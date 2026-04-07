@@ -7,6 +7,7 @@ import WxPageHeader from '@/components/ui/WxPageHeader.vue'
 import WxButton from '@/components/ui/WxButton.vue'
 import WxCard from '@/components/ui/WxCard.vue'
 import WxBadge from '@/components/ui/WxBadge.vue'
+import WxEmptyState from '@/components/ui/WxEmptyState.vue'
 
 const authStore = useAuthStore()
 const links = ref<ShortLink[]>([])
@@ -53,7 +54,17 @@ onMounted(load)
 
     <p v-if="error" class="text-danger">{{ error }}</p>
 
-    <div v-if="loading" class="text-on-surface-variant">Đang tải danh sách link...</div>
+    <div v-if="loading" class="text-on-surface-variant text-center py-8">Đang tải danh sách link...</div>
+
+    <WxEmptyState
+      v-else-if="links.length === 0"
+      title="Chưa có shortlink nào"
+      description="Bạn chưa tạo danh sách link nào. Hãy bắt đầu bằng cách rút gọn URL đầu tiên của bạn."
+    >
+      <template #action>
+        <WxButton variant="primary" to="/app/links/create">Tạo Link ngay</WxButton>
+      </template>
+    </WxEmptyState>
 
     <div v-else class="grid gap-4">
       <WxCard v-for="link in links" :key="link.id" class="p-4 flex flex-col gap-4">
