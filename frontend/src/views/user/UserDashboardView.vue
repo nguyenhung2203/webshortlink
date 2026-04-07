@@ -26,7 +26,6 @@ const loading = ref(true)
 const error = ref('')
 const data = ref<DashboardMetrics | null>(null)
 
-// trends[].bucket is the date label, trends[].totalClicks is the value
 const chartData = computed(() => {
   if (!data.value) return { labels: [], datasets: [] }
   return {
@@ -58,8 +57,8 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    if (!authStore.token) throw new Error('Chưa xác thực')
-    data.value = await UserService.getDashboard(authStore.token)
+    if (!authStore.accessToken) throw new Error('Chưa xác thực')
+    data.value = await UserService.getDashboard(authStore.accessToken)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải dashboard.'
   } finally {
@@ -81,7 +80,6 @@ onMounted(load)
     <div v-if="loading" class="text-on-surface-variant">Đang tải biểu đồ dữ liệu...</div>
 
     <template v-else-if="data">
-      <!-- Stat cards — flat fields on DashboardMetrics -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <WxStatCard title="Tổng lượt click"       :value="data.totalClicks"  :icon="MousePointerClick" />
         <WxStatCard title="Click duy nhất"         :value="data.uniqueClicks" :icon="Users" />

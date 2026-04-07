@@ -92,7 +92,7 @@ function logout() {
         </div>
         <div class="flex items-center gap-3">
           <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-            Plan #{{ authStore.user?.currentPlanId || 'Basic' }}
+            Plan ID: {{ authStore.user?.currentPlanId ?? 'N/A' }}
           </span>
           <span class="text-sm font-medium">{{ authStore.user?.fullName || authStore.user?.email }}</span>
         </div>

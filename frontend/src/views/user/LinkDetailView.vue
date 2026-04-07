@@ -26,8 +26,8 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    if (!authStore.token) throw new Error('Chưa xác thực.')
-    detail.value = await LinkService.detail(authStore.token, linkId.value)
+    if (!authStore.accessToken) throw new Error('Chưa xác thực.')
+    detail.value = await LinkService.detail(authStore.accessToken, linkId.value)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải chi tiết link.'
   } finally {
@@ -36,18 +36,14 @@ async function load() {
 }
 
 async function toggleStatus() {
-  if (!authStore.token || !detail.value) return
+  if (!authStore.accessToken || !detail.value) return
   actionLoading.value = true
   error.value = ''
   message.value = ''
   try {
-    if (detail.value.status === 'Active') {
-      await LinkService.pause(authStore.token, detail.value.id)
-      message.value = 'Đã tạm dừng link.'
-    } else {
-      await LinkService.resume(authStore.token, detail.value.id)
-      message.value = 'Đã kích hoạt lại link.'
-    }
+    const newStatus = detail.value.status !== 'Active'
+    await LinkService.updateStatus(authStore.accessToken, detail.value.id, newStatus)
+    message.value = newStatus ? 'Đã kích hoạt lại link.' : 'Đã tạm dừng link.'
     await load()
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể cập nhật trạng thái link.'
@@ -57,12 +53,12 @@ async function toggleStatus() {
 }
 
 async function deleteLink() {
-  if (!authStore.token || !detail.value) return
+  if (!authStore.accessToken || !detail.value) return
   actionLoading.value = true
   error.value = ''
   message.value = ''
   try {
-    const response = await LinkService.delete(authStore.token, detail.value.id)
+    const response = await LinkService.delete(authStore.accessToken, detail.value.id)
     message.value = response.message
     router.push('/app/links')
   } catch (err) {
@@ -71,6 +67,15 @@ async function deleteLink() {
     actionLoading.value = false
   }
 }
+
+const linkHost = computed(() => {
+  if (!detail.value) return ''
+  try {
+    return new URL(detail.value.shortUrl).host
+  } catch {
+    return 'Liên kết không hợp lệ'
+  }
+})
 
 onMounted(load)
 </script>
@@ -104,7 +109,6 @@ onMounted(load)
     </WxEmptyState>
 
     <template v-else>
-      <!-- Header card — LinkDetail is now flat (LinkDetailDto) -->
       <WxCard padding="md">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div class="space-y-2">
@@ -141,7 +145,7 @@ onMounted(load)
       </WxCard>
 
       <div class="grid gap-6 lg:grid-cols-2">
-        <!-- Cấu hình — fields directly on LinkDetailDto -->
+        <!-- Cấu hình -->
         <WxCard padding="md">
           <div class="space-y-4">
             <h3 class="text-lg font-semibold text-on-surface">Cấu hình Link</h3>
@@ -162,6 +166,10 @@ onMounted(load)
                 <span class="text-on-surface-variant">Tag</span>
                 <strong>{{ detail.tag || '—' }}</strong>
               </div>
+              <div class="flex items-center justify-between gap-4">
+                <span class="text-on-surface-variant">Mô tả</span>
+                <strong>{{ detail.description || '—' }}</strong>
+              </div>
             </div>
           </div>
         </WxCard>
@@ -169,11 +177,11 @@ onMounted(load)
         <!-- Thông tin host -->
         <WxCard padding="md">
           <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-on-surface">Thông tin host</h3>
+            <h3 class="text-lg font-semibold text-on-surface">Thông tin bổ sung</h3>
             <div class="grid gap-3 text-sm">
               <div class="flex items-center justify-between gap-4">
-                <span class="text-on-surface-variant">Host</span>
-                <strong>{{ detail.host }}</strong>
+                <span class="text-on-surface-variant">Host chuyển hướng</span>
+                <strong>{{ linkHost }}</strong>
               </div>
               <div class="flex items-center justify-between gap-4">
                 <span class="text-on-surface-variant">Ngày tạo</span>

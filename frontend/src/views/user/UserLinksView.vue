@@ -18,8 +18,8 @@ async function load() {
   error.value = ''
 
   try {
-    if (!authStore.token) throw new Error('Chưa xác thực')
-    links.value = await LinkService.list(authStore.token)
+    if (!authStore.accessToken) throw new Error('Chưa xác thực')
+    links.value = await LinkService.list(authStore.accessToken)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải danh sách link.'
   } finally {
@@ -29,12 +29,8 @@ async function load() {
 
 async function toggleStatus(link: ShortLink) {
   try {
-    if (!authStore.token) throw new Error('Chưa xác thực')
-    if (link.status === 'Active') {
-      await LinkService.pause(authStore.token, link.id)
-    } else {
-      await LinkService.resume(authStore.token, link.id)
-    }
+    if (!authStore.accessToken) throw new Error('Chưa xác thực')
+    await LinkService.updateStatus(authStore.accessToken, link.id, link.status !== 'Active')
     await load()
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể cập nhật trạng thái.'

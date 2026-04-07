@@ -4,13 +4,19 @@ import { useRouter } from 'vue-router'
 import { LinkService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
 import type { CreateLinkRequest, ShortLink } from '@/types/api'
+import WxPageHeader from '@/components/ui/WxPageHeader.vue'
+import WxInput from '@/components/ui/WxInput.vue'
+import WxButton from '@/components/ui/WxButton.vue'
+import WxCard from '@/components/ui/WxCard.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-const form = ref<CreateLinkRequest>({
+const form = ref<any>({
   originalUrl: 'https://example.com/new-campaign',
   customSlug: '',
+  domainId: null,
+  description: '',
   tag: 'launch',
   expiresAtUtc: '',
   clickLimit: null,
@@ -40,12 +46,14 @@ async function submit() {
   loading.value = true
 
   try {
-    if (!authStore.token) throw new Error('Chưa xác thực')
-    result.value = await LinkService.create(authStore.token, {
+    if (!authStore.accessToken) throw new Error('Chưa xác thực')
+    result.value = await LinkService.create(authStore.accessToken, {
       ...form.value,
-      expiresAtUtc: form.value.expiresAtUtc || null,
+      expiresAtUtc: form.value.expiresAtUtc ? new Date(form.value.expiresAtUtc).toISOString() : null,
       clickLimit: form.value.clickLimit ? Number(form.value.clickLimit) : null,
       customSlug: form.value.customSlug || undefined,
+      description: form.value.description || undefined,
+      domainId: form.value.domainId || null,
       tag: form.value.tag || undefined,
       password: form.value.password || undefined,
     })
@@ -80,6 +88,12 @@ async function submit() {
           placeholder="VD: san-pham-123"
         />
         <WxInput 
+          v-model="form.description" 
+          label="Mô tả" 
+          type="text" 
+          placeholder="VD: Link chiến dịch 2024"
+        />
+        <WxInput 
           v-model="form.tag" 
           label="Nhãn (Tag)" 
           type="text" 
@@ -88,13 +102,12 @@ async function submit() {
         <WxInput 
           v-model="form.expiresAtUtc" 
           label="Thời gian hết hạn (UTC)" 
-          type="datetime-local" 
+          type="text" 
         />
         <WxInput 
           v-model="form.clickLimit" 
           label="Giới hạn số lượt click" 
-          type="number" 
-          min="1" 
+          type="text" 
           placeholder="Để trống nếu không giới hạn"
         />
         <WxInput 

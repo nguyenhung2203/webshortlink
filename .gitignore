@@ -1,7 +1,11 @@
-
 # Claude Agent related
 .claude/
 
 # Backend build files
 backend/backend/bin/
 backend/backend/obj/
+
+# IDE and Editor tools
+.vs/
+*.user
+*.suo

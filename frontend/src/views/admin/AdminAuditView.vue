@@ -9,7 +9,7 @@ const error = ref('')
 
 async function load() {
   try {
-    logs.value = await apiRequest('/api/admin/audit-logs', { token: authStore.token })
+    logs.value = await apiRequest('/api/admin/audit-logs', { token: authStore.accessToken })
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải audit logs.'
   }

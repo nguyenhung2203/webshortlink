@@ -39,28 +39,26 @@ const linkOptions = computed(() =>
   links.value.map((link) => ({ label: link.shortUrl, value: link.id })),
 )
 
-// The selected link object (for display — shortUrl, originalUrl, status)
 const selectedLink = computed(() =>
   links.value.find((l) => l.id === selectedLinkId.value) ?? null,
 )
 
-// analytics.trends[] replaces the old separate timeseries call
 const timeseriesChartData = computed(() => {
-  const trends = analytics.value?.trends ?? []
-  if (trends.length === 0) return { labels: [], datasets: [] }
+  if (!analytics.value || analytics.value.trends.length === 0) return { labels: [], datasets: [] }
+  const data = analytics.value.trends
   return {
-    labels: trends.map((p) => p.bucket),
+    labels: data.map((p) => p.bucket),
     datasets: [
       {
         label: 'Tổng click',
         backgroundColor: '#0ea5e9',
-        data: trends.map((p) => p.totalClicks),
+        data: data.map((p) => p.totalClicks),
         borderRadius: 4,
       },
       {
         label: 'Click duy nhất',
         backgroundColor: '#10b981',
-        data: trends.map((p) => p.uniqueClicks),
+        data: data.map((p) => p.uniqueClicks),
         borderRadius: 4,
       },
     ],
@@ -78,22 +76,21 @@ const timeseriesChartOptions = {
 }
 
 async function loadLinks() {
-  if (!authStore.token) throw new Error('Chưa xác thực.')
-  links.value = await LinkService.list(authStore.token)
+  if (!authStore.accessToken) throw new Error('Chưa xác thực.')
+  links.value = await LinkService.list(authStore.accessToken)
   const requestedId = typeof route.query.linkId === 'string' ? route.query.linkId : ''
   selectedLinkId.value = requestedId || links.value[0]?.id || ''
 }
 
 async function loadAnalytics() {
-  if (!authStore.token || !selectedLinkId.value) {
+  if (!authStore.accessToken || !selectedLinkId.value) {
     analytics.value = null
     return
   }
   loadingDetails.value = true
   error.value = ''
   try {
-    // Single call — trends are embedded in LinkAnalyticsDto
-    analytics.value = await UserService.getLinkAnalytics(authStore.token, selectedLinkId.value)
+    analytics.value = await UserService.getLinkAnalytics(authStore.accessToken, selectedLinkId.value)
   } catch (err) {
     analytics.value = null
     error.value = err instanceof Error ? err.message : 'Không thể tải dữ liệu phân tích.'
@@ -158,7 +155,6 @@ onMounted(bootstrap)
     </WxEmptyState>
 
     <template v-else>
-      <!-- Filter card -->
       <WxCard padding="md">
         <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div class="max-w-xl space-y-1">
@@ -181,7 +177,6 @@ onMounted(bootstrap)
       <div v-if="loadingDetails" class="text-sm text-on-surface-variant">Đang tải chi tiết phân tích...</div>
 
       <template v-else-if="analytics">
-        <!-- Stat cards — flat fields on LinkAnalytics -->
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           <WxStatCard title="Tổng click"    :value="analytics.totalClicks"  :icon="MousePointerClick" />
           <WxStatCard title="Click duy nhất" :value="analytics.uniqueClicks" :icon="Users" />
@@ -189,14 +184,13 @@ onMounted(bootstrap)
         </div>
 
         <div class="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <!-- Trend chart -->
           <WxCard padding="md">
             <div class="space-y-4">
               <div>
                 <h3 class="text-lg font-semibold text-on-surface">Xu hướng click theo ngày</h3>
                 <p class="text-sm text-on-surface-variant">Biểu đồ trực quan hóa bằng Chart.js.</p>
               </div>
-              <div v-if="(analytics.trends ?? []).length === 0" class="rounded-lg bg-surface-container-low p-4 text-sm text-on-surface-variant">
+              <div v-if="analytics.trends.length === 0" class="rounded-lg bg-surface-container-low p-4 text-sm text-on-surface-variant">
                 Chưa có dữ liệu time-series cho link này.
               </div>
               <div v-else class="h-72 w-full mt-2">
@@ -205,7 +199,6 @@ onMounted(bootstrap)
             </div>
           </WxCard>
 
-          <!-- Link info -->
           <WxCard padding="md">
             <div class="space-y-4">
               <div>
@@ -221,13 +214,11 @@ onMounted(bootstrap)
           </WxCard>
         </div>
 
-        <!-- Breakdown cards -->
         <div class="grid gap-6 lg:grid-cols-3">
-          <!-- Referrers (was "sources") -->
           <WxCard padding="md">
             <div class="space-y-4">
               <h3 class="text-lg font-semibold text-on-surface">Nguồn truy cập</h3>
-              <div v-if="(analytics.topReferrers ?? []).length === 0" class="text-sm text-on-surface-variant">Chưa có dữ liệu.</div>
+              <div v-if="analytics.topReferrers.length === 0" class="text-sm text-on-surface-variant">Chưa có dữ liệu.</div>
               <div v-else class="space-y-3">
                 <div v-for="item in analytics.topReferrers" :key="item.label" class="flex items-center justify-between gap-4 text-sm">
                   <span class="truncate text-on-surface-variant">{{ item.label }}</span>
@@ -237,11 +228,10 @@ onMounted(bootstrap)
             </div>
           </WxCard>
 
-          <!-- Devices -->
           <WxCard padding="md">
             <div class="space-y-4">
               <h3 class="text-lg font-semibold text-on-surface">Thiết bị</h3>
-              <div v-if="(analytics.topDevices ?? []).length === 0" class="text-sm text-on-surface-variant">Chưa có dữ liệu.</div>
+              <div v-if="analytics.topDevices.length === 0" class="text-sm text-on-surface-variant">Chưa có dữ liệu.</div>
               <div v-else class="space-y-3">
                 <div v-for="item in analytics.topDevices" :key="item.label" class="flex items-center justify-between gap-4 text-sm">
                   <span class="truncate text-on-surface-variant">{{ item.label }}</span>
@@ -251,11 +241,10 @@ onMounted(bootstrap)
             </div>
           </WxCard>
 
-          <!-- Countries -->
           <WxCard padding="md">
             <div class="space-y-4">
               <h3 class="text-lg font-semibold text-on-surface">Quốc gia</h3>
-              <div v-if="(analytics.topCountries ?? []).length === 0" class="text-sm text-on-surface-variant">Chưa có dữ liệu.</div>
+              <div v-if="analytics.topCountries.length === 0" class="text-sm text-on-surface-variant">Chưa có dữ liệu.</div>
               <div v-else class="space-y-3">
                 <div v-for="item in analytics.topCountries" :key="item.label" class="flex items-center justify-between gap-4 text-sm">
                   <span class="truncate text-on-surface-variant">{{ item.label }}</span>
