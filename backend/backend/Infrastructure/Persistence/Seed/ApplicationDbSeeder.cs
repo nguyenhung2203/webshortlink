@@ -61,8 +61,8 @@ public sealed class ApplicationDbSeeder
             foreach (var migration in pending.Where(m => !appliedMigrations.Contains(m)))
             {
                 await _dbContext.Database.ExecuteSqlRawAsync(
-                    $"INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ('{migration}', '8.0.14')",
-                    cancellationToken);
+                    "INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ({0}, '8.0.14')",
+                    migration);
             }
         }
         else
