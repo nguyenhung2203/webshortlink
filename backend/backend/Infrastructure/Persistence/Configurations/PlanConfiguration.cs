@@ -10,6 +10,7 @@ public sealed class PlanConfiguration : IEntityTypeConfiguration<Plan>
     {
         builder.ToTable("Plans");
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.Code).HasMaxLength(50).IsRequired();
         builder.Property(x => x.Name).HasMaxLength(100).IsRequired();
         builder.Property(x => x.MonthlyPrice).HasColumnType("decimal(18,2)");

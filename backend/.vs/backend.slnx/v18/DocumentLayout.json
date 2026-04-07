@@ -1,20 +1,7 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "E:\\webshortlink\\backend\\",
-  "Documents": [
-    {
-      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|backend\\backend.csproj|e:\\webshortlink\\backend\\backend\\backend.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|backend\\backend.csproj|solutionrelative:backend\\backend.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|backend\\backend.csproj|e:\\webshortlink\\backend\\backend\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|backend\\backend.csproj|solutionrelative:backend\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|backend\\backend.csproj|e:\\webshortlink\\backend\\backend\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|backend\\backend.csproj|solutionrelative:backend\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    }
-  ],
+  "Documents": [],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -22,7 +9,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": -1,
           "Children": [
             {
               "$type": "Bookmark",
@@ -43,44 +30,6 @@
             {
               "$type": "Bookmark",
               "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "backend",
-              "DocumentMoniker": "E:\\webshortlink\\backend\\backend\\backend.csproj",
-              "RelativeDocumentMoniker": "backend\\backend.csproj",
-              "ToolTip": "E:\\webshortlink\\backend\\backend\\backend.csproj",
-              "RelativeToolTip": "backend\\backend.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2026-04-07T02:00:22.057Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "AuthController.cs",
-              "DocumentMoniker": "E:\\webshortlink\\backend\\backend\\Controllers\\AuthController.cs",
-              "RelativeDocumentMoniker": "backend\\Controllers\\AuthController.cs",
-              "ToolTip": "E:\\webshortlink\\backend\\backend\\Controllers\\AuthController.cs",
-              "RelativeToolTip": "backend\\Controllers\\AuthController.cs",
-              "ViewState": "AgIAABIAAAAAAAAAAAAAACwAAAAQAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-06T18:11:19.458Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "Program.cs",
-              "DocumentMoniker": "E:\\webshortlink\\backend\\backend\\Program.cs",
-              "RelativeDocumentMoniker": "backend\\Program.cs",
-              "ToolTip": "E:\\webshortlink\\backend\\backend\\Program.cs",
-              "RelativeToolTip": "backend\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-06T18:08:25.033Z"
             }
           ]
         }

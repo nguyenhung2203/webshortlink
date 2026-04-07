@@ -1,3 +1,5 @@
+using WebShortlink.Backend.Application.Analytics;
+
 namespace WebShortlink.Backend.Application.Admin;
 
 public sealed record AdminOverviewDto(

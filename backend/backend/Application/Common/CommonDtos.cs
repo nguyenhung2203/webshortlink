@@ -15,3 +15,5 @@ public sealed record CurrentSessionDto(Guid UserId, string Email, string FullNam
 public sealed record PublicRedirectAccessRequestDto(string Password);
 
 public sealed record PublicRedirectAccessResponseDto(string RedirectUrl);
+
+public sealed record MessageResponseDto(string Message, string? Code = null);

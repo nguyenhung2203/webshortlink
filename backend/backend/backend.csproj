@@ -24,4 +24,11 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Controllers\**\*.cs" />
+    <Compile Remove="Models\**\*.cs" />
+    <Compile Remove="Services\AppDataStore.cs" />
+    <Compile Remove="WeatherForecast.cs" />
+  </ItemGroup>
+
 </Project>

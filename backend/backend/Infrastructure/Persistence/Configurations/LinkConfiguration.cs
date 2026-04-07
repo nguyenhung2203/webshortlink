@@ -18,6 +18,5 @@ public sealed class LinkConfiguration : IEntityTypeConfiguration<Link>
         builder.Property(x => x.RowVersion).IsRowVersion();
         builder.HasIndex(x => new { x.DomainId, x.Slug }).IsUnique();
         builder.HasIndex(x => new { x.UserId, x.CreatedAtUtc });
-        builder.HasQueryFilter(x => !x.IsDeleted);
     }
 }

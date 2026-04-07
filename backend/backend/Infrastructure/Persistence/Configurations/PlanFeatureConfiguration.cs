@@ -10,6 +10,7 @@ public sealed class PlanFeatureConfiguration : IEntityTypeConfiguration<PlanFeat
     {
         builder.ToTable("PlanFeatures");
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.FeatureKey).HasMaxLength(100).IsRequired();
         builder.Property(x => x.FeatureValue).HasMaxLength(255);
         builder.HasIndex(x => new { x.PlanId, x.FeatureKey }).IsUnique();
