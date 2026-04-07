@@ -14,5 +14,7 @@ public static class ErrorCodes
     public const string PasswordRequired = "PASSWORD_REQUIRED";
     public const string InvalidPassword = "INVALID_PASSWORD";
     public const string PlanFeatureDenied = "PLAN_FEATURE_DENIED";
+    public const string DomainNotVerified = "DOMAIN_NOT_VERIFIED";
+    public const string InvalidRule = "INVALID_RULE";
     public const string RateLimited = "RATE_LIMITED";
 }

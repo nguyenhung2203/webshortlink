@@ -1,34 +1,194 @@
-using System.Security.Claims;
-using System.Text.Encodings.Web;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.Extensions.Options;
+using System.Text;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
+using WebShortlink.Backend.Api;
+using WebShortlink.Backend.Application.Abstractions;
+using WebShortlink.Backend.Application.Admin;
+using WebShortlink.Backend.Application.Analytics;
+using WebShortlink.Backend.Application.Authentication;
+using WebShortlink.Backend.Application.Billing;
+using WebShortlink.Backend.Application.Common;
+using WebShortlink.Backend.Application.Domains;
+using WebShortlink.Backend.Application.Links;
+using WebShortlink.Backend.Domain.Entities;
+using WebShortlink.Backend.Domain.Enums;
+using WebShortlink.Backend.Infrastructure.Auth;
+using WebShortlink.Backend.Infrastructure.Cache;
+using WebShortlink.Backend.Infrastructure.Options;
+using WebShortlink.Backend.Infrastructure.Persistence;
+using WebShortlink.Backend.Infrastructure.Persistence.Seed;
+using WebShortlink.Backend.Infrastructure.Queue;
+using WebShortlink.Backend.Infrastructure.Services;
+using WebShortlink.Backend.Infrastructure.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
+var configuration = builder.Configuration;
+var redisOptions = configuration.GetSection(RedisOptions.SectionName).Get<RedisOptions>() ?? new RedisOptions();
 
-builder.Services.AddSingleton<AppDataStore>();
-builder.Services.AddSingleton<DemoTimeProvider>();
+builder.Services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+builder.Services.Configure<TurnstileOptions>(configuration.GetSection(TurnstileOptions.SectionName));
+builder.Services.Configure<RedisOptions>(configuration.GetSection(RedisOptions.SectionName));
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient<ITurnstileService, TurnstileService>();
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(configuration.GetConnectionString("SqlServer")));
 
 builder.Services
-    .AddAuthentication(DemoAuthHandler.SchemeName)
-    .AddScheme<AuthenticationSchemeOptions, DemoAuthHandler>(DemoAuthHandler.SchemeName, _ => { });
+    .AddIdentity<AppUser, IdentityRole<Guid>>(options =>
+    {
+        options.SignIn.RequireConfirmedEmail = true;
+        options.Password.RequiredLength = 8;
+        options.Password.RequireDigit = true;
+        options.Password.RequireUppercase = true;
+    })
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
 
-builder.Services.AddAuthorization();
+var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = true,
+            ValidIssuer = jwtOptions.Issuer,
+            ValidAudience = jwtOptions.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey))
+        };
+    });
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Events.OnRedirectToLogin = context =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api"))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return Task.CompletedTask;
+        }
+
+        context.Response.Redirect(context.RedirectUri);
+        return Task.CompletedTask;
+    };
+
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api"))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return Task.CompletedTask;
+        }
+
+        context.Response.Redirect(context.RedirectUri);
+        return Task.CompletedTask;
+    };
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("UserOnly", policy => policy.RequireRole(AppRoles.User));
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole(AppRoles.Admin));
+});
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("frontend", policy =>
     {
-        policy
-            .WithOrigins("http://localhost:5173", "https://localhost:5173")
+        policy.WithOrigins("http://localhost:5173", "https://localhost:5173")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
 });
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("auth", limiter =>
+    {
+        limiter.PermitLimit = 10;
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.QueueLimit = 0;
+        limiter.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+    });
+
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await context.HttpContext.Response.WriteAsJsonAsync(new { errorCode = ErrorCodes.RateLimited, message = "Quá nhiều yêu cầu. Vui lòng thử lại sau." }, token);
+    };
+});
+
+if (redisOptions.Enabled)
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = redisOptions.Configuration;
+        options.InstanceName = redisOptions.InstanceName;
+    });
+
+    builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+        ConnectionMultiplexer.Connect(new ConfigurationOptions
+        {
+            AbortOnConnectFail = false,
+            EndPoints = { redisOptions.Configuration }
+        }));
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+}
+
+builder.Services.AddScoped<ICurrentUserService, HttpCurrentUserService>();
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.AddScoped<IPlanCapabilityService, PlanCapabilityService>();
+builder.Services.AddScoped<ILinkCacheService, RedisLinkCacheService>();
+builder.Services.AddScoped<IPasswordHasher<Link>, PasswordHasher<Link>>();
+
+if (redisOptions.Enabled)
+{
+    builder.Services.AddSingleton<IAnalyticsQueue, RedisAnalyticsQueue>();
+}
+else
+{
+    builder.Services.AddSingleton<IAnalyticsQueue, InMemoryAnalyticsQueue>();
+}
+
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<LinkService>();
+builder.Services.AddScoped<RedirectService>();
+builder.Services.AddScoped<LinkRuleService>();
+builder.Services.AddScoped<AnalyticsService>();
+builder.Services.AddScoped<ProfileService>();
+builder.Services.AddScoped<BillingService>();
+builder.Services.AddScoped<DomainService>();
+builder.Services.AddScoped<AdminService>();
+builder.Services.AddScoped<ApplicationDbSeeder>();
+
+builder.Services.AddHostedService<ClickAnalyticsWorker>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
@@ -37,86 +197,17 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("frontend");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
-app.MapGet("/go/{slug}", (string slug, HttpContext httpContext, AppDataStore store, DemoTimeProvider clock) =>
+using (var scope = app.Services.CreateScope())
 {
-    var result = store.ResolveAndTrackClick(slug, httpContext, clock.UtcNow);
-
-    if (!result.Found)
-    {
-        return Results.NotFound(new { message = "Shortlink không tồn tại." });
-    }
-
-    if (!result.Allowed)
-    {
-        return Results.BadRequest(new
-        {
-            message = result.Reason,
-            requiresPassword = result.RequiresPassword
-        });
-    }
-
-    return Results.Redirect(result.TargetUrl!, false, true);
-});
+    var seeder = scope.ServiceProvider.GetRequiredService<ApplicationDbSeeder>();
+    await seeder.SeedAsync();
+}
 
 app.Run();
 
-public sealed class DemoTimeProvider
-{
-    public DateTime UtcNow => DateTime.UtcNow;
-}
-
-public sealed class DemoAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
-{
-    public const string SchemeName = "DemoBearer";
-
-    private readonly AppDataStore _store;
-
-    public DemoAuthHandler(
-        IOptionsMonitor<AuthenticationSchemeOptions> options,
-        ILoggerFactory logger,
-        UrlEncoder encoder,
-        AppDataStore store)
-        : base(options, logger, encoder)
-    {
-        _store = store;
-    }
-
-    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-    {
-        if (!Request.Headers.Authorization.Any())
-        {
-            return Task.FromResult(AuthenticateResult.NoResult());
-        }
-
-        var header = Request.Headers.Authorization.ToString();
-        if (!header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-        {
-            return Task.FromResult(AuthenticateResult.Fail("Token không hợp lệ."));
-        }
-
-        var token = header["Bearer ".Length..].Trim();
-        var user = _store.GetUserByToken(token);
-        if (user is null)
-        {
-            return Task.FromResult(AuthenticateResult.Fail("Phiên đăng nhập đã hết hạn."));
-        }
-
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Name, user.Email),
-            new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Role, user.Role)
-        };
-
-        var identity = new ClaimsIdentity(claims, SchemeName);
-        var principal = new ClaimsPrincipal(identity);
-        var ticket = new AuthenticationTicket(principal, SchemeName);
-        return Task.FromResult(AuthenticateResult.Success(ticket));
-    }
-}
+public partial class Program { }

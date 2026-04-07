@@ -12,6 +12,5 @@ public sealed class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
         builder.Property(x => x.FullName).HasMaxLength(200).IsRequired();
         builder.Property(x => x.CreatedAtUtc).IsRequired();
         builder.HasIndex(x => x.CurrentPlanId);
-        builder.HasQueryFilter(x => !x.IsDeleted);
     }
 }

@@ -13,6 +13,5 @@ public sealed class CustomDomainConfiguration : IEntityTypeConfiguration<CustomD
         builder.Property(x => x.Host).HasMaxLength(255).IsRequired();
         builder.Property(x => x.VerificationToken).HasMaxLength(100).IsRequired();
         builder.HasIndex(x => x.Host).IsUnique();
-        builder.HasQueryFilter(x => !x.IsDeleted);
     }
 }

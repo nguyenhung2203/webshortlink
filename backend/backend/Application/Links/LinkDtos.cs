@@ -3,6 +3,7 @@ namespace WebShortlink.Backend.Application.Links;
 public sealed record CreateLinkRequestDto(
     string OriginalUrl,
     string? CustomSlug,
+    Guid? DomainId,
     string? Description,
     string? Tag,
     DateTime? ExpiresAtUtc,
@@ -11,6 +12,7 @@ public sealed record CreateLinkRequestDto(
 
 public sealed record UpdateLinkRequestDto(
     string OriginalUrl,
+    Guid? DomainId,
     string? Description,
     string? Tag,
     DateTime? ExpiresAtUtc,
@@ -23,6 +25,7 @@ public sealed record LinkListItemDto(
     Guid Id,
     string ShortUrl,
     string Slug,
+    string Host,
     string OriginalUrl,
     string Status,
     string? Tag,
@@ -36,6 +39,7 @@ public sealed record LinkDetailDto(
     Guid Id,
     string ShortUrl,
     string Slug,
+    string Host,
     string OriginalUrl,
     string Status,
     string? Description,
@@ -59,3 +63,18 @@ public sealed record CachedLinkDto(
     int? ClickLimit,
     string? PasswordHash,
     long TotalClicks);
+
+public sealed record CreateLinkRuleRequestDto(
+    string RuleType,
+    string RuleValue,
+    string TargetUrl,
+    int Priority);
+
+public sealed record LinkRuleItemDto(
+    Guid Id,
+    string RuleType,
+    string RuleValue,
+    string TargetUrl,
+    int Priority,
+    bool IsActive,
+    DateTime CreatedAtUtc);
