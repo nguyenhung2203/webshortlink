@@ -6,10 +6,10 @@ import WxButton from '@/components/ui/WxButton.vue'
 import WxInput from '@/components/ui/WxInput.vue'
 import WxPasswordInput from '@/components/ui/WxPasswordInput.vue'
 
-const fullName = ref('Nguyen Demo')
-const email = ref('new-user@demo.local')
-const password = ref('Demo123!')
-const confirmPassword = ref('Demo123!')
+const fullName = ref('')
+const email = ref('')
+const password = ref('')
+const confirmPassword = ref('')
 const error = ref('')
 const successMessage = ref('')
 const loading = ref(false)

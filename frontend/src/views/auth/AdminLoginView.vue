@@ -7,8 +7,8 @@ import WxInput from '@/components/ui/WxInput.vue'
 import WxPasswordInput from '@/components/ui/WxPasswordInput.vue'
 import { Shield } from 'lucide-vue-next'
 
-const email = ref('admin@demo.local')
-const password = ref('Admin123!')
+const email = ref('')
+const password = ref('')
 const error = ref('')
 const loading = ref(false)
 

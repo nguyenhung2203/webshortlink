@@ -2,8 +2,9 @@
 type Size = 'sm' | 'md' | 'lg'
 
 const props = withDefaults(defineProps<{
-  modelValue?: string
-  type?: 'text' | 'email' | 'search' | 'url'
+  label?: string
+  modelValue?: string | number
+  type?: 'text' | 'email' | 'search' | 'url' | 'number' | 'datetime-local' | 'password' | 'date' | 'time'
   placeholder?: string
   disabled?: boolean
   size?: Size
@@ -36,6 +37,9 @@ const sizeClasses: Record<Size, string> = {
 
 <template>
   <div class="flex flex-col gap-1">
+    <label v-if="label" class="text-sm font-semibold text-on-surface mb-0.5 ml-0.5 cursor-pointer">
+      {{ label }}
+    </label>
     <div
       class="flex items-center rounded-lg border transition-colors duration-200 bg-surface-container-low"
       :class="[

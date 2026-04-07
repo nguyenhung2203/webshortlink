@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
-import { UserService, LinkService } from '@/api/services'
+import { UserService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
 import type { DashboardMetrics } from '@/types/api'
 import WxPageHeader from '@/components/ui/WxPageHeader.vue'
@@ -59,70 +59,7 @@ async function load() {
   error.value = ''
   try {
     if (!authStore.accessToken) throw new Error('Chưa xác thực')
-    
-    const token = authStore.accessToken
-    const links = await LinkService.list(token)
-    
-    if (links.length === 0) {
-      data.value = {
-        totalClicks: 0,
-        uniqueClicks: 0,
-        botClicks: 0,
-        activeLinks: 0,
-        trends: [],
-        topLinks: []
-      }
-      return
-    }
-
-    // Frontend-only aggregation from working endpoints
-    let totalBotClicks = 0
-    const trendsMap: Record<string, { bucket: string, totalClicks: number, uniqueClicks: number, botClicks: number }> = {}
-    
-    // Lấy analytics cho từng link để tổng hợp trends và botClicks
-    const analyticsPromises = links.map(l => UserService.getLinkAnalytics(token, l.id).catch(() => null))
-    const analyticsResults = await Promise.all(analyticsPromises)
-
-    analyticsResults.forEach(an => {
-      if (!an) return
-      totalBotClicks += an.botClicks || 0
-      
-      const linkTrends = an.trends || []
-      linkTrends.forEach(t => {
-        if (!trendsMap[t.bucket]) {
-          trendsMap[t.bucket] = { bucket: t.bucket, totalClicks: 0, uniqueClicks: 0, botClicks: 0 }
-        }
-        const entry = trendsMap[t.bucket]
-        if (entry) {
-          entry.totalClicks += t.totalClicks
-          entry.uniqueClicks += t.uniqueClicks
-          entry.botClicks += t.botClicks
-        }
-      })
-    })
-
-    const aggregatedTrends = Object.values(trendsMap).sort((a, b) => a.bucket.localeCompare(b.bucket))
-
-    // Sắp xếp top links
-    const topLinks = [...links]
-      .sort((a, b) => b.totalClicks - a.totalClicks)
-      .slice(0, 5)
-      .map(l => ({
-        linkId: l.id,
-        shortUrl: `https://sho.rt/${l.slug}`,
-        totalClicks: l.totalClicks,
-        uniqueClicks: l.uniqueClicks,
-        status: l.status
-      }))
-
-    data.value = {
-      totalClicks: links.reduce((sum, l) => sum + l.totalClicks, 0),
-      uniqueClicks: links.reduce((sum, l) => sum + l.uniqueClicks, 0),
-      botClicks: totalBotClicks,
-      activeLinks: links.filter(l => l.status === 'Active').length,
-      trends: aggregatedTrends,
-      topLinks: topLinks
-    }
+    data.value = await UserService.getDashboard(authStore.accessToken)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải dashboard.'
   } finally {
