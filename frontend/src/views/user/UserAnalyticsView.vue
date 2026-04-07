@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { LinkService, UserService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
-import type { LinkAnalytics, LinkTimeseriesPoint, ShortLink } from '@/types/api'
+import type { LinkAnalytics, ShortLink } from '@/types/api'
 import WxButton from '@/components/ui/WxButton.vue'
 import WxCard from '@/components/ui/WxCard.vue'
 import WxEmptyState from '@/components/ui/WxEmptyState.vue'
@@ -18,7 +18,7 @@ import {
   Legend,
   BarElement,
   CategoryScale,
-  LinearScale
+  LinearScale,
 } from 'chart.js'
 import { Bar } from 'vue-chartjs'
 
@@ -31,88 +31,71 @@ const authStore = useAuthStore()
 const links = ref<ShortLink[]>([])
 const selectedLinkId = ref('')
 const analytics = ref<LinkAnalytics | null>(null)
-const timeseries = ref<LinkTimeseriesPoint[]>([])
 const loading = ref(true)
 const loadingDetails = ref(false)
 const error = ref('')
 
 const linkOptions = computed(() =>
-  links.value.map((link) => ({
-    label: link.shortUrl,
-    value: link.id,
-  })),
+  links.value.map((link) => ({ label: link.shortUrl, value: link.id })),
 )
 
+// The selected link object (for display — shortUrl, originalUrl, status)
+const selectedLink = computed(() =>
+  links.value.find((l) => l.id === selectedLinkId.value) ?? null,
+)
+
+// analytics.trends[] replaces the old separate timeseries call
 const timeseriesChartData = computed(() => {
-  if (timeseries.value.length === 0) return { labels: [], datasets: [] }
+  const trends = analytics.value?.trends ?? []
+  if (trends.length === 0) return { labels: [], datasets: [] }
   return {
-    labels: timeseries.value.map(p => p.date),
+    labels: trends.map((p) => p.bucket),
     datasets: [
       {
         label: 'Tổng click',
         backgroundColor: '#0ea5e9',
-        data: timeseries.value.map(p => p.totalClicks),
-        borderRadius: 4
+        data: trends.map((p) => p.totalClicks),
+        borderRadius: 4,
       },
       {
         label: 'Click duy nhất',
         backgroundColor: '#10b981',
-        data: timeseries.value.map(p => p.uniqueClicks),
-        borderRadius: 4
-      }
-    ]
+        data: trends.map((p) => p.uniqueClicks),
+        borderRadius: 4,
+      },
+    ],
   }
 })
 
 const timeseriesChartOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  plugins: {
-    legend: { position: 'bottom' as const }
-  },
+  plugins: { legend: { position: 'bottom' as const } },
   scales: {
-    y: {
-      beginAtZero: true,
-      grid: { color: 'rgba(150, 150, 150, 0.1)' }
-    },
-    x: {
-      grid: { display: false }
-    }
-  }
+    y: { beginAtZero: true, grid: { color: 'rgba(150,150,150,0.1)' } },
+    x: { grid: { display: false } },
+  },
 }
 
 async function loadLinks() {
-  if (!authStore.token) {
-    throw new Error('Chưa xác thực.')
-  }
-
+  if (!authStore.token) throw new Error('Chưa xác thực.')
   links.value = await LinkService.list(authStore.token)
-  const requestedLinkId = typeof route.query.linkId === 'string' ? route.query.linkId : ''
-  const initialLinkId = requestedLinkId || selectedLinkId.value || links.value[0]?.id || ''
-  selectedLinkId.value = initialLinkId
+  const requestedId = typeof route.query.linkId === 'string' ? route.query.linkId : ''
+  selectedLinkId.value = requestedId || links.value[0]?.id || ''
 }
 
 async function loadAnalytics() {
   if (!authStore.token || !selectedLinkId.value) {
     analytics.value = null
-    timeseries.value = []
     return
   }
-
   loadingDetails.value = true
   error.value = ''
-
   try {
-    const [analyticsResponse, timeseriesResponse] = await Promise.all([
-      UserService.getLinkAnalytics(authStore.token, selectedLinkId.value),
-      UserService.getLinkTimeseries(authStore.token, selectedLinkId.value),
-    ])
-
-    analytics.value = analyticsResponse
-    timeseries.value = timeseriesResponse
+    // Single call — trends are embedded in LinkAnalyticsDto
+    analytics.value = await UserService.getLinkAnalytics(authStore.token, selectedLinkId.value)
   } catch (err) {
     analytics.value = null
-    timeseries.value = []
     error.value = err instanceof Error ? err.message : 'Không thể tải dữ liệu phân tích.'
   } finally {
     loadingDetails.value = false
@@ -122,7 +105,6 @@ async function loadAnalytics() {
 async function bootstrap() {
   loading.value = true
   error.value = ''
-
   try {
     await loadLinks()
     await loadAnalytics()
@@ -152,14 +134,17 @@ onMounted(bootstrap)
       description="Xem chi tiết click, nguồn truy cập, thiết bị và quốc gia cho từng link."
     >
       <template #actions>
-        <WxButton v-if="selectedLinkId" variant="ghost" @click="router.push(`/app/links/${selectedLinkId}`)">
+        <WxButton
+          v-if="selectedLinkId"
+          variant="ghost"
+          @click="router.push(`/app/links/${selectedLinkId}`)"
+        >
           Mở chi tiết link
         </WxButton>
       </template>
     </WxPageHeader>
 
     <p v-if="error && !loading" class="text-sm text-danger">{{ error }}</p>
-
     <div v-if="loading" class="text-sm text-on-surface-variant">Đang tải danh sách link và phân tích...</div>
 
     <WxEmptyState
@@ -173,12 +158,13 @@ onMounted(bootstrap)
     </WxEmptyState>
 
     <template v-else>
+      <!-- Filter card -->
       <WxCard padding="md">
         <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div class="max-w-xl space-y-1">
             <h2 class="text-lg font-semibold text-on-surface">Bộ lọc phân tích</h2>
             <p class="text-sm text-on-surface-variant">
-              Chọn một link để xem tổng hợp thống kê và biểu đồ time-series có sẵn từ backend.
+              Chọn một link để xem tổng hợp thống kê và biểu đồ time-series.
             </p>
           </div>
           <div class="w-full md:max-w-sm">
@@ -195,53 +181,55 @@ onMounted(bootstrap)
       <div v-if="loadingDetails" class="text-sm text-on-surface-variant">Đang tải chi tiết phân tích...</div>
 
       <template v-else-if="analytics">
+        <!-- Stat cards — flat fields on LinkAnalytics -->
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <WxStatCard title="Tổng click" :value="analytics.metrics.totalClicks" :icon="MousePointerClick" />
-          <WxStatCard title="Click duy nhất" :value="analytics.metrics.uniqueClicks" :icon="Users" />
-          <WxStatCard title="Bot click" :value="analytics.metrics.botClicks" :icon="Bot" />
+          <WxStatCard title="Tổng click"    :value="analytics.totalClicks"  :icon="MousePointerClick" />
+          <WxStatCard title="Click duy nhất" :value="analytics.uniqueClicks" :icon="Users" />
+          <WxStatCard title="Bot click"      :value="analytics.botClicks"    :icon="Bot" />
         </div>
 
         <div class="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <!-- Trend chart -->
           <WxCard padding="md">
             <div class="space-y-4">
               <div>
                 <h3 class="text-lg font-semibold text-on-surface">Xu hướng click theo ngày</h3>
-                <p class="text-sm text-on-surface-variant">Biểu đồ tổng quan từ backend trực quan hóa bằng Chart.js.</p>
+                <p class="text-sm text-on-surface-variant">Biểu đồ trực quan hóa bằng Chart.js.</p>
               </div>
-
-              <div v-if="timeseries.length === 0" class="rounded-lg bg-surface-container-low p-4 text-sm text-on-surface-variant">
+              <div v-if="(analytics.trends ?? []).length === 0" class="rounded-lg bg-surface-container-low p-4 text-sm text-on-surface-variant">
                 Chưa có dữ liệu time-series cho link này.
               </div>
-
               <div v-else class="h-72 w-full mt-2">
                 <Bar :data="timeseriesChartData" :options="timeseriesChartOptions" />
               </div>
             </div>
           </WxCard>
 
+          <!-- Link info -->
           <WxCard padding="md">
             <div class="space-y-4">
               <div>
                 <h3 class="text-lg font-semibold text-on-surface">Thông tin link</h3>
                 <p class="text-sm text-on-surface-variant">Tổng hợp nhanh link đang được phân tích.</p>
               </div>
-
-              <div class="space-y-2 text-sm">
-                <p class="break-all text-primary">{{ analytics.link.shortUrl }}</p>
-                <p class="break-all text-on-surface-variant">{{ analytics.link.originalUrl }}</p>
-                <p class="text-on-surface-variant">Trạng thái: <strong class="text-on-surface">{{ analytics.link.status }}</strong></p>
+              <div v-if="selectedLink" class="space-y-2 text-sm">
+                <p class="break-all text-primary">{{ selectedLink.shortUrl }}</p>
+                <p class="break-all text-on-surface-variant">{{ selectedLink.originalUrl }}</p>
+                <p class="text-on-surface-variant">Trạng thái: <strong class="text-on-surface">{{ selectedLink.status }}</strong></p>
               </div>
             </div>
           </WxCard>
         </div>
 
+        <!-- Breakdown cards -->
         <div class="grid gap-6 lg:grid-cols-3">
+          <!-- Referrers (was "sources") -->
           <WxCard padding="md">
             <div class="space-y-4">
               <h3 class="text-lg font-semibold text-on-surface">Nguồn truy cập</h3>
-              <div v-if="analytics.sources.length === 0" class="text-sm text-on-surface-variant">Chưa có dữ liệu.</div>
+              <div v-if="(analytics.topReferrers ?? []).length === 0" class="text-sm text-on-surface-variant">Chưa có dữ liệu.</div>
               <div v-else class="space-y-3">
-                <div v-for="item in analytics.sources" :key="item.label" class="flex items-center justify-between gap-4 text-sm">
+                <div v-for="item in analytics.topReferrers" :key="item.label" class="flex items-center justify-between gap-4 text-sm">
                   <span class="truncate text-on-surface-variant">{{ item.label }}</span>
                   <strong>{{ item.value }}</strong>
                 </div>
@@ -249,12 +237,13 @@ onMounted(bootstrap)
             </div>
           </WxCard>
 
+          <!-- Devices -->
           <WxCard padding="md">
             <div class="space-y-4">
               <h3 class="text-lg font-semibold text-on-surface">Thiết bị</h3>
-              <div v-if="analytics.devices.length === 0" class="text-sm text-on-surface-variant">Chưa có dữ liệu.</div>
+              <div v-if="(analytics.topDevices ?? []).length === 0" class="text-sm text-on-surface-variant">Chưa có dữ liệu.</div>
               <div v-else class="space-y-3">
-                <div v-for="item in analytics.devices" :key="item.label" class="flex items-center justify-between gap-4 text-sm">
+                <div v-for="item in analytics.topDevices" :key="item.label" class="flex items-center justify-between gap-4 text-sm">
                   <span class="truncate text-on-surface-variant">{{ item.label }}</span>
                   <strong>{{ item.value }}</strong>
                 </div>
@@ -262,12 +251,13 @@ onMounted(bootstrap)
             </div>
           </WxCard>
 
+          <!-- Countries -->
           <WxCard padding="md">
             <div class="space-y-4">
               <h3 class="text-lg font-semibold text-on-surface">Quốc gia</h3>
-              <div v-if="analytics.countries.length === 0" class="text-sm text-on-surface-variant">Chưa có dữ liệu.</div>
+              <div v-if="(analytics.topCountries ?? []).length === 0" class="text-sm text-on-surface-variant">Chưa có dữ liệu.</div>
               <div v-else class="space-y-3">
-                <div v-for="item in analytics.countries" :key="item.label" class="flex items-center justify-between gap-4 text-sm">
+                <div v-for="item in analytics.topCountries" :key="item.label" class="flex items-center justify-between gap-4 text-sm">
                   <span class="truncate text-on-surface-variant">{{ item.label }}</span>
                   <strong>{{ item.value }}</strong>
                 </div>

@@ -1,3 +1,4 @@
+// ─── Shared ────────────────────────────────────────────────────────────────────
 export interface ApiError {
   message: string
 }
@@ -6,6 +7,7 @@ export interface ApiMessageResponse {
   message: string
 }
 
+// ─── Auth ──────────────────────────────────────────────────────────────────────
 export interface AuthResult {
   token: string
   user: {
@@ -18,6 +20,7 @@ export interface AuthResult {
   }
 }
 
+// ─── User Profile ──────────────────────────────────────────────────────────────
 export interface UserProfileProfile {
   id: string
   fullName: string
@@ -26,7 +29,7 @@ export interface UserProfileProfile {
   status: string
   emailConfirmed: boolean
   createdAtUtc: string
-  lastLoginAtUtc: string
+  lastLoginAtUtc: string | null
   plan: {
     id: number
     code: string
@@ -40,118 +43,102 @@ export interface UserProfileProfile {
   }
 }
 
-export interface LinkDetail {
-  summary: ShortLink
-  settings: {
-    password?: string | null
-    expiredAtUtc?: string | null
-    clickLimit?: number | null
-  }
-  permissions: {
-    canUseCustomDomain: boolean
-    canUseAdvancedAnalytics: boolean
-    canUseApi: boolean
-  }
-}
-
+// ─── Links ─────────────────────────────────────────────────────────────────────
+/** Maps to LinkListItemDto from C# */
 export interface ShortLink {
   id: string
   originalUrl: string
   shortUrl: string
   slug: string
+  host: string
   status: string
-  tag?: string
+  tag?: string | null
+  description?: string | null
   totalClicks: number
   uniqueClicks: number
   botClicks: number
   createdAtUtc: string
-  updatedAtUtc?: string
-  owner?: string
-  abuseScore?: number
+  updatedAtUtc?: string | null
 }
 
+/** Maps to LinkDetailDto from C# */
+export interface LinkDetail {
+  id: string
+  shortUrl: string
+  slug: string
+  host: string
+  originalUrl: string
+  status: string
+  description?: string | null
+  tag?: string | null
+  expiresAtUtc?: string | null
+  clickLimit?: number | null
+  hasPassword: boolean
+  totalClicks: number
+  uniqueClicks: number
+  createdAtUtc: string
+  updatedAtUtc?: string | null
+}
+
+/** Maps to CreateLinkRequestDto from C# */
 export interface CreateLinkRequest {
   originalUrl: string
-  customSlug?: string
-  tag?: string
-  expiredAtUtc?: string | null
+  customSlug?: string | null
+  domainId?: string | null
+  description?: string | null
+  tag?: string | null
+  expiresAtUtc?: string | null
   clickLimit?: number | null
-  password?: string
+  password?: string | null
 }
 
+// ─── Analytics ─────────────────────────────────────────────────────────────────
+/** Maps to TrendPointDto */
+export interface TrendPoint {
+  bucket: string
+  totalClicks: number
+  uniqueClicks: number
+  botClicks: number
+}
+
+/** Maps to TopLinkDto */
+export interface TopLink {
+  linkId: string
+  shortUrl: string
+  totalClicks: number
+  uniqueClicks: number
+  status: string
+}
+
+/** Maps to AnalyticsOverviewDto */
 export interface DashboardMetrics {
-  metrics: {
-    totalClicks: number
-    uniqueClicks: number
-    botClicks: number
-    activeLinks: number
-  }
-  trend: {
-    date: string
-    totalClicks: number
-  }[]
-  topLinks: {
-    id: string
-    shortUrl: string
-    status: string
-    totalClicks: number
-    uniqueClicks: number
-  }[]
+  totalClicks: number
+  uniqueClicks: number
+  botClicks: number
+  activeLinks: number
+  trends: TrendPoint[]
+  topLinks: TopLink[]
 }
 
+/** Maps to KeyValueMetricDto */
 export interface AnalyticsBreakdownItem {
   label: string
   value: number
 }
 
+/** Maps to LinkAnalyticsDto */
 export interface LinkAnalytics {
-  link: ShortLink
-  metrics: {
-    totalClicks: number
-    uniqueClicks: number
-    botClicks: number
-  }
-  sources: AnalyticsBreakdownItem[]
-  devices: AnalyticsBreakdownItem[]
-  countries: AnalyticsBreakdownItem[]
-}
-
-export interface LinkTimeseriesPoint {
-  date: string
+  linkId: string
   totalClicks: number
   uniqueClicks: number
+  botClicks: number
+  trends: TrendPoint[]
+  topCountries: AnalyticsBreakdownItem[]
+  topDevices: AnalyticsBreakdownItem[]
+  topReferrers: AnalyticsBreakdownItem[]
 }
 
-export interface AdminDashboardDashboard {
-  business: {
-    totalUsers: number
-    paidUsers: number
-    conversionRate: number
-    monthlyRevenue: number
-  }
-  product: {
-    totalLinks: number
-    totalClicks: number
-    activeLinks: number
-    uniqueClicks: number
-  }
-  operations: {
-    botClicks: number
-    queueLagSeconds: number
-    errorRate: number
-  }
-}
-
-export interface AdminUser {
-  id: string
-  email: string
-  fullName: string
-  plan: string
-  links: number
-  totalClicks: number
-  status: string
-}
-
+// ─── Plans & Billing ───────────────────────────────────────────────────────────
 export interface Plan {
   id: number
   code?: string
@@ -172,4 +159,56 @@ export interface Subscription {
 export interface UpgradeSubscriptionResponse {
   message: string
   plan: Plan
+}
+
+// ─── Admin ─────────────────────────────────────────────────────────────────────
+/** Maps to AdminOverviewDto */
+export interface AdminDashboardDashboard {
+  business: {
+    totalUsers: number
+    paidUsers: number
+    conversionRate: number
+    monthlyRevenue: number
+  }
+  product: {
+    totalLinks: number
+    activeLinks: number
+    totalClicks: number
+    uniqueClicks: number
+  }
+  operations: {
+    botClicks: number
+    suspiciousClicks: number
+    errorRate: number
+    queueLagSeconds: number
+    redirectLatencyP95Ms: number
+  }
+}
+
+/** Maps to AdminUserListItemDto */
+export interface AdminUser {
+  id: string
+  email: string
+  fullName: string
+  role: string
+  accountStatus: string
+  planName: string
+  linksCount: number
+  totalClicks: number
+  createdAtUtc: string
+  lastLoginAtUtc?: string | null
+}
+
+/** Maps to AdminLinkListItemDto */
+export interface AdminLink {
+  id: string
+  shortUrl: string
+  slug: string
+  originalUrl: string
+  status: string
+  ownerEmail: string
+  totalClicks: number
+  botClicks: number
+  abuseScore: number
+  createdAtUtc: string
 }

@@ -12,7 +12,7 @@ const form = ref<CreateLinkRequest>({
   originalUrl: 'https://example.com/new-campaign',
   customSlug: '',
   tag: 'launch',
-  expiredAtUtc: '',
+  expiresAtUtc: '',
   clickLimit: null,
   password: '',
 })
@@ -43,7 +43,7 @@ async function submit() {
     if (!authStore.token) throw new Error('Chưa xác thực')
     result.value = await LinkService.create(authStore.token, {
       ...form.value,
-      expiredAtUtc: form.value.expiredAtUtc || null,
+      expiresAtUtc: form.value.expiresAtUtc || null,
       clickLimit: form.value.clickLimit ? Number(form.value.clickLimit) : null,
       customSlug: form.value.customSlug || undefined,
       tag: form.value.tag || undefined,
@@ -86,7 +86,7 @@ async function submit() {
           placeholder="VD: xuan2024"
         />
         <WxInput 
-          v-model="form.expiredAtUtc" 
+          v-model="form.expiresAtUtc" 
           label="Thời gian hết hạn (UTC)" 
           type="datetime-local" 
         />

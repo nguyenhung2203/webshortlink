@@ -21,17 +21,12 @@ const message = ref('')
 const detail = ref<LinkDetail | null>(null)
 
 const linkId = computed(() => String(route.params.id ?? ''))
-const summary = computed(() => detail.value?.summary ?? null)
 
 async function load() {
   loading.value = true
   error.value = ''
-
   try {
-    if (!authStore.token) {
-      throw new Error('Chưa xác thực.')
-    }
-
+    if (!authStore.token) throw new Error('Chưa xác thực.')
     detail.value = await LinkService.detail(authStore.token, linkId.value)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải chi tiết link.'
@@ -41,23 +36,18 @@ async function load() {
 }
 
 async function toggleStatus() {
-  if (!authStore.token || !summary.value) {
-    return
-  }
-
+  if (!authStore.token || !detail.value) return
   actionLoading.value = true
   error.value = ''
   message.value = ''
-
   try {
-    if (summary.value.status === 'Active') {
-      await LinkService.pause(authStore.token, summary.value.id)
+    if (detail.value.status === 'Active') {
+      await LinkService.pause(authStore.token, detail.value.id)
       message.value = 'Đã tạm dừng link.'
     } else {
-      await LinkService.resume(authStore.token, summary.value.id)
+      await LinkService.resume(authStore.token, detail.value.id)
       message.value = 'Đã kích hoạt lại link.'
     }
-
     await load()
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể cập nhật trạng thái link.'
@@ -67,16 +57,12 @@ async function toggleStatus() {
 }
 
 async function deleteLink() {
-  if (!authStore.token || !summary.value) {
-    return
-  }
-
+  if (!authStore.token || !detail.value) return
   actionLoading.value = true
   error.value = ''
   message.value = ''
-
   try {
-    const response = await LinkService.delete(authStore.token, summary.value.id)
+    const response = await LinkService.delete(authStore.token, detail.value.id)
     message.value = response.message
     router.push('/app/links')
   } catch (err) {
@@ -118,33 +104,33 @@ onMounted(load)
     </WxEmptyState>
 
     <template v-else>
+      <!-- Header card — LinkDetail is now flat (LinkDetailDto) -->
       <WxCard padding="md">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div class="space-y-2">
             <div class="flex items-center gap-3">
-              <h2 class="text-xl font-bold text-primary">{{ detail.summary.shortUrl }}</h2>
-              <WxBadge :variant="detail.summary.status === 'Active' ? 'success' : 'warning'">
-                {{ detail.summary.status }}
+              <h2 class="text-xl font-bold text-primary">{{ detail.shortUrl }}</h2>
+              <WxBadge :variant="detail.status === 'Active' ? 'success' : 'warning'">
+                {{ detail.status }}
               </WxBadge>
             </div>
-            <p class="break-all text-sm text-on-surface-variant">{{ detail.summary.originalUrl }}</p>
+            <p class="break-all text-sm text-on-surface-variant">{{ detail.originalUrl }}</p>
             <div class="flex flex-wrap gap-4 text-sm text-on-surface-variant">
-              <span>Slug: <strong class="text-on-surface">{{ detail.summary.slug }}</strong></span>
-              <span>Tổng click: <strong class="text-on-surface">{{ detail.summary.totalClicks }}</strong></span>
-              <span>Click duy nhất: <strong class="text-on-surface">{{ detail.summary.uniqueClicks }}</strong></span>
-              <span>Bot: <strong class="text-on-surface">{{ detail.summary.botClicks }}</strong></span>
+              <span>Slug: <strong class="text-on-surface">{{ detail.slug }}</strong></span>
+              <span>Tổng click: <strong class="text-on-surface">{{ detail.totalClicks }}</strong></span>
+              <span>Click duy nhất: <strong class="text-on-surface">{{ detail.uniqueClicks }}</strong></span>
             </div>
           </div>
 
           <div class="flex flex-wrap gap-3">
             <WxButton
-              :variant="detail.summary.status === 'Active' ? 'danger' : 'success'"
+              :variant="detail.status === 'Active' ? 'danger' : 'success'"
               :loading="actionLoading"
               @click="toggleStatus"
             >
-              {{ detail.summary.status === 'Active' ? 'Tạm dừng Link' : 'Kích hoạt lại' }}
+              {{ detail.status === 'Active' ? 'Tạm dừng Link' : 'Kích hoạt lại' }}
             </WxButton>
-            <WxButton variant="ghost" @click="router.push(`/app/analytics?linkId=${detail.summary.id}`)">
+            <WxButton variant="ghost" @click="router.push(`/app/analytics?linkId=${detail.id}`)">
               Xem analytics
             </WxButton>
             <WxButton variant="danger" :loading="actionLoading" @click="deleteLink">
@@ -155,47 +141,47 @@ onMounted(load)
       </WxCard>
 
       <div class="grid gap-6 lg:grid-cols-2">
+        <!-- Cấu hình — fields directly on LinkDetailDto -->
         <WxCard padding="md">
           <div class="space-y-4">
             <h3 class="text-lg font-semibold text-on-surface">Cấu hình Link</h3>
             <div class="grid gap-3 text-sm">
               <div class="flex items-center justify-between gap-4">
                 <span class="text-on-surface-variant">Mật khẩu bảo vệ</span>
-                <strong>{{ detail.settings.password ? 'Đã bật' : 'Không' }}</strong>
+                <strong>{{ detail.hasPassword ? 'Đã bật' : 'Không' }}</strong>
               </div>
               <div class="flex items-center justify-between gap-4">
                 <span class="text-on-surface-variant">Hết hạn</span>
-                <strong>{{ detail.settings.expiredAtUtc || 'Không giới hạn' }}</strong>
+                <strong>{{ detail.expiresAtUtc || 'Không giới hạn' }}</strong>
               </div>
               <div class="flex items-center justify-between gap-4">
                 <span class="text-on-surface-variant">Click limit</span>
-                <strong>{{ detail.settings.clickLimit ?? 'Không giới hạn' }}</strong>
+                <strong>{{ detail.clickLimit ?? 'Không giới hạn' }}</strong>
+              </div>
+              <div class="flex items-center justify-between gap-4">
+                <span class="text-on-surface-variant">Tag</span>
+                <strong>{{ detail.tag || '—' }}</strong>
               </div>
             </div>
           </div>
         </WxCard>
 
+        <!-- Thông tin host -->
         <WxCard padding="md">
           <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-on-surface">Quyền theo gói</h3>
+            <h3 class="text-lg font-semibold text-on-surface">Thông tin host</h3>
             <div class="grid gap-3 text-sm">
               <div class="flex items-center justify-between gap-4">
-                <span class="text-on-surface-variant">Custom domain</span>
-                <WxBadge :variant="detail.permissions.canUseCustomDomain ? 'success' : 'neutral'">
-                  {{ detail.permissions.canUseCustomDomain ? 'Có' : 'Không' }}
-                </WxBadge>
+                <span class="text-on-surface-variant">Host</span>
+                <strong>{{ detail.host }}</strong>
               </div>
               <div class="flex items-center justify-between gap-4">
-                <span class="text-on-surface-variant">Advanced analytics</span>
-                <WxBadge :variant="detail.permissions.canUseAdvancedAnalytics ? 'success' : 'neutral'">
-                  {{ detail.permissions.canUseAdvancedAnalytics ? 'Có' : 'Không' }}
-                </WxBadge>
+                <span class="text-on-surface-variant">Ngày tạo</span>
+                <strong>{{ new Date(detail.createdAtUtc).toLocaleDateString('vi-VN') }}</strong>
               </div>
-              <div class="flex items-center justify-between gap-4">
-                <span class="text-on-surface-variant">API access</span>
-                <WxBadge :variant="detail.permissions.canUseApi ? 'success' : 'neutral'">
-                  {{ detail.permissions.canUseApi ? 'Có' : 'Không' }}
-                </WxBadge>
+              <div v-if="detail.updatedAtUtc" class="flex items-center justify-between gap-4">
+                <span class="text-on-surface-variant">Cập nhật lần cuối</span>
+                <strong>{{ new Date(detail.updatedAtUtc).toLocaleDateString('vi-VN') }}</strong>
               </div>
             </div>
           </div>
