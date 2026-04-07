@@ -5,13 +5,13 @@ using WebShortlink.Backend.Domain.Enums;
 
 namespace WebShortlink.Backend.Infrastructure.Persistence.Seed;
 
-public sealed class ApplicationDbSeeder
+public sealed class ApplicationRuntimeSeeder
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly RoleManager<IdentityRole<Guid>> _roleManager;
     private readonly UserManager<AppUser> _userManager;
 
-    public ApplicationDbSeeder(
+    public ApplicationRuntimeSeeder(
         ApplicationDbContext dbContext,
         RoleManager<IdentityRole<Guid>> roleManager,
         UserManager<AppUser> userManager)
@@ -30,46 +30,51 @@ public sealed class ApplicationDbSeeder
         await SeedDemoUsersAsync(cancellationToken);
     }
 
-    /// <summary>
-    /// Áp dụng migration an toàn: nếu DB đã tồn tại bảng nhưng chưa có
-    /// __EFMigrationsHistory (tạo thủ công / script), tự đăng ký migration
-    /// hiện tại để tránh lỗi "object already exists".
-    /// </summary>
     private async Task EnsureMigratedSafeAsync(CancellationToken cancellationToken)
     {
-        // Đảm bảo DB tồn tại
-        await _dbContext.Database.EnsureCreatedAsync(cancellationToken).ContinueWith(_ => { });
-
         var pending = (await _dbContext.Database.GetPendingMigrationsAsync(cancellationToken)).ToList();
         if (pending.Count == 0)
         {
-            return; // Tất cả migration đã apply
+            return;
         }
 
-        // Kiểm tra bảng AppUsers đã tồn tại chưa (DB tạo thủ công)
-        var conn = _dbContext.Database.GetDbConnection();
-        await conn.OpenAsync(cancellationToken);
-        await using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT COUNT(1) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'AppUsers'";
-        var tableExists = (int)(await cmd.ExecuteScalarAsync(cancellationToken) ?? 0) > 0;
-        await conn.CloseAsync();
+        var connection = _dbContext.Database.GetDbConnection();
+        await connection.OpenAsync(cancellationToken);
 
-        if (tableExists)
+        await using var tableCheckCommand = connection.CreateCommand();
+        tableCheckCommand.CommandText = "SELECT COUNT(1) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'AppUsers'";
+        var appUsersTableExists = (int)(await tableCheckCommand.ExecuteScalarAsync(cancellationToken) ?? 0) > 0;
+
+        if (appUsersTableExists)
         {
-            // DB đã có schema → chỉ đăng ký migration vào history, không apply lại
+            await using var historyCommand = connection.CreateCommand();
+            historyCommand.CommandText =
+                """
+                IF OBJECT_ID(N'[__EFMigrationsHistory]', N'U') IS NULL
+                BEGIN
+                    CREATE TABLE [__EFMigrationsHistory] (
+                        [MigrationId] nvarchar(150) NOT NULL,
+                        [ProductVersion] nvarchar(32) NOT NULL,
+                        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+                    );
+                END
+                """;
+            await historyCommand.ExecuteNonQueryAsync(cancellationToken);
+            await connection.CloseAsync();
+
             var appliedMigrations = (await _dbContext.Database.GetAppliedMigrationsAsync(cancellationToken)).ToHashSet();
-            foreach (var migration in pending.Where(m => !appliedMigrations.Contains(m)))
+            foreach (var migration in pending.Where(migration => !appliedMigrations.Contains(migration)))
             {
                 await _dbContext.Database.ExecuteSqlRawAsync(
                     "INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ({0}, '8.0.14')",
                     migration);
             }
+
+            return;
         }
-        else
-        {
-            // DB chưa có schema → apply migration bình thường
-            await _dbContext.Database.MigrateAsync(cancellationToken);
-        }
+
+        await connection.CloseAsync();
+        await _dbContext.Database.MigrateAsync(cancellationToken);
     }
 
     private async Task SeedRolesAsync()
@@ -91,15 +96,12 @@ public sealed class ApplicationDbSeeder
         }
 
         var now = DateTime.UtcNow;
-        var plans = new[]
-        {
+        _dbContext.Plans.AddRange(
             new Plan { Id = 1, Code = "regular", Name = "Thường", MonthlyPrice = 0, IsActive = true, CreatedAtUtc = now },
             new Plan { Id = 2, Code = "pro", Name = "Pro", MonthlyPrice = 199000, IsActive = true, CreatedAtUtc = now },
-            new Plan { Id = 3, Code = "plus", Name = "Plus", MonthlyPrice = 499000, IsActive = true, CreatedAtUtc = now }
-        };
+            new Plan { Id = 3, Code = "plus", Name = "Plus", MonthlyPrice = 499000, IsActive = true, CreatedAtUtc = now });
 
-        var features = new[]
-        {
+        _dbContext.PlanFeatures.AddRange(
             new PlanFeature { Id = 1, PlanId = 1, FeatureKey = "links.max_count", LimitValue = 100, IsEnabled = true, CreatedAtUtc = now },
             new PlanFeature { Id = 2, PlanId = 2, FeatureKey = "links.max_count", LimitValue = 5000, IsEnabled = true, CreatedAtUtc = now },
             new PlanFeature { Id = 3, PlanId = 3, FeatureKey = "links.max_count", LimitValue = 50000, IsEnabled = true, CreatedAtUtc = now },
@@ -108,11 +110,8 @@ public sealed class ApplicationDbSeeder
             new PlanFeature { Id = 6, PlanId = 3, FeatureKey = "domains.custom", IsEnabled = true, LimitValue = 20, CreatedAtUtc = now },
             new PlanFeature { Id = 7, PlanId = 1, FeatureKey = "analytics.advanced", IsEnabled = false, CreatedAtUtc = now },
             new PlanFeature { Id = 8, PlanId = 2, FeatureKey = "analytics.advanced", IsEnabled = true, CreatedAtUtc = now },
-            new PlanFeature { Id = 9, PlanId = 3, FeatureKey = "analytics.advanced", IsEnabled = true, CreatedAtUtc = now }
-        };
+            new PlanFeature { Id = 9, PlanId = 3, FeatureKey = "analytics.advanced", IsEnabled = true, CreatedAtUtc = now });
 
-        _dbContext.Plans.AddRange(plans);
-        _dbContext.PlanFeatures.AddRange(features);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
@@ -152,10 +151,12 @@ public sealed class ApplicationDbSeeder
 
             await _userManager.CreateAsync(admin, "Admin123!");
         }
+
         if (!await _userManager.IsInRoleAsync(admin, AppRoles.Admin))
         {
             await _userManager.AddToRoleAsync(admin, AppRoles.Admin);
         }
+
         await EnsureSubscriptionAsync(admin, 3, cancellationToken);
 
         var user = await _userManager.FindByEmailAsync("user@demo.local");
@@ -175,6 +176,7 @@ public sealed class ApplicationDbSeeder
 
             await _userManager.CreateAsync(user, "Demo123!");
         }
+
         if (!await _userManager.IsInRoleAsync(user, AppRoles.User))
         {
             await _userManager.AddToRoleAsync(user, AppRoles.User);
