@@ -4,9 +4,9 @@ using WebShortlink.Backend.Domain.Entities;
 
 namespace WebShortlink.Backend.Infrastructure.Persistence.Configurations;
 
-public sealed class ClickEventConfiguration : IEntityTypeConfiguration<ClickEvent>
+public sealed class ClickEventConfiguration : IEntityTypeConfiguration<WebShortlink.Backend.Domain.Entities.ClickEvent>
 {
-    public void Configure(EntityTypeBuilder<ClickEvent> builder)
+    public void Configure(EntityTypeBuilder<WebShortlink.Backend.Domain.Entities.ClickEvent> builder)
     {
         builder.ToTable("ClickEvents");
         builder.HasKey(x => x.Id);

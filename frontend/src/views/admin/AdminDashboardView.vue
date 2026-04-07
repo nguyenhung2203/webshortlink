@@ -1,17 +1,22 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { apiRequest } from '@/api/client'
+import { AdminService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
+import type { AdminDashboardDashboard } from '@/types/api'
+import WxPageHeader from '@/components/ui/WxPageHeader.vue'
 
 const authStore = useAuthStore()
-const data = ref<any>(null)
+const data = ref<AdminDashboardDashboard | null>(null)
 const error = ref('')
 
 async function load() {
   try {
-    data.value = await apiRequest('/api/admin/dashboard', { token: authStore.token })
+    if (!authStore.accessToken) {
+      throw new Error('Chưa xác thực.')
+    }
+    data.value = await AdminService.getDashboard(authStore.accessToken)
   } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Không thể tải admin dashboard.'
+    error.value = err instanceof Error ? err.message : 'Không thể tải dashboard admin.'
   }
 }
 
@@ -19,54 +24,46 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="stack-lg">
-    <div class="page-header">
-      <div>
-        <h2>Overview</h2>
-        <p class="muted">Theo dõi business, product và operations trong cùng một màn hình.</p>
-      </div>
+  <div class="flex flex-col gap-6">
+    <WxPageHeader
+      title="Tổng quan hệ thống"
+      description="Số liệu tổng quan về hoạt động trên hệ thống WebShortlink."
+    />
+
+    <div v-if="error" class="text-red-500 bg-red-50 p-4 rounded-md">
+      {{ error }}
     </div>
 
-    <p v-if="error" class="error-text">{{ error }}</p>
-
-    <template v-if="data">
-      <div class="stats-grid">
-        <article class="stat-card">
-          <span>Total Users</span>
-          <strong>{{ data.business.totalUsers }}</strong>
-        </article>
-        <article class="stat-card">
-          <span>Paid Users</span>
-          <strong>{{ data.business.paidUsers }}</strong>
-        </article>
-        <article class="stat-card">
-          <span>Total Links</span>
-          <strong>{{ data.product.totalLinks }}</strong>
-        </article>
-        <article class="stat-card">
-          <span>Total Clicks</span>
-          <strong>{{ data.product.totalClicks }}</strong>
-        </article>
+    <div v-else-if="data" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-white p-6 rounded-xl border border-gray-200">
+        <h3 class="font-bold text-lg mb-4 text-gray-800">Doanh thu & Users</h3>
+        <ul class="space-y-3 text-sm text-gray-600">
+          <li class="flex justify-between"><span>Tổng số user:</span> <strong class="text-gray-900">{{ data.business.totalUsers }}</strong></li>
+          <li class="flex justify-between"><span>User trả phí:</span> <strong class="text-gray-900">{{ data.business.paidUsers }}</strong></li>
+          <li class="flex justify-between"><span>Tỷ lệ chuyển đổi:</span> <strong class="text-gray-900">{{ data.business.conversionRate }}%</strong></li>
+          <li class="flex justify-between"><span>Doanh thu tháng (MRR):</span> <strong class="text-gray-900 text-green-600">${{ data.business.monthlyRevenue }}</strong></li>
+        </ul>
       </div>
 
-      <div class="three-columns">
-        <section class="panel">
-          <h3>Business</h3>
-          <p>Conversion: <strong>{{ data.business.conversionRate }}%</strong></p>
-          <p>Revenue: <strong>{{ data.business.monthlyRevenue.toLocaleString('vi-VN') }}đ</strong></p>
-        </section>
-        <section class="panel">
-          <h3>Product</h3>
-          <p>Active links: <strong>{{ data.product.activeLinks }}</strong></p>
-          <p>Unique clicks: <strong>{{ data.product.uniqueClicks }}</strong></p>
-        </section>
-        <section class="panel">
-          <h3>Operations</h3>
-          <p>Bot clicks: <strong>{{ data.operations.botClicks }}</strong></p>
-          <p>Queue lag: <strong>{{ data.operations.queueLagSeconds }}s</strong></p>
-          <p>Error rate: <strong>{{ data.operations.errorRate }}%</strong></p>
-        </section>
+      <div class="bg-white p-6 rounded-xl border border-gray-200">
+        <h3 class="font-bold text-lg mb-4 text-gray-800">Sản phẩm (Links)</h3>
+        <ul class="space-y-3 text-sm text-gray-600">
+          <li class="flex justify-between"><span>Tổng link:</span> <strong class="text-gray-900">{{ data.product.totalLinks }}</strong></li>
+          <li class="flex justify-between"><span>Link đang hoạt động:</span> <strong class="text-gray-900">{{ data.product.activeLinks }}</strong></li>
+          <li class="flex justify-between"><span>Tổng Click:</span> <strong class="text-gray-900">{{ data.product.totalClicks }}</strong></li>
+          <li class="flex justify-between"><span>Unique Clicks:</span> <strong class="text-gray-900">{{ data.product.uniqueClicks }}</strong></li>
+        </ul>
       </div>
-    </template>
-  </section>
+
+      <div class="bg-white p-6 rounded-xl border border-gray-200">
+        <h3 class="font-bold text-lg mb-4 text-gray-800">Vận hành</h3>
+        <ul class="space-y-3 text-sm text-gray-600">
+          <li class="flex justify-between"><span>Bot Clicks:</span> <strong class="text-gray-900">{{ data.operations.botClicks }}</strong></li>
+          <li class="flex justify-between"><span>Clicks đáng ngờ:</span> <strong class="text-gray-900">{{ data.operations.suspiciousClicks }}</strong></li>
+          <li class="flex justify-between"><span>Tỉ lệ lỗi:</span> <strong class="text-gray-900">{{ data.operations.errorRate }}%</strong></li>
+          <li class="flex justify-between"><span>Queue Lag (giây):</span> <strong class="text-gray-900">{{ data.operations.queueLagSeconds }}s</strong></li>
+        </ul>
+      </div>
+    </div>
+  </div>
 </template>

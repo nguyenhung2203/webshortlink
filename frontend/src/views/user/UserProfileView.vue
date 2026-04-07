@@ -1,53 +1,89 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { apiRequest } from '@/api/client'
+import { UserService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
+import WxPageHeader from '@/components/ui/WxPageHeader.vue'
+import WxCard from '@/components/ui/WxCard.vue'
+import WxInput from '@/components/ui/WxInput.vue'
+import WxPasswordInput from '@/components/ui/WxPasswordInput.vue'
+import WxButton from '@/components/ui/WxButton.vue'
+import type { UserProfileProfile } from '@/types/api'
 
 const authStore = useAuthStore()
-const profile = ref<any>(null)
 const fullName = ref('')
+const email = ref('')
+const role = ref('')
+const status = ref('')
+const currentPlanId = ref(0)
 const currentPassword = ref('')
 const newPassword = ref('')
+const confirmPassword = ref('')
 const message = ref('')
 const error = ref('')
+const loading = ref(true)
+const actionLoading = ref(false)
 
 async function load() {
+  loading.value = true
+  error.value = ''
+
   try {
-    profile.value = await apiRequest('/api/me/profile', { token: authStore.token })
-    fullName.value = profile.value.fullName
+    if (!authStore.accessToken) throw new Error('Chưa xác thực')
+    const profile = await UserService.getProfile(authStore.accessToken)
+    fullName.value = profile.fullName
+    email.value = profile.email
+    role.value = profile.role
+    status.value = profile.accountStatus
+    currentPlanId.value = profile.currentPlanId
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải hồ sơ.'
+  } finally {
+    loading.value = false
   }
 }
 
 async function saveProfile() {
+  actionLoading.value = true
+  error.value = ''
+  message.value = ''
+
   try {
-    profile.value = await apiRequest('/api/me/profile', {
-      method: 'PUT',
-      token: authStore.token,
-      body: { fullName: fullName.value },
-    })
+    if (!authStore.accessToken) throw new Error('Chưa xác thực')
+    await UserService.updateProfile(authStore.accessToken, fullName.value)
     message.value = 'Đã cập nhật hồ sơ.'
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể cập nhật hồ sơ.'
+  } finally {
+    actionLoading.value = false
   }
 }
 
 async function changePassword() {
+  if (newPassword.value !== confirmPassword.value) {
+    error.value = 'Mật khẩu xác nhận không khớp.'
+    return
+  }
+
+  actionLoading.value = true
+  error.value = ''
+  message.value = ''
+
   try {
-    await apiRequest('/api/me/password', {
-      method: 'PUT',
-      token: authStore.token,
-      body: {
-        currentPassword: currentPassword.value,
-        newPassword: newPassword.value,
-      },
-    })
+    if (!authStore.accessToken) throw new Error('Chưa xác thực')
+    await UserService.changePassword(
+      authStore.accessToken,
+      currentPassword.value,
+      newPassword.value,
+      confirmPassword.value
+    )
     message.value = 'Đổi mật khẩu thành công.'
     currentPassword.value = ''
     newPassword.value = ''
+    confirmPassword.value = ''
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể đổi mật khẩu.'
+  } finally {
+    actionLoading.value = false
   }
 }
 
@@ -55,39 +91,39 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="stack-lg">
-    <div class="page-header">
-      <div>
-        <h2>Profile</h2>
-        <p class="muted">Quản lý thông tin cá nhân và bảo mật tài khoản.</p>
-      </div>
+  <div class="flex flex-col gap-6">
+    <WxPageHeader
+      title="Tài khoản cá nhân"
+      subtitle="Quản lý thông tin cá nhân và bảo mật tài khoản."
+    />
+
+    <p v-if="error && !loading" class="text-danger text-sm">{{ error }}</p>
+    <p v-if="message" class="text-success text-sm font-medium p-3 bg-success/10 rounded-lg border border-success/20">{{ message }}</p>
+
+    <div v-if="loading" class="text-sm text-on-surface-variant">Đang tải hồ sơ...</div>
+
+    <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <WxCard title="Thông tin cá nhân" class="p-6">
+        <form class="flex flex-col gap-4 mt-2" @submit.prevent="saveProfile">
+          <div class="flex flex-col gap-2">
+            <span class="text-sm text-on-surface-variant">Email (Không thể đổi): <strong>{{ email }}</strong></span>
+            <span class="text-sm text-on-surface-variant">Vai trò: <strong>{{ role }}</strong></span>
+            <span class="text-sm text-on-surface-variant">Trạng thái: <strong>{{ status }}</strong></span>
+            <span class="text-sm text-on-surface-variant">ID Gói hiện tại: <strong>{{ currentPlanId }}</strong></span>
+          </div>
+          <WxInput v-model="fullName" label="Họ và tên" type="text" />
+          <WxButton variant="primary" type="submit" :loading="actionLoading" class="self-start mt-2">Lưu hồ sơ</WxButton>
+        </form>
+      </WxCard>
+
+      <WxCard title="Đổi mật khẩu" class="p-6">
+        <form class="flex flex-col gap-4 mt-2" @submit.prevent="changePassword">
+          <WxPasswordInput v-model="currentPassword" label="Mật khẩu hiện tại" />
+          <WxPasswordInput v-model="newPassword" label="Mật khẩu mới" />
+          <WxPasswordInput v-model="confirmPassword" label="Xác nhận mật khẩu mới" />
+          <WxButton variant="cta" type="submit" :loading="actionLoading" class="self-start mt-2">Cập nhật mật khẩu</WxButton>
+        </form>
+      </WxCard>
     </div>
-
-    <p v-if="error" class="error-text">{{ error }}</p>
-    <p v-if="message" class="success-text">{{ message }}</p>
-
-    <div class="two-columns">
-      <form class="panel stack-sm" @submit.prevent="saveProfile">
-        <h3>Thông tin cá nhân</h3>
-        <label class="field">
-          <span>Họ tên</span>
-          <input v-model="fullName" type="text" />
-        </label>
-        <button class="primary-button" type="submit">Lưu hồ sơ</button>
-      </form>
-
-      <form class="panel stack-sm" @submit.prevent="changePassword">
-        <h3>Đổi mật khẩu</h3>
-        <label class="field">
-          <span>Mật khẩu hiện tại</span>
-          <input v-model="currentPassword" type="password" />
-        </label>
-        <label class="field">
-          <span>Mật khẩu mới</span>
-          <input v-model="newPassword" type="password" />
-        </label>
-        <button class="primary-button" type="submit">Cập nhật mật khẩu</button>
-      </form>
-    </div>
-  </section>
+  </div>
 </template>

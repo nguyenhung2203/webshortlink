@@ -9,18 +9,26 @@ const router = createRouter({
       component: () => import('@/layouts/PublicLayout.vue'),
       children: [
         { path: '', name: 'landing', component: () => import('@/views/LandingView.vue') },
+      ],
+    },
+    {
+      path: '/auth',
+      component: () => import('@/layouts/AuthLayout.vue'),
+      children: [
         { path: 'login', name: 'login', component: () => import('@/views/auth/LoginView.vue'), meta: { guestOnly: true } },
+        { path: 'admin', name: 'admin-login', component: () => import('@/views/auth/AdminLoginView.vue'), meta: { guestOnly: true } },
         { path: 'register', name: 'register', component: () => import('@/views/auth/RegisterView.vue'), meta: { guestOnly: true } },
       ],
     },
     {
       path: '/app',
-      component: () => import('@/layouts/UserShellLayout.vue'),
+      component: () => import('@/layouts/UserLayout.vue'),
       meta: { requiresAuth: true, role: 'User' },
       children: [
         { path: 'dashboard', name: 'user-dashboard', component: () => import('@/views/user/UserDashboardView.vue') },
         { path: 'links', name: 'user-links', component: () => import('@/views/user/UserLinksView.vue') },
         { path: 'links/create', name: 'user-create-link', component: () => import('@/views/user/CreateLinkView.vue') },
+        { path: 'links/:id', name: 'user-link-detail', component: () => import('@/views/user/LinkDetailView.vue') },
         { path: 'analytics', name: 'user-analytics', component: () => import('@/views/user/UserAnalyticsView.vue') },
         { path: 'billing', name: 'user-billing', component: () => import('@/views/user/UserBillingView.vue') },
         { path: 'profile', name: 'user-profile', component: () => import('@/views/user/UserProfileView.vue') },
@@ -28,7 +36,7 @@ const router = createRouter({
     },
     {
       path: '/admin',
-      component: () => import('@/layouts/AdminShellLayout.vue'),
+      component: () => import('@/layouts/AdminLayout.vue'),
       meta: { requiresAuth: true, role: 'Admin' },
       children: [
         { path: '', name: 'admin-dashboard', component: () => import('@/views/admin/AdminDashboardView.vue') },
@@ -48,7 +56,7 @@ router.beforeEach((to) => {
   }
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    return '/login'
+    return to.path.startsWith('/admin') ? '/auth/admin' : '/auth/login'
   }
 
   if (to.meta.role && authStore.role !== to.meta.role) {

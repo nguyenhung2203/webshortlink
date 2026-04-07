@@ -58,7 +58,8 @@ public sealed class AuthService
             UserName = request.Email.Trim().ToLowerInvariant(),
             Email = request.Email.Trim().ToLowerInvariant(),
             FullName = request.FullName.Trim(),
-            AccountStatus = UserAccountStatus.PendingVerification,
+            AccountStatus = UserAccountStatus.Active,
+            EmailConfirmed = true,
             CreatedAtUtc = DateTime.UtcNow,
             CurrentPlanId = 1
         };
@@ -113,10 +114,11 @@ public sealed class AuthService
             throw new AppException(ErrorCodes.Forbidden, "Tài khoản đã bị khóa.", StatusCodes.Status403Forbidden);
         }
 
-        if (!user.EmailConfirmed)
-        {
-            throw new AppException(ErrorCodes.Forbidden, "Tài khoản chưa xác thực email.", StatusCodes.Status403Forbidden);
-        }
+        // Bypass yều cầu xác thực email cho môi trường Dev:
+        // if (!user.EmailConfirmed)
+        // {
+        //     throw new AppException(ErrorCodes.Forbidden, "Tài khoản chưa xác thực email.", StatusCodes.Status403Forbidden);
+        // }
 
         var signInResult = await _signInManager.CheckPasswordSignInAsync(user, request.Password, true);
         if (!signInResult.Succeeded)

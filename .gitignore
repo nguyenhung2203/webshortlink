@@ -1,43 +1,11 @@
-## ===== .NET / ASP.NET Core =====
-bin/
-obj/
-obj2/
+# Claude Agent related
+.claude/
 
-## ===== Visual Studio =====
+# Backend build files
+backend/backend/bin/
+backend/backend/obj/
+
+# IDE and Editor tools
 .vs/
 *.user
 *.suo
-*.userosscache
-*.sln.docobj
-
-## ===== Rider / JetBrains =====
-.idea/
-*.DotSettings.user
-
-## ===== Debug / Runtime files =====
-run.log
-run.err.log
-run.pid
-*.log
-*.pid
-
-## ===== Secrets & Configs nhạy cảm =====
-appsettings.Development.json
-appsettings.Production.json
-appsettings.Staging.json
-secrets.json
-*.pfx
-*.p12
-.env
-.env.*
-
-## ===== Node.js / Frontend =====
-node_modules/
-dist/
-.vite/
-*.local
-
-## ===== OS files =====
-.DS_Store
-Thumbs.db
-desktop.ini
