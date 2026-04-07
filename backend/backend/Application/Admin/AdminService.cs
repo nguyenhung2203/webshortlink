@@ -206,14 +206,16 @@ public sealed class AdminService
     public async Task<MessageResponseDto> ToggleLinkAsync(Guid linkId, bool enable, CancellationToken cancellationToken)
     {
         var current = _currentUserService.GetRequired();
-        var link = await _dbContext.Links.FirstOrDefaultAsync(x => x.Id == linkId && !x.IsDeleted, cancellationToken)
+        var link = await _dbContext.Links
+            .Include(x => x.Domain)
+            .FirstOrDefaultAsync(x => x.Id == linkId && !x.IsDeleted, cancellationToken)
             ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy link.", StatusCodes.Status404NotFound);
 
         link.Status = enable ? LinkStatus.Active : LinkStatus.DisabledByAdmin;
         link.UpdatedAtUtc = DateTime.UtcNow;
         link.UpdatedByUserId = current.UserId.ToString();
         await _dbContext.SaveChangesAsync(cancellationToken);
-        await _linkCacheService.RemoveAsync("default", link.Slug, cancellationToken);
+        await _linkCacheService.RemoveAsync(link.Domain?.Host ?? "sho.rt", link.Slug, cancellationToken);
 
         await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-009:ToggleLink", "Link", linkId.ToString(), current.UserId, current.IpAddress, new { enable }, cancellationToken);
         return new MessageResponseDto("Cập nhật trạng thái link thành công.");

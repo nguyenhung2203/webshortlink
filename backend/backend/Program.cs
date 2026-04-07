@@ -178,7 +178,7 @@ builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<BillingService>();
 builder.Services.AddScoped<DomainService>();
 builder.Services.AddScoped<AdminService>();
-builder.Services.AddScoped<ApplicationDbSeeder>();
+builder.Services.AddScoped<ApplicationRuntimeSeeder>();
 
 builder.Services.AddHostedService<ClickAnalyticsWorker>();
 
@@ -204,7 +204,7 @@ app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
 {
-    var seeder = scope.ServiceProvider.GetRequiredService<ApplicationDbSeeder>();
+    var seeder = scope.ServiceProvider.GetRequiredService<ApplicationRuntimeSeeder>();
     await seeder.SeedAsync();
 }
 
