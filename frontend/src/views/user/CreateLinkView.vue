@@ -12,16 +12,34 @@ import WxCard from '@/components/ui/WxCard.vue'
 const router = useRouter()
 const authStore = useAuthStore()
 
-const form = ref<any>({
-  originalUrl: 'https://example.com/new-campaign',
+const defaultForm = {
+  originalUrl: '',
   customSlug: '',
   domainId: null,
   description: '',
-  tag: 'launch',
+  tag: '',
   expiresAtUtc: '',
   clickLimit: null,
   password: '',
-})
+}
+
+const form = ref<any>({ ...defaultForm })
+
+const copySuccess = ref(false)
+
+async function copyToClipboard(text: string) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text)
+      copySuccess.value = true
+      setTimeout(() => { copySuccess.value = false }, 2000)
+    } else {
+      error.value = 'Trình duyệt không hỗ trợ copy tự động.'
+    }
+  } catch (err) {
+    error.value = 'Không thể copy link.'
+  }
+}
 
 const result = ref<ShortLink | null>(null)
 const error = ref('')
@@ -57,6 +75,9 @@ async function submit() {
       tag: form.value.tag || undefined,
       password: form.value.password || undefined,
     })
+    
+    // Clear the form to prevent double submission
+    form.value = { ...defaultForm }
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tạo link.'
   } finally {
@@ -130,12 +151,22 @@ async function submit() {
       </form>
     </WxCard>
 
-    <WxCard v-if="result" class="p-6 max-w-2xl bg-success/10 border-success/30">
-      <h3 class="text-lg font-bold text-success mb-4">🎉 Tạo link thành công!</h3>
+    <WxCard v-if="result" class="p-6 max-w-2xl bg-success/10 border-success/30 relative">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-success">🎉 Tạo link thành công!</h3>
+        <WxButton 
+          :variant="copySuccess ? 'primary' : 'secondary'" 
+          @click="copyToClipboard(result.shortUrl)"
+        >
+          <svg v-if="!copySuccess" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M20 6 9 17l-5-5"/></svg>
+          {{ copySuccess ? 'Đã sao chép' : 'Copy Link' }}
+        </WxButton>
+      </div>
       <div class="flex flex-col gap-2">
-        <p class="text-sm"><strong>Short URL:</strong> <a :href="result.shortUrl" target="_blank" class="text-primary hover:underline">{{ result.shortUrl }}</a></p>
-        <p class="text-sm"><strong>Slug:</strong> {{ result.slug }}</p>
-        <p class="text-sm"><strong>Trạng thái:</strong> {{ result.status === 'Active' ? 'Hoạt động' : result.status }}</p>
+        <p class="text-sm"><strong>Short URL:</strong> <a :href="result.shortUrl" target="_blank" class="text-primary hover:underline font-medium ml-1">{{ result.shortUrl }}</a></p>
+        <p class="text-sm"><strong>Slug:</strong> <span class="ml-1">{{ result.slug }}</span></p>
+        <p class="text-sm"><strong>Trạng thái:</strong> <span class="ml-1">{{ result.status === 'Active' ? 'Hoạt động' : result.status }}</span></p>
       </div>
     </WxCard>
   </div>
