@@ -11,14 +11,20 @@ const authStore = useAuthStore()
 const plans = ref<Plan[]>([])
 const subscription = ref<Subscription | null>(null)
 const error = ref('')
+const loading = ref(true)
 
 async function load() {
+  loading.value = true
+  error.value = ''
+
   try {
     if (!authStore.token) throw new Error('Chưa xác thực')
     plans.value = await UserService.getPlans()
     subscription.value = await UserService.getSubscription(authStore.token)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải billing.'
+  } finally {
+    loading.value = false
   }
 }
 
@@ -42,7 +48,9 @@ onMounted(load)
       subtitle="Quản lý gói dịch vụ hiện tại (Basic / Pro / Plus)."
     />
 
-    <p v-if="error" class="text-danger text-sm">{{ error }}</p>
+    <p v-if="error && !loading" class="text-danger text-sm">{{ error }}</p>
+    
+    <div v-if="loading" class="text-sm text-on-surface-variant">Đang tải gói dịch vụ...</div>
 
     <WxCard v-if="subscription" title="Gói hiện tại" class="p-6">
       <div class="flex flex-col gap-2">

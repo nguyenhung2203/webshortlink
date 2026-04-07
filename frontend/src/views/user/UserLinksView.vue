@@ -79,6 +79,12 @@ onMounted(load)
 
         <div class="flex gap-3 mt-2">
           <WxButton 
+            variant="ghost" 
+            :to="`/app/links/${link.id}`"
+          >
+            Chi tiết
+          </WxButton>
+          <WxButton 
             variant="secondary" 
             :href="`http://localhost:5130/go/${link.slug}`" 
             target="_blank"

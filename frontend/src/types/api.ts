@@ -2,6 +2,10 @@ export interface ApiError {
   message: string
 }
 
+export interface ApiMessageResponse {
+  message: string
+}
+
 export interface AuthResult {
   token: string
   user: {
@@ -56,10 +60,12 @@ export interface ShortLink {
   shortUrl: string
   slug: string
   status: string
+  tag?: string
   totalClicks: number
   uniqueClicks: number
   botClicks: number
   createdAtUtc: string
+  updatedAtUtc?: string
   owner?: string
   abuseScore?: number
 }
@@ -91,6 +97,29 @@ export interface DashboardMetrics {
     totalClicks: number
     uniqueClicks: number
   }[]
+}
+
+export interface AnalyticsBreakdownItem {
+  label: string
+  value: number
+}
+
+export interface LinkAnalytics {
+  link: ShortLink
+  metrics: {
+    totalClicks: number
+    uniqueClicks: number
+    botClicks: number
+  }
+  sources: AnalyticsBreakdownItem[]
+  devices: AnalyticsBreakdownItem[]
+  countries: AnalyticsBreakdownItem[]
+}
+
+export interface LinkTimeseriesPoint {
+  date: string
+  totalClicks: number
+  uniqueClicks: number
 }
 
 export interface AdminDashboardDashboard {
@@ -125,6 +154,7 @@ export interface AdminUser {
 
 export interface Plan {
   id: number
+  code?: string
   name: string
   monthlyPrice: number
   linkLimit: number
@@ -132,7 +162,14 @@ export interface Plan {
 }
 
 export interface Subscription {
-  planId: number
+  id: string
+  status: string
+  startAtUtc: string
   endAtUtc: string
+  plan: Plan
+}
+
+export interface UpgradeSubscriptionResponse {
+  message: string
   plan: Plan
 }

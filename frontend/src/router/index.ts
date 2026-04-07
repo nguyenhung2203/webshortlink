@@ -29,6 +29,7 @@ const router = createRouter({
         { path: 'links', name: 'user-links', component: () => import('@/views/user/UserLinksView.vue') },
         { path: 'links/create', name: 'user-create-link', component: () => import('@/views/user/CreateLinkView.vue') },
         { path: 'links/:id', name: 'user-link-detail', component: () => import('@/views/user/LinkDetailView.vue') },
+        { path: 'analytics', name: 'user-analytics', component: () => import('@/views/user/UserAnalyticsView.vue') },
         { path: 'billing', name: 'user-billing', component: () => import('@/views/user/UserBillingView.vue') },
         { path: 'profile', name: 'user-profile', component: () => import('@/views/user/UserProfileView.vue') },
       ],
