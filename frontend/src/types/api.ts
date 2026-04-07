@@ -184,7 +184,7 @@ export interface AdminDashboardDashboard {
     suspiciousClicks: number
     errorRate: number
     queueLagSeconds: number
-    systemUptimeDays: number
+    redirectLatencyP95Ms: number
   }
 }
 

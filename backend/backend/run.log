@@ -1,0 +1,377 @@
+Using launch settings from E:\webshortlink\backend\backend\Properties\launchSettings.json...
+Building...
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (34ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (28ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (9ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT [MigrationId], [ProductVersion]
+      FROM [__EFMigrationsHistory]
+      ORDER BY [MigrationId];
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (16ms) [Parameters=[@__normalizedName_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [a].[Id], [a].[ConcurrencyStamp], [a].[Name], [a].[NormalizedName]
+      FROM [AspNetRoles] AS [a]
+      WHERE [a].[NormalizedName] = @__normalizedName_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__normalizedName_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [a].[Id], [a].[ConcurrencyStamp], [a].[Name], [a].[NormalizedName]
+      FROM [AspNetRoles] AS [a]
+      WHERE [a].[NormalizedName] = @__normalizedName_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Plans] AS [p]) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [SystemSettings] AS [s]) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__normalizedEmail_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(2) [a].[Id], [a].[AccessFailedCount], [a].[AccountStatus], [a].[ConcurrencyStamp], [a].[CreatedAtUtc], [a].[CurrentPlanId], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsDeleted], [a].[LastLoginAtUtc], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+      FROM [AppUsers] AS [a]
+      WHERE [a].[NormalizedEmail] = @__normalizedEmail_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__normalizedRoleName_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(2) [a].[Id], [a].[ConcurrencyStamp], [a].[Name], [a].[NormalizedName]
+      FROM [AspNetRoles] AS [a]
+      WHERE [a].[NormalizedName] = @__normalizedRoleName_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__get_Item_0='?' (DbType = Guid), @__get_Item_1='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [a].[UserId], [a].[RoleId]
+      FROM [AspNetUserRoles] AS [a]
+      WHERE [a].[UserId] = @__get_Item_0 AND [a].[RoleId] = @__get_Item_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__user_Id_0='?' (DbType = Guid), @__planId_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Subscriptions] AS [s]
+              WHERE [s].[UserId] = @__user_Id_0 AND [s].[PlanId] = @__planId_1 AND [s].[Status] = 2) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__normalizedEmail_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(2) [a].[Id], [a].[AccessFailedCount], [a].[AccountStatus], [a].[ConcurrencyStamp], [a].[CreatedAtUtc], [a].[CurrentPlanId], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsDeleted], [a].[LastLoginAtUtc], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+      FROM [AppUsers] AS [a]
+      WHERE [a].[NormalizedEmail] = @__normalizedEmail_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__normalizedRoleName_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(2) [a].[Id], [a].[ConcurrencyStamp], [a].[Name], [a].[NormalizedName]
+      FROM [AspNetRoles] AS [a]
+      WHERE [a].[NormalizedName] = @__normalizedRoleName_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__get_Item_0='?' (DbType = Guid), @__get_Item_1='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [a].[UserId], [a].[RoleId]
+      FROM [AspNetUserRoles] AS [a]
+      WHERE [a].[UserId] = @__get_Item_0 AND [a].[RoleId] = @__get_Item_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__user_Id_0='?' (DbType = Guid), @__planId_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Subscriptions] AS [s]
+              WHERE [s].[UserId] = @__user_Id_0 AND [s].[PlanId] = @__planId_1 AND [s].[Status] = 2) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__user_Id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [s].[Id], [s].[AutoRenew], [s].[CreatedAtUtc], [s].[CreatedByUserId], [s].[EndAtUtc], [s].[PlanId], [s].[StartAtUtc], [s].[Status], [s].[UpdatedAtUtc], [s].[UpdatedByUserId], [s].[UserId]
+      FROM [Subscriptions] AS [s]
+      WHERE [s].[UserId] = @__user_Id_0 AND [s].[Status] = 2
+      ORDER BY [s].[StartAtUtc] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__subscription_Id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Payments] AS [p]
+              WHERE [p].[SubscriptionId] = @__subscription_Id_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@__user_Id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Links] AS [l]
+              WHERE [l].[UserId] = @__user_Id_0 AND [l].[IsDeleted] = CAST(0 AS bit)) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5130
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: E:\webshortlink\backend\backend
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__normalizedEmail_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(2) [a].[Id], [a].[AccessFailedCount], [a].[AccountStatus], [a].[ConcurrencyStamp], [a].[CreatedAtUtc], [a].[CurrentPlanId], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsDeleted], [a].[LastLoginAtUtc], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+      FROM [AppUsers] AS [a]
+      WHERE [a].[NormalizedEmail] = @__normalizedEmail_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__normalizedEmail_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(2) [a].[Id], [a].[AccessFailedCount], [a].[AccountStatus], [a].[ConcurrencyStamp], [a].[CreatedAtUtc], [a].[CurrentPlanId], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsDeleted], [a].[LastLoginAtUtc], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+      FROM [AppUsers] AS [a]
+      WHERE [a].[NormalizedEmail] = @__normalizedEmail_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@p1='?' (DbType = Guid), @p2='?' (Size = 4000), @p0='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+      SET IMPLICIT_TRANSACTIONS OFF;
+      SET NOCOUNT ON;
+      UPDATE [AppUsers] SET [LastLoginAtUtc] = @p0
+      OUTPUT 1
+      WHERE [Id] = @p1 AND [ConcurrencyStamp] = @p2;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@p1='?' (DbType = Guid), @p2='?' (Size = 4000), @p0='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+      SET IMPLICIT_TRANSACTIONS OFF;
+      SET NOCOUNT ON;
+      UPDATE [AppUsers] SET [LastLoginAtUtc] = @p0
+      OUTPUT 1
+      WHERE [Id] = @p1 AND [ConcurrencyStamp] = @p2;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__userId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT [a0].[Name]
+      FROM [AspNetUserRoles] AS [a]
+      INNER JOIN [AspNetRoles] AS [a0] ON [a].[RoleId] = [a0].[Id]
+      WHERE [a].[UserId] = @__userId_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__userId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT [a0].[Name]
+      FROM [AspNetUserRoles] AS [a]
+      INNER JOIN [AspNetRoles] AS [a0] ON [a].[RoleId] = [a0].[Id]
+      WHERE [a].[UserId] = @__userId_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime2), @p2='?' (Size = 4000), @p3='?' (Size = 500), @p4='?' (DbType = DateTime2), @p5='?' (Size = 64), @p6='?' (Size = 256), @p7='?' (DbType = DateTime2), @p8='?' (Size = 4000), @p9='?' (DbType = DateTime2), @p10='?' (Size = 4000), @p11='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SET IMPLICIT_TRANSACTIONS OFF;
+      SET NOCOUNT ON;
+      INSERT INTO [RefreshSessions] ([Id], [CreatedAtUtc], [CreatedByUserId], [DeviceInfo], [ExpiresAtUtc], [IpAddress], [RefreshTokenHash], [RevokedAtUtc], [RevokedReason], [UpdatedAtUtc], [UpdatedByUserId], [UserId])
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime2), @p2='?' (Size = 4000), @p3='?' (Size = 500), @p4='?' (DbType = DateTime2), @p5='?' (Size = 64), @p6='?' (Size = 256), @p7='?' (DbType = DateTime2), @p8='?' (Size = 4000), @p9='?' (DbType = DateTime2), @p10='?' (Size = 4000), @p11='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SET IMPLICIT_TRANSACTIONS OFF;
+      SET NOCOUNT ON;
+      INSERT INTO [RefreshSessions] ([Id], [CreatedAtUtc], [CreatedByUserId], [DeviceInfo], [ExpiresAtUtc], [IpAddress], [RefreshTokenHash], [RevokedAtUtc], [RevokedReason], [UpdatedAtUtc], [UpdatedByUserId], [UserId])
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__normalizedEmail_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(2) [a].[Id], [a].[AccessFailedCount], [a].[AccountStatus], [a].[ConcurrencyStamp], [a].[CreatedAtUtc], [a].[CurrentPlanId], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsDeleted], [a].[LastLoginAtUtc], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+      FROM [AppUsers] AS [a]
+      WHERE [a].[NormalizedEmail] = @__normalizedEmail_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__normalizedEmail_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(2) [a].[Id], [a].[AccessFailedCount], [a].[AccountStatus], [a].[ConcurrencyStamp], [a].[CreatedAtUtc], [a].[CurrentPlanId], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsDeleted], [a].[LastLoginAtUtc], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+      FROM [AppUsers] AS [a]
+      WHERE [a].[NormalizedEmail] = @__normalizedEmail_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__normalizedEmail_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(2) [a].[Id], [a].[AccessFailedCount], [a].[AccountStatus], [a].[ConcurrencyStamp], [a].[CreatedAtUtc], [a].[CurrentPlanId], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsDeleted], [a].[LastLoginAtUtc], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+      FROM [AppUsers] AS [a]
+      WHERE [a].[NormalizedEmail] = @__normalizedEmail_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@p1='?' (DbType = Guid), @p2='?' (Size = 4000), @p0='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+      SET IMPLICIT_TRANSACTIONS OFF;
+      SET NOCOUNT ON;
+      UPDATE [AppUsers] SET [LastLoginAtUtc] = @p0
+      OUTPUT 1
+      WHERE [Id] = @p1 AND [ConcurrencyStamp] = @p2;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT [a0].[Name]
+      FROM [AspNetUserRoles] AS [a]
+      INNER JOIN [AspNetRoles] AS [a0] ON [a].[RoleId] = [a0].[Id]
+      WHERE [a].[UserId] = @__userId_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime2), @p2='?' (Size = 4000), @p3='?' (Size = 500), @p4='?' (DbType = DateTime2), @p5='?' (Size = 64), @p6='?' (Size = 256), @p7='?' (DbType = DateTime2), @p8='?' (Size = 4000), @p9='?' (DbType = DateTime2), @p10='?' (Size = 4000), @p11='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SET IMPLICIT_TRANSACTIONS OFF;
+      SET NOCOUNT ON;
+      INSERT INTO [RefreshSessions] ([Id], [CreatedAtUtc], [CreatedByUserId], [DeviceInfo], [ExpiresAtUtc], [IpAddress], [RefreshTokenHash], [RevokedAtUtc], [RevokedReason], [UpdatedAtUtc], [UpdatedByUserId], [UserId])
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@p1='?' (DbType = Guid), @p2='?' (Size = 4000), @p0='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+      SET IMPLICIT_TRANSACTIONS OFF;
+      SET NOCOUNT ON;
+      UPDATE [AppUsers] SET [LastLoginAtUtc] = @p0
+      OUTPUT 1
+      WHERE [Id] = @p1 AND [ConcurrencyStamp] = @p2;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__userId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT [a0].[Name]
+      FROM [AspNetUserRoles] AS [a]
+      INNER JOIN [AspNetRoles] AS [a0] ON [a].[RoleId] = [a0].[Id]
+      WHERE [a].[UserId] = @__userId_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime2), @p2='?' (Size = 4000), @p3='?' (Size = 500), @p4='?' (DbType = DateTime2), @p5='?' (Size = 64), @p6='?' (Size = 256), @p7='?' (DbType = DateTime2), @p8='?' (Size = 4000), @p9='?' (DbType = DateTime2), @p10='?' (Size = 4000), @p11='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SET IMPLICIT_TRANSACTIONS OFF;
+      SET NOCOUNT ON;
+      INSERT INTO [RefreshSessions] ([Id], [CreatedAtUtc], [CreatedByUserId], [DeviceInfo], [ExpiresAtUtc], [IpAddress], [RefreshTokenHash], [RevokedAtUtc], [RevokedReason], [UpdatedAtUtc], [UpdatedByUserId], [UserId])
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@p1='?' (DbType = Guid), @p2='?' (Size = 4000), @p0='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+      SET IMPLICIT_TRANSACTIONS OFF;
+      SET NOCOUNT ON;
+      UPDATE [AppUsers] SET [LastLoginAtUtc] = @p0
+      OUTPUT 1
+      WHERE [Id] = @p1 AND [ConcurrencyStamp] = @p2;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT [a0].[Name]
+      FROM [AspNetUserRoles] AS [a]
+      INNER JOIN [AspNetRoles] AS [a0] ON [a].[RoleId] = [a0].[Id]
+      WHERE [a].[UserId] = @__userId_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime2), @p2='?' (Size = 4000), @p3='?' (Size = 500), @p4='?' (DbType = DateTime2), @p5='?' (Size = 64), @p6='?' (Size = 256), @p7='?' (DbType = DateTime2), @p8='?' (Size = 4000), @p9='?' (DbType = DateTime2), @p10='?' (Size = 4000), @p11='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SET IMPLICIT_TRANSACTIONS OFF;
+      SET NOCOUNT ON;
+      INSERT INTO [RefreshSessions] ([Id], [CreatedAtUtc], [CreatedByUserId], [DeviceInfo], [ExpiresAtUtc], [IpAddress], [RefreshTokenHash], [RevokedAtUtc], [RevokedReason], [UpdatedAtUtc], [UpdatedByUserId], [UserId])
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__current_UserId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT [l].[Id], [l].[ClickLimit], [l].[CreatedAtUtc], [l].[CreatedByUserId], [l].[DeletedAtUtc], [l].[DeletedByUserId], [l].[Description], [l].[DomainId], [l].[ExpiresAtUtc], [l].[IsDeleted], [l].[OriginalUrl], [l].[PasswordHash], [l].[RowVersion], [l].[Slug], [l].[Status], [l].[Tag], [l].[TotalClicks], [l].[UniqueClicks], [l].[UpdatedAtUtc], [l].[UpdatedByUserId], [l].[UserId]
+      FROM [Links] AS [l]
+      WHERE [l].[UserId] = @__current_UserId_0 AND [l].[IsDeleted] = CAST(0 AS bit)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT_BIG(*)
+      FROM [AppUsers] AS [a]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT_BIG(*)
+      FROM [AppUsers] AS [a]
+      WHERE [a].[CurrentPlanId] <> 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT_BIG(*)
+      FROM [Links] AS [l]
+      WHERE [l].[IsDeleted] = CAST(0 AS bit)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (7ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT_BIG(*)
+      FROM [Links] AS [l]
+      WHERE [l].[IsDeleted] = CAST(0 AS bit) AND [l].[Status] = 2
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT_BIG(*)
+      FROM [ClickEvents] AS [c]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (6ms) [Parameters=[@__linkIds_0='?' (Size = 4000)], CommandType='Text', CommandTimeout='30']
+      SELECT [l].[Id], [l].[BotClicks], [l].[CreatedAtUtc], [l].[CreatedByUserId], [l].[LinkId], [l].[StatDate], [l].[SuspiciousClicks], [l].[TotalClicks], [l].[UniqueClicks], [l].[UpdatedAtUtc], [l].[UpdatedByUserId]
+      FROM [LinkDailyStats] AS [l]
+      WHERE [l].[LinkId] IN (
+          SELECT [l0].[value]
+          FROM OPENJSON(@__linkIds_0) WITH ([value] uniqueidentifier '$') AS [l0]
+      )
+      ORDER BY [l].[StatDate]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (15ms) [Parameters=[@__current_UserId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT [l].[Id], CASE
+          WHEN [d].[Id] IS NOT NULL THEN [d].[Host]
+          ELSE N'sho.rt'
+      END, [l].[Slug], [l].[OriginalUrl], [l].[Status], [l].[Tag], [l].[TotalClicks], [l].[UniqueClicks], (
+          SELECT COUNT_BIG(*)
+          FROM [ClickEvents] AS [c]
+          WHERE [l].[Id] = [c].[LinkId] AND [c].[IsBot] = CAST(1 AS bit)), [l].[CreatedAtUtc], [l].[UpdatedAtUtc]
+      FROM [Links] AS [l]
+      LEFT JOIN [Domains] AS [d] ON [l].[DomainId] = [d].[Id]
+      WHERE [l].[UserId] = @__current_UserId_0 AND [l].[IsDeleted] = CAST(0 AS bit)
+      ORDER BY [l].[CreatedAtUtc] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COALESCE(SUM([l].[UniqueClicks]), CAST(0 AS bigint))
+      FROM [LinkDailyStats] AS [l]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT_BIG(*)
+      FROM [ClickEvents] AS [c]
+      WHERE [c].[IsBot] = CAST(1 AS bit)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT_BIG(*)
+      FROM [ClickEvents] AS [c]
+      WHERE [c].[IsSuspicious] = CAST(1 AS bit)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (5ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COALESCE(SUM([p].[Amount]), 0.0)
+      FROM [Payments] AS [p]
+      WHERE [p].[Status] = 2
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__normalizedEmail_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(2) [a].[Id], [a].[AccessFailedCount], [a].[AccountStatus], [a].[ConcurrencyStamp], [a].[CreatedAtUtc], [a].[CurrentPlanId], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsDeleted], [a].[LastLoginAtUtc], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+      FROM [AppUsers] AS [a]
+      WHERE [a].[NormalizedEmail] = @__normalizedEmail_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__normalizedEmail_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(2) [a].[Id], [a].[AccessFailedCount], [a].[AccountStatus], [a].[ConcurrencyStamp], [a].[CreatedAtUtc], [a].[CurrentPlanId], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsDeleted], [a].[LastLoginAtUtc], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+      FROM [AppUsers] AS [a]
+      WHERE [a].[NormalizedEmail] = @__normalizedEmail_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@p1='?' (DbType = Guid), @p2='?' (Size = 4000), @p0='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+      SET IMPLICIT_TRANSACTIONS OFF;
+      SET NOCOUNT ON;
+      UPDATE [AppUsers] SET [LastLoginAtUtc] = @p0
+      OUTPUT 1
+      WHERE [Id] = @p1 AND [ConcurrencyStamp] = @p2;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__userId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT [a0].[Name]
+      FROM [AspNetUserRoles] AS [a]
+      INNER JOIN [AspNetRoles] AS [a0] ON [a].[RoleId] = [a0].[Id]
+      WHERE [a].[UserId] = @__userId_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (6ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT [p].[Id], [p].[Code], [p].[Name], [p].[MonthlyPrice], [p].[IsActive]
+      FROM [Plans] AS [p]
+      WHERE [p].[IsActive] = CAST(1 AS bit)
+      ORDER BY [p].[Id]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime2), @p2='?' (Size = 4000), @p3='?' (Size = 500), @p4='?' (DbType = DateTime2), @p5='?' (Size = 64), @p6='?' (Size = 256), @p7='?' (DbType = DateTime2), @p8='?' (Size = 4000), @p9='?' (DbType = DateTime2), @p10='?' (Size = 4000), @p11='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SET IMPLICIT_TRANSACTIONS OFF;
+      SET NOCOUNT ON;
+      INSERT INTO [RefreshSessions] ([Id], [CreatedAtUtc], [CreatedByUserId], [DeviceInfo], [ExpiresAtUtc], [IpAddress], [RefreshTokenHash], [RevokedAtUtc], [RevokedReason], [UpdatedAtUtc], [UpdatedByUserId], [UserId])
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@p1='?' (DbType = Guid), @p2='?' (Size = 4000), @p0='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+      SET IMPLICIT_TRANSACTIONS OFF;
+      SET NOCOUNT ON;
+      UPDATE [AppUsers] SET [LastLoginAtUtc] = @p0
+      OUTPUT 1
+      WHERE [Id] = @p1 AND [ConcurrencyStamp] = @p2;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__userId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT [a0].[Name]
+      FROM [AspNetUserRoles] AS [a]
+      INNER JOIN [AspNetRoles] AS [a0] ON [a].[RoleId] = [a0].[Id]
+      WHERE [a].[UserId] = @__userId_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime2), @p2='?' (Size = 4000), @p3='?' (Size = 500), @p4='?' (DbType = DateTime2), @p5='?' (Size = 64), @p6='?' (Size = 256), @p7='?' (DbType = DateTime2), @p8='?' (Size = 4000), @p9='?' (DbType = DateTime2), @p10='?' (Size = 4000), @p11='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SET IMPLICIT_TRANSACTIONS OFF;
+      SET NOCOUNT ON;
+      INSERT INTO [RefreshSessions] ([Id], [CreatedAtUtc], [CreatedByUserId], [DeviceInfo], [ExpiresAtUtc], [IpAddress], [RefreshTokenHash], [RevokedAtUtc], [RevokedReason], [UpdatedAtUtc], [UpdatedByUserId], [UserId])
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__current_UserId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [a].[Id], [a].[AccessFailedCount], [a].[AccountStatus], [a].[ConcurrencyStamp], [a].[CreatedAtUtc], [a].[CurrentPlanId], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsDeleted], [a].[LastLoginAtUtc], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+      FROM [AppUsers] AS [a]
+      WHERE [a].[Id] = @__current_UserId_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (9ms) [Parameters=[@__current_UserId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [s].[Id], [s].[AutoRenew], [s].[CreatedAtUtc], [s].[CreatedByUserId], [s].[EndAtUtc], [s].[PlanId], [s].[StartAtUtc], [s].[Status], [s].[UpdatedAtUtc], [s].[UpdatedByUserId], [s].[UserId], [p].[Id], [p].[Code], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[IsActive], [p].[MonthlyPrice], [p].[Name], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [Subscriptions] AS [s]
+      INNER JOIN [Plans] AS [p] ON [s].[PlanId] = [p].[Id]
+      WHERE [s].[UserId] = @__current_UserId_0 AND [s].[Status] = 2
+      ORDER BY [s].[StartAtUtc] DESC
