@@ -7,8 +7,8 @@ import WxInput from '@/components/ui/WxInput.vue'
 import WxPasswordInput from '@/components/ui/WxPasswordInput.vue'
 import { LockIcon, MailIcon } from 'lucide-vue-next'
 
-const email = ref('user@demo.local')
-const password = ref('Demo123!')
+const email = ref('')
+const password = ref('')
 const error = ref('')
 const loading = ref(false)
 
@@ -61,6 +61,10 @@ async function submit() {
         label="Mật khẩu" 
         required 
       />
+
+      <div class="flex justify-end -mt-2">
+        <RouterLink to="/auth/forgot-password" class="text-sm text-primary font-medium hover:underline">Quên mật khẩu?</RouterLink>
+      </div>
 
       <p v-if="error" class="text-danger text-sm font-medium">{{ error }}</p>
 

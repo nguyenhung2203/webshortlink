@@ -4,6 +4,7 @@ import { ref } from 'vue'
 type Size = 'sm' | 'md' | 'lg'
 
 const props = withDefaults(defineProps<{
+  label?: string
   modelValue?: string
   placeholder?: string
   disabled?: boolean
@@ -36,6 +37,9 @@ const sizeClasses: Record<Size, string> = {
 
 <template>
   <div class="flex flex-col gap-1">
+    <label v-if="label" class="text-sm font-semibold text-on-surface mb-0.5 ml-0.5 cursor-pointer">
+      {{ label }}
+    </label>
     <div
       class="flex items-center rounded-lg border transition-colors duration-200 bg-surface-container-lowest"
       :class="[

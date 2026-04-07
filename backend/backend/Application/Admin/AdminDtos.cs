@@ -20,9 +20,9 @@ public sealed record AdminUserListItemDto(
     string Email,
     string FullName,
     string Role,
-    string AccountStatus,
+    string Status,
     string PlanName,
-    long LinksCount,
+    long TotalLinks,
     long TotalClicks,
     DateTime CreatedAtUtc,
     DateTime? LastLoginAtUtc);
@@ -51,10 +51,10 @@ public sealed record AdminLinkListItemDto(
     string Slug,
     string OriginalUrl,
     string Status,
-    string OwnerEmail,
+    string UserEmail,
     long TotalClicks,
     long BotClicks,
-    int AbuseScore,
+    int? HighestRiskScore,
     DateTime CreatedAtUtc);
 
 public sealed record AdminLinkDetailDto(
@@ -63,8 +63,16 @@ public sealed record AdminLinkDetailDto(
     string Slug,
     string OriginalUrl,
     string Status,
-    string OwnerEmail,
+    string UserEmail,
     long TotalClicks,
     long UniqueClicks,
     long BotClicks,
     IReadOnlyCollection<KeyValueMetricDto> RecentCountries);
+
+public sealed record AdminAuditLogItemDto(
+    Guid Id,
+    string Action,
+    string? ResourceType,
+    string? ResourceId,
+    string ActorType,
+    DateTime CreatedAtUtc);

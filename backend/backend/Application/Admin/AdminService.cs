@@ -161,6 +161,7 @@ public sealed class AdminService
     {
         return await _dbContext.Links.AsNoTracking()
             .Include(x => x.User)
+            .Include(x => x.Domain)
             .OrderByDescending(x => x.CreatedAtUtc)
             .Where(x => !x.IsDeleted)
             .Select(x => new AdminLinkListItemDto(
@@ -172,7 +173,7 @@ public sealed class AdminService
                 x.User.Email!,
                 x.TotalClicks,
                 x.ClickEvents.LongCount(y => y.IsBot),
-                x.AbuseReports.OrderByDescending(y => y.RiskScore).Select(y => y.RiskScore).FirstOrDefault(),
+                x.AbuseReports.OrderByDescending(y => y.RiskScore).Select(y => (int?)y.RiskScore).FirstOrDefault(),
                 x.CreatedAtUtc))
             .ToListAsync(cancellationToken);
     }
@@ -206,14 +207,14 @@ public sealed class AdminService
     public async Task<MessageResponseDto> ToggleLinkAsync(Guid linkId, bool enable, CancellationToken cancellationToken)
     {
         var current = _currentUserService.GetRequired();
-        var link = await _dbContext.Links.FirstOrDefaultAsync(x => x.Id == linkId && !x.IsDeleted, cancellationToken)
+        var link = await _dbContext.Links.Include(x => x.Domain).FirstOrDefaultAsync(x => x.Id == linkId && !x.IsDeleted, cancellationToken)
             ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy link.", StatusCodes.Status404NotFound);
 
         link.Status = enable ? LinkStatus.Active : LinkStatus.DisabledByAdmin;
         link.UpdatedAtUtc = DateTime.UtcNow;
         link.UpdatedByUserId = current.UserId.ToString();
         await _dbContext.SaveChangesAsync(cancellationToken);
-        await _linkCacheService.RemoveAsync("default", link.Slug, cancellationToken);
+        await _linkCacheService.RemoveAsync("sho.rt", link.Slug, cancellationToken);
 
         await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-009:ToggleLink", "Link", linkId.ToString(), current.UserId, current.IpAddress, new { enable }, cancellationToken);
         return new MessageResponseDto("Cập nhật trạng thái link thành công.");
@@ -240,10 +241,10 @@ public sealed class AdminService
         };
     }
 
-    public async Task<object> GetAuditLogsAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<AdminAuditLogItemDto>> GetAuditLogsAsync(CancellationToken cancellationToken)
     {
         var logs = await _dbContext.AuditLogs.AsNoTracking().OrderByDescending(x => x.CreatedAtUtc).Take(50).ToListAsync(cancellationToken);
-        return logs.Select(x => new { x.Id, x.Action, x.ResourceType, x.ResourceId, x.ActorType, x.CreatedAtUtc });
+        return logs.Select(x => new AdminAuditLogItemDto(x.Id, x.Action, x.ResourceType, x.ResourceId, x.ActorType.ToString(), x.CreatedAtUtc)).ToList();
     }
 
     private async Task<Dictionary<Guid, string>> GetUserRolesMapAsync(CancellationToken cancellationToken)

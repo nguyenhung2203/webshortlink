@@ -1,31 +1,21 @@
 <template>
   <div class="min-h-screen bg-surface flex items-center justify-center p-4">
-    <section class="max-w-3xl w-full bg-surface-container rounded-2xl shadow-xl border border-outline-variant p-8 md:p-12">
-      <p class="text-primary font-bold uppercase tracking-wider text-sm mb-2">Shortlink SaaS MVP</p>
-      <h1 class="text-3xl md:text-5xl font-extrabold text-on-surface mb-6 leading-tight">Rút gọn link, theo dõi click, quản trị gói dịch vụ trong một hệ thống.</h1>
-      <p class="text-on-surface-variant text-lg mb-8 leading-relaxed">
-        Bản code hiện tại ưu tiên đi hết luồng sản phẩm: đăng nhập, tạo link, xem analytics,
-        nâng cấp gói và quản trị admin.
+    <section class="max-w-4xl w-full bg-surface-container rounded-3xl shadow-2xl border border-outline-variant p-10 md:p-14 text-center">
+      <p class="text-primary font-bold uppercase tracking-widest text-sm mb-3">Wemake Shortlink Platform</p>
+      
+      <h1 class="text-4xl md:text-6xl font-black text-on-surface mb-6 leading-tight tracking-tight">
+        WeShort Nền tảng <br/> <span class="text-primary">quản lý URL thông minh</span>
+      </h1>
+      
+      <p class="text-on-surface-variant text-xl mb-10 leading-relaxed max-w-2xl mx-auto font-medium">
+        Biến những URL dài dòng thành đường link siêu ngắn. Theo dõi mọi lượt click, kiểm soát dữ liệu và phân tích người dùng hiệu quả nhất.
       </p>
 
-      <div class="flex flex-wrap gap-4 mt-6">
-        <WxButton variant="primary" to="/auth/login" size="lg">Đăng nhập User</WxButton>
-        <WxButton variant="cta" to="/auth/admin" size="lg">Đăng nhập Admin</WxButton>
-        <WxButton variant="secondary" to="/auth/register" size="lg">Tạo tài khoản</WxButton>
+      <div class="flex flex-col sm:flex-row gap-4 mt-6 justify-center">
+        <WxButton variant="primary" to="/auth/register" size="lg" class="px-8 py-4 text-lg">🚀 Tạo tài khoản miễn phí</WxButton>
+        <WxButton variant="secondary" to="/auth/login" size="lg" class="px-8 py-4 text-lg">Đăng nhập</WxButton>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12 bg-surface-container-low p-6 rounded-xl border border-outline-variant">
-        <div>
-          <h3 class="font-bold text-lg mb-2 text-on-surface">👉 User demo (Khách hàng)</h3>
-          <p class="text-on-surface-variant font-mono text-sm"><strong>Email:</strong> user@demo.local</p>
-          <p class="text-on-surface-variant font-mono text-sm"><strong>Password:</strong> Demo123!</p>
-        </div>
-        <div>
-          <h3 class="font-bold text-lg mb-2 text-on-surface">👉 Admin demo (Quản trị viên)</h3>
-          <p class="text-on-surface-variant font-mono text-sm"><strong>Email:</strong> admin@demo.local</p>
-          <p class="text-on-surface-variant font-mono text-sm"><strong>Password:</strong> Admin123!</p>
-        </div>
-      </div>
     </section>
   </div>
 </template>

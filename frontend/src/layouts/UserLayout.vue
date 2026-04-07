@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { Home, Link as LinkIcon, BarChart2, CreditCard, User, LogOut } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
@@ -7,6 +7,10 @@ import { useAuthStore } from '@/stores/auth'
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+
+onMounted(() => {
+  authStore.refreshSession()
+})
 
 const navItems = [
   { to: '/app/dashboard', label: 'Tổng quan', shortLabel: 'Tổng quan', icon: Home },
@@ -57,7 +61,8 @@ function logout() {
   <div class="flex h-screen overflow-hidden bg-surface text-on-surface">
     <aside class="hidden w-64 flex-col border-r border-outline-variant bg-surface-container transition-all duration-300 md:flex">
       <div class="header-gradient flex h-14 items-center border-b border-outline-variant px-6 text-white">
-        <span class="text-lg font-bold tracking-wider">Shortlink SaaS</span>
+        <span class="text-xl font-bold tracking-wider">WeShort</span>
+        <span class="ml-2 text-xs font-medium text-white/70">by Wemake</span>
       </div>
 
       <nav class="flex flex-1 flex-col gap-1 overflow-y-auto p-4">
@@ -91,10 +96,25 @@ function logout() {
           <h1 class="text-lg font-bold">{{ title }}</h1>
         </div>
         <div class="flex items-center gap-3">
-          <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-            Plan ID: {{ authStore.user?.currentPlanId ?? 'N/A' }}
+          <span 
+            v-if="authStore.user?.currentPlanId === 2"
+            class="rounded-full bg-primary/20 border border-primary/30 px-3 py-1 text-xs font-black text-primary uppercase drop-shadow-sm tracking-widest"
+          >
+            PRO
           </span>
-          <span class="text-sm font-medium">{{ authStore.user?.fullName || authStore.user?.email }}</span>
+          <span 
+            v-else-if="authStore.user?.currentPlanId === 3"
+            class="rounded-full bg-amber-500/20 border border-amber-500/30 px-3 py-1 text-xs font-black text-amber-600 uppercase drop-shadow-sm tracking-widest"
+          >
+            PLUS
+          </span>
+          <span 
+            v-else
+            class="rounded-full bg-gray-200 border border-gray-300 px-3 py-1 text-xs font-bold text-gray-500 uppercase tracking-widest"
+          >
+            FREE
+          </span>
+          <span class="text-sm font-bold text-on-surface ml-1">{{ authStore.user?.fullName || authStore.user?.email }}</span>
         </div>
       </header>
 

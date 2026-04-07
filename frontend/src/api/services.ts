@@ -47,6 +47,21 @@ export const AuthService = {
       method: 'GET',
       token,
     }),
+  forgotPassword: (email: string) =>
+    apiRequest<MessageResponseDto>('/api/public/auth/forgot-password', {
+      method: 'POST',
+      body: { email, turnstileToken: null },
+    }),
+  resetPassword: (email: string, token: string, newPassword: string, confirmPassword: string) =>
+    apiRequest<MessageResponseDto>('/api/public/auth/reset-password', {
+      method: 'POST',
+      body: { email, token, newPassword, confirmPassword },
+    }),
+  verifyEmail: (userId: string, token: string) =>
+    apiRequest<MessageResponseDto>('/api/public/auth/verify-email', {
+      method: 'POST',
+      body: { userId, token },
+    }),
 }
 
 // ─── Links ─────────────────────────────────────────────────────────────────────
@@ -97,6 +112,8 @@ export const UserService = {
       body: { planId },
       token,
     }),
+  getDomains: (token: string) =>
+    apiRequest<any[]>('/api/user/domains', { token }),
 }
 
 // ─── Admin ──────────────────────────────────────────────────────────────────────

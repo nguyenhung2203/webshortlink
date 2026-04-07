@@ -60,6 +60,19 @@ export const useAuthStore = defineStore('auth', () => {
     return payload // returns MessageResponseDto
   }
 
+  async function refreshSession() {
+    if (!accessToken.value) return
+    try {
+      const sessionData = await AuthService.session(accessToken.value)
+      if (user.value) {
+        user.value = { ...user.value, ...sessionData }
+        persist()
+      }
+    } catch {
+      // Ignored
+    }
+  }
+
   async function logout() {
     if (accessToken.value) {
       try {
@@ -86,5 +99,6 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     register,
     logout,
+    refreshSession,
   }
 })
