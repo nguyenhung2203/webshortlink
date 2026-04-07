@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { apiRequest } from '@/api/client'
+import { AuthService } from '@/api/services'
 
 interface AuthPayload {
   token: string
@@ -44,24 +44,18 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function login(email: string, password: string) {
-    const payload = await apiRequest<AuthPayload>('/api/auth/login', {
-      method: 'POST',
-      body: { email, password },
-    })
+    const payload = await AuthService.login(email, password)
 
     token.value = payload.token
-    user.value = payload.user
+    user.value = payload.user as AuthPayload['user']
     persist()
   }
 
   async function register(fullName: string, email: string, password: string) {
-    const payload = await apiRequest<AuthPayload>('/api/auth/register', {
-      method: 'POST',
-      body: { fullName, email, password },
-    })
+    const payload = await AuthService.register(fullName, email, password)
 
     token.value = payload.token
-    user.value = payload.user
+    user.value = payload.user as AuthPayload['user']
     persist()
   }
 

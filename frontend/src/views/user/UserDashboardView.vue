@@ -1,19 +1,25 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { apiRequest } from '@/api/client'
+import { UserService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
+import type { DashboardMetrics } from '@/types/api'
+import WxPageHeader from '@/components/ui/WxPageHeader.vue'
+import WxCard from '@/components/ui/WxCard.vue'
+import WxStatCard from '@/components/ui/WxStatCard.vue'
+import { MousePointerClick, Users, Bot, Link as LinkIcon } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const loading = ref(true)
 const error = ref('')
-const data = ref<any>(null)
+const data = ref<DashboardMetrics | null>(null)
 
 async function load() {
   loading.value = true
   error.value = ''
 
   try {
-    data.value = await apiRequest('/api/analytics/overview', { token: authStore.token })
+    if (!authStore.token) throw new Error('Chưa xác thực')
+    data.value = await UserService.getDashboard(authStore.token)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải dashboard.'
   } finally {
@@ -25,75 +31,68 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="stack-lg">
-    <div class="page-header">
-      <div>
-        <h2>Dashboard</h2>
-        <p class="muted">Theo dõi tổng quan toàn bộ shortlink của bạn.</p>
-      </div>
-    </div>
+  <div class="flex flex-col gap-6">
+    <WxPageHeader
+      title="Tổng quan"
+      subtitle="Theo dõi tổng quan toàn bộ shortlink của bạn."
+    />
 
-    <p v-if="error" class="error-text">{{ error }}</p>
+    <p v-if="error" class="text-danger">{{ error }}</p>
 
-    <div v-if="loading" class="panel">Đang tải dashboard...</div>
+    <div v-if="loading" class="text-on-surface-variant">Đang tải biểu đồ dữ liệu...</div>
 
     <template v-else-if="data">
-      <div class="stats-grid">
-        <article class="stat-card">
-          <span>Total Clicks</span>
-          <strong>{{ data.metrics.totalClicks }}</strong>
-        </article>
-        <article class="stat-card">
-          <span>Unique Clicks</span>
-          <strong>{{ data.metrics.uniqueClicks }}</strong>
-        </article>
-        <article class="stat-card">
-          <span>Bot Clicks</span>
-          <strong>{{ data.metrics.botClicks }}</strong>
-        </article>
-        <article class="stat-card">
-          <span>Active Links</span>
-          <strong>{{ data.metrics.activeLinks }}</strong>
-        </article>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <WxStatCard 
+          title="Tổng lượt click" 
+          :value="data.metrics.totalClicks" 
+          :icon="MousePointerClick" 
+        />
+        <WxStatCard 
+          title="Click duy nhất" 
+          :value="data.metrics.uniqueClicks" 
+          :icon="Users" 
+        />
+        <WxStatCard 
+          title="Click từ Bot" 
+          :value="data.metrics.botClicks" 
+          :icon="Bot" 
+        />
+        <WxStatCard 
+          title="Link đang hoạt động" 
+          :value="data.metrics.activeLinks" 
+          :icon="LinkIcon" 
+        />
       </div>
 
-      <div class="two-columns">
-        <section class="panel">
-          <div class="section-title">
-            <h3>Xu hướng click</h3>
-            <span class="muted">7 ngày gần đây</span>
-          </div>
-          <div class="mini-bars">
-            <div v-for="point in data.trend" :key="point.date" class="mini-bar-item">
-              <div class="mini-bar-track">
-                <div class="mini-bar-fill" :style="{ width: `${Math.max(16, point.totalClicks * 5)}px` }"></div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <WxCard title="Xu hướng click" subtitle="7 ngày gần đây" class="p-4">
+          <div class="flex flex-col gap-3 mt-4">
+            <div v-for="point in data.trend" :key="point.date" class="flex items-center gap-4">
+              <span class="w-24 text-sm text-on-surface-variant">{{ point.date }}</span>
+              <div class="flex-1 bg-surface-container-high h-2 rounded-full overflow-hidden">
+                <div class="bg-primary h-full rounded-full" :style="{ width: `${Math.max(2, Math.min(100, point.totalClicks * 5))}%` }"></div>
               </div>
-              <div class="mini-bar-meta">
-                <span>{{ point.date }}</span>
-                <strong>{{ point.totalClicks }}</strong>
-              </div>
+              <strong class="w-8 text-right">{{ point.totalClicks }}</strong>
             </div>
           </div>
-        </section>
+        </WxCard>
 
-        <section class="panel">
-          <div class="section-title">
-            <h3>Top links</h3>
-          </div>
-          <div class="stack-sm">
-            <article v-for="link in data.topLinks" :key="link.id" class="list-row">
+        <WxCard title="Top links" class="p-4">
+          <div class="flex flex-col gap-4 mt-4">
+            <div v-for="link in data.topLinks" :key="link.id" class="flex justify-between items-center bg-surface-container-low p-3 rounded-lg border border-outline-variant">
               <div>
-                <strong>{{ link.shortUrl }}</strong>
-                <p class="muted">{{ link.status }}</p>
+                <strong class="text-primary">{{ link.shortUrl }}</strong>
+                <p class="text-xs text-on-surface-variant">{{ link.status }}</p>
               </div>
               <div class="text-right">
                 <strong>{{ link.totalClicks }}</strong>
-                <p class="muted">unique {{ link.uniqueClicks }}</p>
+                <p class="text-xs text-on-surface-variant">{{ link.uniqueClicks }} duy nhất</p>
               </div>
-            </article>
+            </div>
           </div>
-        </section>
+        </WxCard>
       </div>
     </template>
-  </section>
+  </div>
 </template>

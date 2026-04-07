@@ -1,5 +1,5 @@
 <template>
-  <div class="public-shell">
+  <div class="min-h-screen bg-surface text-on-surface">
     <RouterView />
   </div>
 </template>

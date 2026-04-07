@@ -2,6 +2,9 @@
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import WxButton from '@/components/ui/WxButton.vue'
+import WxInput from '@/components/ui/WxInput.vue'
+import WxPasswordInput from '@/components/ui/WxPasswordInput.vue'
 
 const fullName = ref('Nguyen Demo')
 const email = ref('new-user@demo.local')
@@ -14,6 +17,20 @@ const router = useRouter()
 
 async function submit() {
   error.value = ''
+
+  if (!fullName.value || fullName.value.length < 3) {
+    error.value = 'Họ tên phải có ít nhất 3 ký tự.'
+    return
+  }
+  if (!email.value || !email.value.includes('@')) {
+    error.value = 'Vui lòng nhập định dạng email hợp lệ.'
+    return
+  }
+  if (!password.value || password.value.length < 6) {
+    error.value = 'Mật khẩu phải có ít nhất 6 ký tự.'
+    return
+  }
+
   loading.value = true
 
   try {
@@ -28,36 +45,45 @@ async function submit() {
 </script>
 
 <template>
-  <div class="auth-shell">
-    <form class="auth-card" @submit.prevent="submit">
-      <p class="eyebrow">Đăng ký</p>
-      <h1>Tạo tài khoản mới</h1>
+  <div>
+    <form @submit.prevent="submit" class="flex flex-col gap-4">
+      <div class="mb-4">
+        <p class="text-primary font-bold uppercase tracking-wider text-sm mb-1">Đăng ký thành viên</p>
+        <h1 class="text-2xl font-bold text-on-surface">Tạo tài khoản mới</h1>
+        <p class="text-sm text-on-surface-variant mt-2">Đăng ký để trải nghiệm toàn bộ tính năng quản lý link chuyên nghiệp.</p>
+      </div>
 
-      <label class="field">
-        <span>Họ tên</span>
-        <input v-model="fullName" type="text" required />
-      </label>
+      <WxInput 
+        v-model="fullName" 
+        label="Họ và tên" 
+        type="text" 
+        required 
+      />
 
-      <label class="field">
-        <span>Email</span>
-        <input v-model="email" type="email" required />
-      </label>
+      <WxInput 
+        v-model="email" 
+        label="Địa chỉ Email" 
+        type="email" 
+        required 
+      />
 
-      <label class="field">
-        <span>Mật khẩu</span>
-        <input v-model="password" type="password" required />
-      </label>
+      <WxPasswordInput 
+        v-model="password" 
+        label="Mật khẩu tạo mới" 
+        required 
+      />
 
-      <p v-if="error" class="error-text">{{ error }}</p>
+      <p v-if="error" class="text-danger text-sm font-medium">{{ error }}</p>
 
-      <button class="primary-button" :disabled="loading" type="submit">
-        {{ loading ? 'Đang tạo...' : 'Tạo tài khoản' }}
-      </button>
+      <WxButton :loading="loading" variant="primary" class="w-full mt-2" type="submit">
+        {{ loading ? 'Đang tạo...' : 'Xác nhận Đăng ký' }}
+      </WxButton>
 
-      <p class="muted">
+      <p class="text-sm text-on-surface-variant mt-4 text-center">
         Đã có tài khoản?
-        <RouterLink to="/login">Đăng nhập</RouterLink>
+        <RouterLink to="/auth/login" class="text-primary hover:underline font-medium">Đăng nhập</RouterLink>
       </p>
     </form>
   </div>
+</template>
 </template>

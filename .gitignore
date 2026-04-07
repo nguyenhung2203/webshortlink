@@ -1,0 +1,7 @@
+
+# Claude Agent related
+.claude/
+
+# Backend build files
+backend/backend/bin/
+backend/backend/obj/

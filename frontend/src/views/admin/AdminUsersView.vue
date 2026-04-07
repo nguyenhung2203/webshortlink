@@ -1,28 +1,32 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { apiRequest } from '@/api/client'
+import { AdminService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
+import type { AdminUser } from '@/types/api'
+import WxPageHeader from '@/components/ui/WxPageHeader.vue'
+import WxCard from '@/components/ui/WxCard.vue'
+import WxBadge from '@/components/ui/WxBadge.vue'
+import WxButton from '@/components/ui/WxButton.vue'
 
 const authStore = useAuthStore()
-const users = ref<any[]>([])
+const users = ref<AdminUser[]>([])
 const error = ref('')
 
 async function load() {
   try {
-    users.value = await apiRequest('/api/admin/users', { token: authStore.token })
+    if (!authStore.token) throw new Error('Chưa xác thực')
+    users.value = await AdminService.getUsers(authStore.token)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải users.'
   }
 }
 
-async function toggle(user: any) {
+async function toggle(user: AdminUser) {
   const action = user.status === 'Active' ? 'lock' : 'unlock'
 
   try {
-    await apiRequest(`/api/admin/users/${user.id}/${action}`, {
-      method: 'PATCH',
-      token: authStore.token,
-    })
+    if (!authStore.token) throw new Error('Chưa xác thực')
+    await AdminService.toggleUserLock(authStore.token, user.id, action)
     await load()
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể cập nhật user.'
@@ -33,30 +37,36 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="stack-lg">
-    <div class="page-header">
-      <div>
-        <h2>Users</h2>
-        <p class="muted">Quản lý tài khoản, plan và trạng thái kích hoạt.</p>
-      </div>
-    </div>
+  <div class="flex flex-col gap-6">
+    <WxPageHeader
+      title="Khách hàng"
+      subtitle="Quản lý tài khoản, gói dịch vụ và trạng thái kích hoạt."
+    />
 
-    <p v-if="error" class="error-text">{{ error }}</p>
+    <p v-if="error" class="text-danger text-sm">{{ error }}</p>
 
-    <div class="stack-sm">
-      <article v-for="user in users" :key="user.id" class="panel list-row list-row-wrap">
-        <div>
-          <strong>{{ user.email }}</strong>
-          <p class="muted">{{ user.fullName }} • {{ user.plan }}</p>
-          <p class="muted">Links {{ user.links }} • Clicks {{ user.totalClicks }}</p>
+    <div class="grid gap-4">
+      <WxCard v-for="user in users" :key="user.id" class="p-5">
+        <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+          <div class="flex flex-col gap-1">
+            <strong class="text-lg text-on-surface">{{ user.email }}</strong>
+            <p class="text-sm text-on-surface-variant">{{ user.fullName }} • <span class="font-bold text-primary">{{ user.plan }}</span></p>
+            <p class="text-xs text-on-surface-variant mt-1">Sở hữu {{ user.links }} links • Thu hút {{ user.totalClicks }} clicks</p>
+          </div>
+          <div class="flex gap-4 items-center">
+            <WxBadge :variant="user.status === 'Active' ? 'success' : 'warning'">
+              {{ user.status === 'Active' ? 'Hoạt động' : 'Đã khóa' }}
+            </WxBadge>
+            <WxButton 
+              :variant="user.status === 'Active' ? 'danger' : 'success'" 
+              @click="toggle(user)"
+              size="sm"
+            >
+              {{ user.status === 'Active' ? 'Khóa tài khoản' : 'Mở khóa' }}
+            </WxButton>
+          </div>
         </div>
-        <div class="inline-actions">
-          <span class="badge">{{ user.status }}</span>
-          <button class="ghost-button" @click="toggle(user)">
-            {{ user.status === 'Active' ? 'Lock' : 'Unlock' }}
-          </button>
-        </div>
-      </article>
+      </WxCard>
     </div>
-  </section>
+  </div>
 </template>
