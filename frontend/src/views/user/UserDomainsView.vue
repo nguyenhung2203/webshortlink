@@ -54,7 +54,12 @@ async function verifyDomain(domainId: string) {
   if (!authStore.accessToken) return
   verifyLoadingId.value = domainId
   try {
-    const result = await DomainService.verify(authStore.accessToken, domainId)
+    const domain = domains.value.find((item) => item.id === domainId)
+    if (!domain?.verificationToken) {
+      throw new Error('Thiếu verification token để xác minh domain.')
+    }
+
+    const result = await DomainService.verify(authStore.accessToken, domainId, domain.verificationToken)
     if (result?.verified) {
       alert('✅ Domain đã được xác minh thành công!')
     } else {
@@ -159,6 +164,9 @@ onMounted(load)
                   <XCircle :size="12" /> Chờ xác minh
                 </span>
               </div>
+              <p v-if="!domain.isVerified" class="mt-2 text-xs text-on-surface-variant break-all">
+                TXT token: <strong class="text-on-surface">{{ domain.verificationToken }}</strong>
+              </p>
             </div>
           </div>
 

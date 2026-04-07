@@ -15,6 +15,30 @@ public sealed record ProductOverviewDto(long TotalLinks, long ActiveLinks, long 
 
 public sealed record OperationsOverviewDto(long BotClicks, long SuspiciousClicks, decimal ErrorRate, int QueueLagSeconds, int RedirectLatencyP95Ms);
 
+public sealed record AdminReportsDto(
+    long TotalUsers,
+    long TotalLinks,
+    long TotalClicks,
+    long ActiveSubscriptions,
+    IReadOnlyCollection<AdminPlanBreakdownDto> PlanBreakdown);
+
+public sealed record AdminPlanBreakdownDto(
+    int PlanId,
+    string PlanName,
+    long Count,
+    decimal Percent);
+
+public sealed record AdminSecurityDto(
+    long FailedLoginsToday,
+    long SuspiciousClicks,
+    long LockedAccounts,
+    IReadOnlyCollection<AdminSystemHealthItemDto> SystemHealth);
+
+public sealed record AdminSystemHealthItemDto(
+    string Name,
+    string Status,
+    string Value);
+
 public sealed record AdminUserListItemDto(
     Guid Id,
     string Email,
@@ -76,3 +100,13 @@ public sealed record AdminAuditLogItemDto(
     string? ResourceId,
     string ActorType,
     DateTime CreatedAtUtc);
+
+public sealed record AdminPaymentListItemDto(
+    Guid Id,
+    string UserEmail,
+    string PlanName,
+    decimal Amount,
+    string Status,
+    string Provider,
+    DateTime CreatedAtUtc,
+    DateTime? PaidAtUtc);

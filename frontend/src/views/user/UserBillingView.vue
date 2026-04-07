@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { UserService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
 import type { Plan, Subscription } from '@/types/api'
@@ -8,6 +9,7 @@ import WxCard from '@/components/ui/WxCard.vue'
 import WxButton from '@/components/ui/WxButton.vue'
 
 const authStore = useAuthStore()
+const router = useRouter()
 const plans = ref<Plan[]>([])
 const subscription = ref<Subscription | null>(null)
 const error = ref('')
@@ -56,9 +58,14 @@ async function upgrade(planId: number) {
   try {
     if (!authStore.accessToken) throw new Error('Chưa xác thực')
     const response = await UserService.upgradeSubscription(authStore.accessToken, planId)
-    actionMessage.value = response.message
-    await authStore.refreshSession()
-    await load()
+    
+    if (response.amountCharged > 0) {
+      router.push(`/app/checkout/${response.subscriptionId}`)
+    } else {
+      actionMessage.value = response.message
+      await authStore.refreshSession()
+      await load()
+    }
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể nâng cấp gói.'
     loading.value = false

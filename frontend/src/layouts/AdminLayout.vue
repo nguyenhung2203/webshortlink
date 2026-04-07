@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { LayoutDashboard, Users, Link as LinkIcon, LogOut, ClipboardList, BarChart2, ShieldCheck } from 'lucide-vue-next'
+import { LayoutDashboard, Users, Link as LinkIcon, LogOut, ClipboardList, BarChart2, ShieldCheck, CreditCard } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -12,6 +12,7 @@ const navItems = [
   { to: '/admin', label: 'Tổng quan', shortLabel: 'Tổng quan', icon: LayoutDashboard },
   { to: '/admin/users', label: 'Khách hàng', shortLabel: 'Khách hàng', icon: Users },
   { to: '/admin/links', label: 'Quản lý Link', shortLabel: 'Links', icon: LinkIcon },
+  { to: '/admin/payments', label: 'Nạp tiền / Thanh toán', shortLabel: 'Nạp tiền', icon: CreditCard },
   { to: '/admin/reports', label: 'Báo cáo', shortLabel: 'Báo cáo', icon: BarChart2 },
   { to: '/admin/security', label: 'Bảo mật', shortLabel: 'Bảo mật', icon: ShieldCheck },
   { to: '/admin/audit', label: 'Nhật ký', shortLabel: 'Nhật ký', icon: ClipboardList },

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { LinkService, UserService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
@@ -29,9 +29,13 @@ const form = ref<any>({ ...defaultForm })
 const domains = ref<any[]>([])
 const copySuccess = ref(false)
 const showAdvanced = ref(false)
+const currentPlanId = computed(() => authStore.user?.currentPlanId ?? 1)
+const canUseCustomDomain = computed(() => currentPlanId.value >= 2)
+const canUseCustomSlug = computed(() => currentPlanId.value >= 2)
+const canUsePremiumLinkSettings = computed(() => currentPlanId.value >= 2)
 
 onMounted(async () => {
-  if (authStore.user && authStore.user.currentPlanId > 1 && authStore.accessToken) {
+  if (canUseCustomDomain.value && authStore.accessToken) {
     try {
       domains.value = await UserService.getDomains(authStore.accessToken)
     } catch {
@@ -69,8 +73,20 @@ async function submit() {
     error.value = 'Hậu tố rút gọn chỉ được chứa chữ cái không dấu, số, gạch nối (-) và gạch dưới (_).'
     return
   }
+  if (form.value.customSlug && !canUseCustomSlug.value) {
+    error.value = 'Custom slug yêu cầu gói Pro hoặc Plus.'
+    return
+  }
   if (form.value.clickLimit !== null && (isNaN(Number(form.value.clickLimit)) || Number(form.value.clickLimit) <= 0)) {
     error.value = 'Giới hạn số click phải lớn hơn 0.'
+    return
+  }
+  if (!canUsePremiumLinkSettings.value && (form.value.password || form.value.expiresAtUtc || form.value.clickLimit)) {
+    error.value = 'Mật khẩu, ngày hết hạn và giới hạn click yêu cầu gói Pro hoặc Plus.'
+    return
+  }
+  if (!canUseCustomDomain.value && form.value.domainId) {
+    error.value = 'Tên miền riêng yêu cầu gói Pro hoặc Plus.'
     return
   }
 
@@ -163,10 +179,14 @@ async function submit() {
               <WxInput 
                 v-model="form.customSlug" 
                 type="text" 
+                :disabled="!canUseCustomSlug"
                 placeholder="VD: uu-dai-thang-10"
               />
               <span class="text-sm text-primary mt-1.5 block font-medium" v-if="form.customSlug">
                 Link sẽ là: <strong class="underline decoration-dashed">weshort.link/{{ form.customSlug }}</strong>
+              </span>
+              <span v-if="!canUseCustomSlug" class="text-xs mt-1.5 block text-amber-600 font-semibold">
+                Custom slug yêu cầu gói Pro hoặc Plus.
               </span>
             </div>
           </div>
@@ -183,7 +203,7 @@ async function submit() {
             {{ showAdvanced ? 'Ẩn tuỳ chọn nâng cao' : 'Hiện tuỳ chọn nâng cao (Mật khẩu, Hạn sử dụng, Giới hạn...)' }}
           </button>
 
-          <div v-if="showAdvanced" class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5 bg-gray-50 p-5 rounded-xl border border-gray-100">
+          <div v-if="showAdvanced && canUsePremiumLinkSettings" class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5 bg-gray-50 p-5 rounded-xl border border-gray-100">
             <div>
               <WxInput v-model="form.password" type="text" label="Mật khẩu bảo vệ" placeholder="VD: 123456" />
               <p class="text-xs text-gray-500 mt-1">Người click phải nhập đúng MK này mới vào được web gốc.</p>
@@ -200,6 +220,10 @@ async function submit() {
             <div class="md:col-span-2">
               <WxInput v-model="form.description" type="text" label="Ghi chú cá nhân" placeholder="Nhớ nội dung link này dùng làm gì..." />
             </div>
+          </div>
+          <div v-else-if="showAdvanced" class="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-700">
+            Các tuỳ chọn nâng cao như mật khẩu, ngày hết hạn và giới hạn click chỉ mở cho gói Pro hoặc Plus.
+            <button type="button" class="ml-2 font-semibold underline" @click="router.push('/app/billing')">Nâng cấp ngay</button>
           </div>
         </div>
 

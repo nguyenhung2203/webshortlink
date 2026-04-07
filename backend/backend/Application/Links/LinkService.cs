@@ -12,6 +12,7 @@ namespace WebShortlink.Backend.Application.Links;
 public sealed class LinkService
 {
     private const string LinkLimitFeatureKey = "links.max_count";
+    private const string CustomSlugFeatureKey = "links.custom_slug";
     private const string DomainsFeatureKey = "domains.custom";
     private const string DefaultHost = "sho.rt";
     private readonly ApplicationDbContext _dbContext;
@@ -46,6 +47,12 @@ public sealed class LinkService
         }
 
         var domain = await ResolveOwnedDomainAsync(current.UserId, request.DomainId, cancellationToken);
+        var hasCustomSlug = !string.IsNullOrWhiteSpace(request.CustomSlug);
+        if (hasCustomSlug)
+        {
+            await _planCapabilityService.EnsureFeatureEnabledAsync(current.UserId, CustomSlugFeatureKey, cancellationToken);
+        }
+
         var slug = string.IsNullOrWhiteSpace(request.CustomSlug) ? GenerateSlug() : request.CustomSlug.Trim().ToLowerInvariant();
         var exists = await _dbContext.Links.AnyAsync(x => x.Slug == slug && x.DomainId == request.DomainId && !x.IsDeleted, cancellationToken);
         if (exists)

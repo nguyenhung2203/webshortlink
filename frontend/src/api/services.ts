@@ -91,6 +91,14 @@ export const LinkRuleService = {
     isActive: boolean
   }) =>
     apiRequest<any>(`/api/user/links/${linkId}/rules`, { method: 'POST', body: data, token }),
+  update: (token: string, linkId: string, ruleId: string, data: {
+    ruleType: string
+    ruleValue: string
+    targetUrl: string
+    priority: number
+    isActive: boolean
+  }) =>
+    apiRequest<any>(`/api/user/links/${linkId}/rules/${ruleId}`, { method: 'PUT', body: data, token }),
   delete: (token: string, linkId: string, ruleId: string) =>
     apiRequest<ApiMessageResponse>(`/api/user/links/${linkId}/rules/${ruleId}`, { method: 'DELETE', token }),
 }
@@ -140,6 +148,8 @@ export const UserService = {
     apiRequest<Subscription>('/api/user/subscription', { token }),
   getPayments: (token: string) =>
     apiRequest<any[]>('/api/user/payments', { token }),
+  getPaymentDetail: (token: string, paymentId: string) =>
+    apiRequest<any>('/api/user/billing/payments/' + paymentId, { token }),
   upgradeSubscription: (token: string, planId: number) =>
     apiRequest<UpgradeSubscriptionResponse>('/api/user/billing/upgrade', {
       method: 'POST',
@@ -155,8 +165,8 @@ export const DomainService = {
     apiRequest<any[]>('/api/user/domains', { token }),
   create: (token: string, host: string) =>
     apiRequest<any>('/api/user/domains', { method: 'POST', body: { host }, token }),
-  verify: (token: string, domainId: string, txtRecord?: string) =>
-    apiRequest<any>(`/api/user/domains/${domainId}/verify`, { method: 'POST', body: { txtRecord }, token }),
+  verify: (token: string, domainId: string, verificationToken: string) =>
+    apiRequest<any>(`/api/user/domains/${domainId}/verify`, { method: 'POST', body: { verificationToken }, token }),
   delete: (token: string, domainId: string) =>
     apiRequest<ApiMessageResponse>(`/api/user/domains/${domainId}`, { method: 'DELETE', token }),
 }
@@ -196,4 +206,8 @@ export const AdminService = {
     apiRequest<any>('/api/admin/reports', { token }),
   getSecurity: (token: string) =>
     apiRequest<any>('/api/admin/security', { token }),
+  getPayments: (token: string) =>
+    apiRequest<any[]>('/api/admin/payments', { token }),
+  approvePayment: (token: string, paymentId: string) =>
+    apiRequest<ApiMessageResponse>('/api/admin/payments/' + paymentId + '/approve', { method: 'PATCH', token }),
 } as const

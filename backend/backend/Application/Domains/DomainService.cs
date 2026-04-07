@@ -42,7 +42,7 @@ public sealed class DomainService
     {
         var current = _currentUserService.GetRequired();
         await _planCapabilityService.EnsureFeatureEnabledAsync(current.UserId, DomainsFeatureKey, cancellationToken);
-        var domainLimit = await _planCapabilityService.GetLimitAsync(current.UserId, DomainsFeatureKey, cancellationToken) ?? 0;
+        var domainLimit = await _planCapabilityService.GetLimitAsync(current.UserId, "domains.max_count", cancellationToken) ?? 0;
         var currentDomains = await _dbContext.Domains.CountAsync(x => x.UserId == current.UserId && !x.IsDeleted, cancellationToken);
         if (currentDomains >= domainLimit)
         {
@@ -73,7 +73,7 @@ public sealed class DomainService
         return new DomainListItemDto(domain.Id, domain.Host, domain.IsVerified, domain.VerificationToken, domain.VerifiedAtUtc, domain.CreatedAtUtc);
     }
 
-    public async Task<MessageResponseDto> VerifyAsync(Guid domainId, VerifyDomainRequestDto request, CancellationToken cancellationToken)
+    public async Task<VerifyDomainResponseDto> VerifyAsync(Guid domainId, VerifyDomainRequestDto request, CancellationToken cancellationToken)
     {
         var current = _currentUserService.GetRequired();
         var domain = await _dbContext.Domains.FirstOrDefaultAsync(x => x.Id == domainId && x.UserId == current.UserId && !x.IsDeleted, cancellationToken)
@@ -100,7 +100,7 @@ public sealed class DomainService
             new { domain.Host },
             cancellationToken);
 
-        return new MessageResponseDto("Xac minh domain thanh cong.");
+        return new VerifyDomainResponseDto(true, domain.Host, "Xac minh domain thanh cong.");
     }
 
     public async Task<MessageResponseDto> DeleteAsync(Guid domainId, CancellationToken cancellationToken)

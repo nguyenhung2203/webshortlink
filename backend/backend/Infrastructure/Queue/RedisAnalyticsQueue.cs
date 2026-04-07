@@ -54,4 +54,19 @@ public sealed class RedisAnalyticsQueue : IAnalyticsQueue
             return null;
         }
     }
+
+    public async Task<long> GetPendingCountAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        try
+        {
+            var db = _redis.GetDatabase();
+            return await db.ListLengthAsync(_options.ClickQueueKey);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Khong lay duoc do dai Redis queue.");
+            return 0;
+        }
+    }
 }

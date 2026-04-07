@@ -37,6 +37,8 @@ const title = computed(() => {
       return 'Phân tích'
     case 'user-billing':
       return 'Gói dịch vụ'
+    case 'user-checkout':
+      return 'Thanh toán VietQR'
     case 'user-payments':
       return 'Lịch sử thanh toán'
     case 'user-domains':

@@ -36,24 +36,15 @@ public sealed class BillingService
             throw new AppException(ErrorCodes.Conflict, "Tai khoan dang o goi nay.", StatusCodes.Status409Conflict);
         }
 
-        var activeSubscriptions = await _dbContext.Subscriptions
-            .Where(x => x.UserId == current.UserId && x.Status == SubscriptionStatus.Active)
-            .ToListAsync(cancellationToken);
-
-        foreach (var activeSubscription in activeSubscriptions)
-        {
-            activeSubscription.Status = SubscriptionStatus.Expired;
-            activeSubscription.EndAtUtc = DateTime.UtcNow;
-            activeSubscription.UpdatedAtUtc = DateTime.UtcNow;
-            activeSubscription.UpdatedByUserId = current.UserId.ToString();
-        }
+        var isPaidPlan = targetPlan.MonthlyPrice > 0;
+        var subscriptionStatus = isPaidPlan ? SubscriptionStatus.Pending : SubscriptionStatus.Active;
 
         var subscription = new Subscription
         {
             Id = Guid.NewGuid(),
             UserId = current.UserId,
             PlanId = targetPlan.Id,
-            Status = SubscriptionStatus.Active,
+            Status = subscriptionStatus,
             StartAtUtc = DateTime.UtcNow,
             EndAtUtc = DateTime.UtcNow.AddMonths(1),
             AutoRenew = true,
@@ -62,23 +53,44 @@ public sealed class BillingService
         };
 
         _dbContext.Subscriptions.Add(subscription);
-        user.CurrentPlanId = targetPlan.Id;
 
-        if (targetPlan.MonthlyPrice > 0)
+        // Only explicitly change the CurrentPlanId immediately if it's a free switch.
+        // For paid plans, user retains old plan until payment approved.
+        if (!isPaidPlan)
         {
-            _dbContext.Payments.Add(new Payment
+            user.CurrentPlanId = targetPlan.Id;
+            
+            // Re-cancel existing if it's a free downgrade etc
+            var activeSubscriptions = await _dbContext.Subscriptions
+                .Where(x => x.UserId == current.UserId && x.Status == SubscriptionStatus.Active && x.Id != subscription.Id)
+                .ToListAsync(cancellationToken);
+
+            foreach (var activeSubscription in activeSubscriptions)
+            {
+                activeSubscription.Status = SubscriptionStatus.Expired;
+                activeSubscription.EndAtUtc = DateTime.UtcNow;
+                activeSubscription.UpdatedAtUtc = DateTime.UtcNow;
+                activeSubscription.UpdatedByUserId = current.UserId.ToString();
+            }
+        }
+
+        Payment? payment = null;
+        if (isPaidPlan)
+        {
+            payment = new Payment
             {
                 Id = Guid.NewGuid(),
                 SubscriptionId = subscription.Id,
                 Amount = targetPlan.MonthlyPrice,
                 Currency = "VND",
-                Provider = "internal-demo",
-                ProviderReference = $"upgrade-{subscription.Id:N}",
-                Status = PaymentStatus.Paid,
-                PaidAtUtc = DateTime.UtcNow,
+                Provider = "VietQR",
+                ProviderReference = null,
+                Status = PaymentStatus.Pending,
+                PaidAtUtc = null,
                 CreatedAtUtc = DateTime.UtcNow,
                 CreatedByUserId = current.UserId.ToString()
-            });
+            };
+            _dbContext.Payments.Add(payment);
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -93,7 +105,7 @@ public sealed class BillingService
             cancellationToken);
 
         return new UpgradeSubscriptionResponseDto(
-            subscription.Id,
+            payment?.Id ?? subscription.Id, // Returns PaymentId if paid, else SubscriptionId
             targetPlan.Id,
             targetPlan.Code,
             targetPlan.Name,
@@ -101,6 +113,26 @@ public sealed class BillingService
             "VND",
             subscription.StartAtUtc,
             subscription.EndAtUtc,
-            targetPlan.MonthlyPrice > 0 ? "Nang cap goi thanh cong." : "Chuyen goi thanh cong.");
+            isPaidPlan ? "Đã tạo yêu cầu thanh toán. Đang chờ xác nhận." : "Chuyển đổi gói cước thành công.");
+    }
+
+    public async Task<PaymentHistoryDto> GetPaymentDetailAsync(Guid paymentId, CancellationToken cancellationToken)
+    {
+        var current = _currentUserService.GetRequired();
+        var payment = await _dbContext.Payments
+            .Include(x => x.Subscription)
+                .ThenInclude(x => x.Plan)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == paymentId && x.Subscription.UserId == current.UserId, cancellationToken)
+            ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy giao dịch", StatusCodes.Status404NotFound);
+
+        return new PaymentHistoryDto(
+            payment.Id,
+            payment.Subscription.Plan.Name,
+            payment.Amount,
+            payment.Currency,
+            payment.Status.ToString(),
+            payment.CreatedAtUtc,
+            payment.PaidAtUtc);
     }
 }

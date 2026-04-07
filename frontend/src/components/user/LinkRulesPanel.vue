@@ -16,6 +16,7 @@ const loading = ref(true)
 const addLoading = ref(false)
 const error = ref('')
 const showAdd = ref(false)
+const editingRuleId = ref<string | null>(null)
 
 const ruleTypes = [
   { value: 'GeoTargeting', label: '🌍 Quốc gia (Geo)' },
@@ -61,8 +62,13 @@ async function addRule() {
   addLoading.value = true
   error.value = ''
   try {
-    await LinkRuleService.create(authStore.accessToken, props.linkId, form.value)
+    if (editingRuleId.value) {
+      await LinkRuleService.update(authStore.accessToken, props.linkId, editingRuleId.value, form.value)
+    } else {
+      await LinkRuleService.create(authStore.accessToken, props.linkId, form.value)
+    }
     showAdd.value = false
+    editingRuleId.value = null
     form.value = { ruleType: 'GeoTargeting', ruleValue: '', targetUrl: '', priority: 1, isActive: true }
     await load()
   } catch (err) {
@@ -80,6 +86,18 @@ async function deleteRule(ruleId: string) {
   } catch (err) {
     alert(err instanceof Error ? err.message : 'Không thể xóa rule.')
   }
+}
+
+function editRule(rule: any) {
+  editingRuleId.value = rule.id
+  form.value = {
+    ruleType: rule.ruleType,
+    ruleValue: rule.ruleValue,
+    targetUrl: rule.targetUrl,
+    priority: rule.priority,
+    isActive: rule.isActive,
+  }
+  showAdd.value = true
 }
 
 onMounted(load)
@@ -132,8 +150,10 @@ onMounted(load)
         </div>
         <p v-if="error" class="text-danger text-xs">{{ error }}</p>
         <div class="flex gap-2">
-          <WxButton size="sm" variant="primary" :loading="addLoading" @click="addRule">Lưu Rule</WxButton>
-          <WxButton size="sm" variant="ghost" @click="showAdd = false">Hủy</WxButton>
+          <WxButton size="sm" variant="primary" :loading="addLoading" @click="addRule">
+            {{ editingRuleId ? 'Cập nhật Rule' : 'Lưu Rule' }}
+          </WxButton>
+          <WxButton size="sm" variant="ghost" @click="showAdd = false; editingRuleId = null">Hủy</WxButton>
         </div>
       </div>
     </div>
@@ -154,6 +174,13 @@ onMounted(load)
           <p class="text-sm text-on-surface font-medium truncate">{{ rule.ruleValue }}</p>
           <p class="text-xs text-on-surface-variant truncate">→ {{ rule.targetUrl }}</p>
         </div>
+        <button
+          v-if="isPro"
+          @click="editRule(rule)"
+          class="text-primary hover:bg-primary/10 rounded-lg p-1.5 transition-colors shrink-0"
+        >
+          Sửa
+        </button>
         <button
           v-if="isPro"
           @click="deleteRule(rule.id)"

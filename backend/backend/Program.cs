@@ -211,6 +211,7 @@ builder.Services.AddScoped<BillingService>();
 builder.Services.AddScoped<DomainService>();
 builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<ApplicationDbSeeder>();
+builder.Services.AddScoped<ApplicationRuntimeSeeder>();
 
 builder.Services.AddHostedService<ClickAnalyticsWorker>();
 
@@ -261,7 +262,7 @@ using (var scope = app.Services.CreateScope())
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     try
     {
-        var seeder = scope.ServiceProvider.GetRequiredService<ApplicationDbSeeder>();
+        var seeder = scope.ServiceProvider.GetRequiredService<ApplicationRuntimeSeeder>();
         await seeder.SeedAsync();
         logger.LogInformation("Database seeding completed successfully.");
     }

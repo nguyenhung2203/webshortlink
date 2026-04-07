@@ -9,7 +9,7 @@ namespace WebShortlink.Backend.Application.Links;
 
 public sealed class LinkRuleService
 {
-    private const string AdvancedTargetingFeatureKey = "targeting.advanced";
+    private const string AdvancedTargetingFeatureKey = "rules.targeting_advanced";
 
     private readonly ApplicationDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
@@ -44,25 +44,7 @@ public sealed class LinkRuleService
         await _planCapabilityService.EnsureFeatureEnabledAsync(current.UserId, AdvancedTargetingFeatureKey, cancellationToken);
         await EnsureOwnedLinkAsync(current.UserId, linkId, cancellationToken);
 
-        if (!Enum.TryParse<LinkRuleType>(request.RuleType, true, out var ruleType))
-        {
-            throw new AppException(ErrorCodes.InvalidRule, "Rule type khong hop le.");
-        }
-
-        if (!Uri.TryCreate(request.TargetUrl, UriKind.Absolute, out _))
-        {
-            throw new AppException(ErrorCodes.ValidationFailed, "Target URL khong hop le.");
-        }
-
-        if (request.Priority < 0)
-        {
-            throw new AppException(ErrorCodes.ValidationFailed, "Priority khong hop le.");
-        }
-
-        if (ruleType != LinkRuleType.Rotation && string.IsNullOrWhiteSpace(request.RuleValue))
-        {
-            throw new AppException(ErrorCodes.ValidationFailed, "Rule value khong duoc de trong.");
-        }
+        var ruleType = ValidateRuleInput(request.RuleType, request.RuleValue, request.TargetUrl, request.Priority);
 
         var rule = new LinkRule
         {
@@ -78,6 +60,30 @@ public sealed class LinkRuleService
         };
 
         _dbContext.LinkRules.Add(rule);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return new LinkRuleItemDto(rule.Id, rule.RuleType.ToString(), rule.RuleValue, rule.TargetUrl, rule.Priority, rule.IsActive, rule.CreatedAtUtc);
+    }
+
+    public async Task<LinkRuleItemDto> UpdateRuleAsync(Guid linkId, Guid ruleId, UpdateLinkRuleRequestDto request, CancellationToken cancellationToken)
+    {
+        var current = _currentUserService.GetRequired();
+        await _planCapabilityService.EnsureFeatureEnabledAsync(current.UserId, AdvancedTargetingFeatureKey, cancellationToken);
+        await EnsureOwnedLinkAsync(current.UserId, linkId, cancellationToken);
+
+        var rule = await _dbContext.LinkRules.FirstOrDefaultAsync(x => x.Id == ruleId && x.LinkId == linkId, cancellationToken)
+            ?? throw new AppException(ErrorCodes.NotFound, "Khong tim thay rule.", StatusCodes.Status404NotFound);
+
+        var ruleType = ValidateRuleInput(request.RuleType, request.RuleValue, request.TargetUrl, request.Priority);
+
+        rule.RuleType = ruleType;
+        rule.RuleValue = request.RuleValue?.Trim() ?? string.Empty;
+        rule.TargetUrl = request.TargetUrl.Trim();
+        rule.Priority = request.Priority;
+        rule.IsActive = request.IsActive;
+        rule.UpdatedAtUtc = DateTime.UtcNow;
+        rule.UpdatedByUserId = current.UserId.ToString();
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return new LinkRuleItemDto(rule.Id, rule.RuleType.ToString(), rule.RuleValue, rule.TargetUrl, rule.Priority, rule.IsActive, rule.CreatedAtUtc);
@@ -104,5 +110,30 @@ public sealed class LinkRuleService
         {
             throw new AppException(ErrorCodes.NotFound, "Khong tim thay link.", StatusCodes.Status404NotFound);
         }
+    }
+
+    private static LinkRuleType ValidateRuleInput(string ruleTypeText, string? ruleValue, string targetUrl, int priority)
+    {
+        if (!Enum.TryParse<LinkRuleType>(ruleTypeText, true, out var ruleType))
+        {
+            throw new AppException(ErrorCodes.InvalidRule, "Rule type khong hop le.");
+        }
+
+        if (!Uri.TryCreate(targetUrl, UriKind.Absolute, out _))
+        {
+            throw new AppException(ErrorCodes.ValidationFailed, "Target URL khong hop le.");
+        }
+
+        if (priority < 0)
+        {
+            throw new AppException(ErrorCodes.ValidationFailed, "Priority khong hop le.");
+        }
+
+        if (ruleType != LinkRuleType.Rotation && string.IsNullOrWhiteSpace(ruleValue))
+        {
+            throw new AppException(ErrorCodes.ValidationFailed, "Rule value khong duoc de trong.");
+        }
+
+        return ruleType;
     }
 }

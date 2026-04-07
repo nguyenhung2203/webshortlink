@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import { UserService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
 import { CreditCard, CheckCircle, XCircle, Clock } from 'lucide-vue-next'
@@ -11,15 +12,19 @@ const loading = ref(true)
 const error = ref('')
 
 function statusIcon(status: string) {
-  if (status === 'Succeeded' || status === 'Completed') return CheckCircle
+  if (status === 'Paid' || status === 'Succeeded' || status === 'Completed') return CheckCircle
   if (status === 'Failed') return XCircle
   return Clock
 }
 
 function statusClass(status: string) {
-  if (status === 'Succeeded' || status === 'Completed') return 'text-success'
+  if (status === 'Paid' || status === 'Succeeded' || status === 'Completed') return 'text-success'
   if (status === 'Failed') return 'text-danger'
   return 'text-warning'
+}
+
+function isPending(status: string) {
+  return status === 'Pending'
 }
 
 function formatAmount(amount: number, currency: string) {
@@ -96,6 +101,13 @@ onMounted(load)
           <p v-if="payment.invoiceUrl" class="text-xs">
             <a :href="payment.invoiceUrl" target="_blank" class="text-primary hover:underline">Xem hóa đơn</a>
           </p>
+          <RouterLink
+            v-if="isPending(payment.status)"
+            :to="'/app/checkout/' + payment.id"
+            class="mt-1 inline-block text-xs font-medium text-warning hover:underline"
+          >
+            Tiếp tục thanh toán →
+          </RouterLink>
         </div>
       </div>
     </div>
