@@ -93,9 +93,12 @@ onMounted(load)
           <p class="text-sm font-medium text-on-surface-variant uppercase tracking-wider mb-1">Trạng thái</p>
           <p class="text-lg font-bold text-success">{{ subscription.status === 'Active' ? 'Đang hoạt động' : subscription.status }}</p>
         </div>
-        <div>
-          <p class="text-sm font-medium text-on-surface-variant uppercase tracking-wider mb-1">Hạn sử dụng</p>
-          <p class="text-lg font-bold text-gray-800">{{ new Date(subscription.endAtUtc).toLocaleDateString('vi-VN') }}</p>
+        <div class="flex items-end">
+          <div class="sm:ml-auto">
+            <RouterLink to="/app/payments" class="text-sm text-primary font-semibold hover:underline">
+              Xem lịch sử thanh toán →
+            </RouterLink>
+          </div>
         </div>
       </div>
     </WxCard>

@@ -19,6 +19,7 @@ public sealed class AuthService
     private readonly ITurnstileService _turnstileService;
     private readonly IAuditLogService _auditLogService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IEmailSenderService _emailSenderService;
     private readonly JwtOptions _jwtOptions;
 
     public AuthService(
@@ -29,6 +30,7 @@ public sealed class AuthService
         ITurnstileService turnstileService,
         IAuditLogService auditLogService,
         ICurrentUserService currentUserService,
+        IEmailSenderService emailSenderService,
         IOptions<JwtOptions> jwtOptions)
     {
         _dbContext = dbContext;
@@ -38,6 +40,7 @@ public sealed class AuthService
         _turnstileService = turnstileService;
         _auditLogService = auditLogService;
         _currentUserService = currentUserService;
+        _emailSenderService = emailSenderService;
         _jwtOptions = jwtOptions.Value;
     }
 
@@ -59,7 +62,7 @@ public sealed class AuthService
             Email = request.Email.Trim().ToLowerInvariant(),
             FullName = request.FullName.Trim(),
             AccountStatus = UserAccountStatus.Active,
-            EmailConfirmed = true,
+            EmailConfirmed = false,
             CreatedAtUtc = DateTime.UtcNow,
             CurrentPlanId = 1
         };
@@ -85,7 +88,13 @@ public sealed class AuthService
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        var verificationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        var verificationToken = await _userManager.GenerateUserTokenAsync(user, TokenOptions.DefaultEmailProvider, "ConfirmEmail");
+        await _emailSenderService.SendEmailAsync(
+            user.Email,
+            "Xác thực Tài khoản WeShort",
+            $"Mã bí mật (OTP) để xác thực email của bạn là:\n\n{verificationToken}\n\nVui lòng copy và dán vào Hệ thống để kích hoạt quyền truy cập.",
+            cancellationToken);
+
         await _auditLogService.WriteAsync(
             AuditActorType.Public,
             "PUB-API-001:Register",
@@ -93,7 +102,7 @@ public sealed class AuthService
             user.Id.ToString(),
             null,
             null,
-            new { verificationToken, request.Email },
+            new { verificationToken = "***HIDE***", request.Email },
             cancellationToken);
 
         return new MessageResponseDto("Đăng ký thành công. Vui lòng xác thực email trước khi đăng nhập.", "EMAIL_VERIFICATION_REQUIRED");
@@ -114,11 +123,10 @@ public sealed class AuthService
             throw new AppException(ErrorCodes.Forbidden, "Tài khoản đã bị khóa.", StatusCodes.Status403Forbidden);
         }
 
-        // Bypass yều cầu xác thực email cho môi trường Dev:
-        // if (!user.EmailConfirmed)
-        // {
-        //     throw new AppException(ErrorCodes.Forbidden, "Tài khoản chưa xác thực email.", StatusCodes.Status403Forbidden);
-        // }
+        if (!user.EmailConfirmed)
+        {
+            throw new AppException(ErrorCodes.Forbidden, "Tài khoản chưa xác thực email.", StatusCodes.Status403Forbidden);
+        }
 
         var signInResult = await _signInManager.CheckPasswordSignInAsync(user, request.Password, true);
         if (!signInResult.Succeeded)
@@ -174,7 +182,13 @@ public sealed class AuthService
             return new MessageResponseDto("Nếu email tồn tại, hệ thống sẽ gửi hướng dẫn đặt lại mật khẩu.");
         }
 
-        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var token = await _userManager.GenerateUserTokenAsync(user, TokenOptions.DefaultEmailProvider, "ResetPassword");
+        await _emailSenderService.SendEmailAsync(
+            user.Email,
+            "Khôi phục Mật khẩu - WeShort",
+            $"Hệ thống đã nhận được yêu cầu khôi phục mật khẩu. Mã bảo mật (OTP) của bạn là:\n\n{token}\n\nTuyệt đối không chia sẻ mã này cho bất kỳ ai.",
+            cancellationToken);
+
         await _auditLogService.WriteAsync(
             AuditActorType.Public,
             "PUB-API-005:ForgotPassword",
@@ -182,7 +196,7 @@ public sealed class AuthService
             user.Id.ToString(),
             null,
             null,
-            new { resetToken = token, request.Email },
+            new { resetToken = "***HIDE***", request.Email },
             cancellationToken);
 
         return new MessageResponseDto("Nếu email tồn tại, hệ thống sẽ gửi hướng dẫn đặt lại mật khẩu.");
@@ -198,7 +212,14 @@ public sealed class AuthService
         var user = await _userManager.FindByEmailAsync(request.Email.Trim().ToLowerInvariant())
             ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy tài khoản.", StatusCodes.Status404NotFound);
 
-        var result = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
+        var isValid = await _userManager.VerifyUserTokenAsync(user, TokenOptions.DefaultEmailProvider, "ResetPassword", request.Token);
+        if (!isValid)
+        {
+            throw new AppException(ErrorCodes.ValidationFailed, "Mã OTP không hợp lệ hoặc đã hết hạn.");
+        }
+
+        var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var result = await _userManager.ResetPasswordAsync(user, resetToken, request.NewPassword);
         if (!result.Succeeded)
         {
             throw new AppException(ErrorCodes.ValidationFailed, string.Join("; ", result.Errors.Select(x => x.Description)));
@@ -217,7 +238,14 @@ public sealed class AuthService
         var user = await _userManager.FindByIdAsync(userId.ToString())
             ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy tài khoản.", StatusCodes.Status404NotFound);
 
-        var result = await _userManager.ConfirmEmailAsync(user, request.Token);
+        var isValid = await _userManager.VerifyUserTokenAsync(user, TokenOptions.DefaultEmailProvider, "ConfirmEmail", request.Token);
+        if (!isValid)
+        {
+            throw new AppException(ErrorCodes.ValidationFailed, "Mã OTP xác thực không hợp lệ hoặc đã hết hạn.");
+        }
+
+        var confirmToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        var result = await _userManager.ConfirmEmailAsync(user, confirmToken);
         if (!result.Succeeded)
         {
             throw new AppException(ErrorCodes.ValidationFailed, "Token xác thực email không hợp lệ.");

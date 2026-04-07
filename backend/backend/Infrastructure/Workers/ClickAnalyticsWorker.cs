@@ -134,10 +134,17 @@ public sealed class ClickAnalyticsWorker : BackgroundService
                         link.TotalClicks),
                     stoppingToken);
             }
+            catch (OperationCanceledException)
+            {
+                // Host is shutting down, ignore
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Analytics worker gặp lỗi khi xử lý click event.");
-                await Task.Delay(1000, stoppingToken);
+                if (!stoppingToken.IsCancellationRequested)
+                {
+                    await Task.Delay(1000, stoppingToken);
+                }
             }
         }
     }

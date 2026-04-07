@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { LinkService } from '@/api/services'
+import { LinkService, UserService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
 import type { LinkDetail } from '@/types/api'
 import WxBadge from '@/components/ui/WxBadge.vue'
@@ -9,6 +9,7 @@ import WxButton from '@/components/ui/WxButton.vue'
 import WxCard from '@/components/ui/WxCard.vue'
 import WxEmptyState from '@/components/ui/WxEmptyState.vue'
 import WxPageHeader from '@/components/ui/WxPageHeader.vue'
+import LinkRulesPanel from '@/components/user/LinkRulesPanel.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -19,15 +20,22 @@ const actionLoading = ref(false)
 const error = ref('')
 const message = ref('')
 const detail = ref<LinkDetail | null>(null)
+const currentPlanId = ref(1)
 
 const linkId = computed(() => String(route.params.id ?? ''))
+const isPro = computed(() => currentPlanId.value >= 2)
 
 async function load() {
   loading.value = true
   error.value = ''
   try {
     if (!authStore.accessToken) throw new Error('Chưa xác thực.')
-    detail.value = await LinkService.detail(authStore.accessToken, linkId.value)
+    const [linkData, subscription] = await Promise.all([
+      LinkService.detail(authStore.accessToken, linkId.value),
+      UserService.getSubscription(authStore.accessToken),
+    ])
+    detail.value = linkData
+    currentPlanId.value = (subscription as any)?.planId ?? 1
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải chi tiết link.'
   } finally {
@@ -77,6 +85,19 @@ const linkHost = computed(() => {
   }
 })
 
+const exportLoading = ref(false)
+async function exportCsv() {
+  if (!authStore.accessToken || !detail.value) return
+  exportLoading.value = true
+  try {
+    await UserService.exportLinkAnalyticsCsv(authStore.accessToken, detail.value.id)
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Không thể xuất dữ liệu.'
+  } finally {
+    exportLoading.value = false
+  }
+}
+
 onMounted(load)
 </script>
 
@@ -87,7 +108,10 @@ onMounted(load)
       description="Xem cấu hình, giới hạn và quyền sử dụng của shortlink."
     >
       <template #actions>
-        <WxButton variant="secondary" @click="router.push('/app/links')">Quay lại danh sách</WxButton>
+        <WxButton v-if="isPro" variant="secondary" :disabled="exportLoading" @click="exportCsv">
+          {{ exportLoading ? 'Đang xuất...' : 'Export CSV' }}
+        </WxButton>
+        <WxButton variant="secondary" @click="router.push('/app/links')">Quậy lại danh sách</WxButton>
       </template>
     </WxPageHeader>
 
@@ -195,6 +219,11 @@ onMounted(load)
           </div>
         </WxCard>
       </div>
+        <!-- Link Rules -->
+        <LinkRulesPanel
+          :link-id="detail.id"
+          :is-pro="isPro"
+        />
     </template>
   </div>
 </template>

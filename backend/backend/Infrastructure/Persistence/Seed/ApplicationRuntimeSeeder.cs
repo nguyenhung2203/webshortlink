@@ -90,27 +90,66 @@ public sealed class ApplicationRuntimeSeeder
 
     private async Task SeedPlansAsync(CancellationToken cancellationToken)
     {
-        if (await _dbContext.Plans.AnyAsync(cancellationToken))
-        {
-            return;
-        }
-
         var now = DateTime.UtcNow;
-        _dbContext.Plans.AddRange(
+
+        var plans = new[]
+        {
             new Plan { Id = 1, Code = "regular", Name = "Thường", MonthlyPrice = 0, IsActive = true, CreatedAtUtc = now },
             new Plan { Id = 2, Code = "pro", Name = "Pro", MonthlyPrice = 199000, IsActive = true, CreatedAtUtc = now },
-            new Plan { Id = 3, Code = "plus", Name = "Plus", MonthlyPrice = 499000, IsActive = true, CreatedAtUtc = now });
+            new Plan { Id = 3, Code = "plus", Name = "Plus", MonthlyPrice = 499000, IsActive = true, CreatedAtUtc = now }
+        };
 
-        _dbContext.PlanFeatures.AddRange(
-            new PlanFeature { Id = 1, PlanId = 1, FeatureKey = "links.max_count", LimitValue = 100, IsEnabled = true, CreatedAtUtc = now },
-            new PlanFeature { Id = 2, PlanId = 2, FeatureKey = "links.max_count", LimitValue = 5000, IsEnabled = true, CreatedAtUtc = now },
-            new PlanFeature { Id = 3, PlanId = 3, FeatureKey = "links.max_count", LimitValue = 50000, IsEnabled = true, CreatedAtUtc = now },
-            new PlanFeature { Id = 4, PlanId = 1, FeatureKey = "domains.custom", IsEnabled = false, CreatedAtUtc = now },
-            new PlanFeature { Id = 5, PlanId = 2, FeatureKey = "domains.custom", IsEnabled = true, LimitValue = 3, CreatedAtUtc = now },
-            new PlanFeature { Id = 6, PlanId = 3, FeatureKey = "domains.custom", IsEnabled = true, LimitValue = 20, CreatedAtUtc = now },
-            new PlanFeature { Id = 7, PlanId = 1, FeatureKey = "analytics.advanced", IsEnabled = false, CreatedAtUtc = now },
-            new PlanFeature { Id = 8, PlanId = 2, FeatureKey = "analytics.advanced", IsEnabled = true, CreatedAtUtc = now },
-            new PlanFeature { Id = 9, PlanId = 3, FeatureKey = "analytics.advanced", IsEnabled = true, CreatedAtUtc = now });
+        foreach (var plan in plans)
+        {
+            var p = await _dbContext.Plans.FirstOrDefaultAsync(x => x.Id == plan.Id, cancellationToken);
+            if (p == null) _dbContext.Plans.Add(plan);
+        }
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var features = new[]
+        {
+            new PlanFeature { PlanId = 1, FeatureKey = "links.max_count", LimitValue = 100, IsEnabled = true, CreatedAtUtc = now },
+            new PlanFeature { PlanId = 2, FeatureKey = "links.max_count", LimitValue = 5000, IsEnabled = true, CreatedAtUtc = now },
+            new PlanFeature { PlanId = 3, FeatureKey = "links.max_count", LimitValue = 50000, IsEnabled = true, CreatedAtUtc = now },
+
+            new PlanFeature { PlanId = 1, FeatureKey = "domains.custom", IsEnabled = false, CreatedAtUtc = now },
+            new PlanFeature { PlanId = 2, FeatureKey = "domains.custom", IsEnabled = true, LimitValue = 3, CreatedAtUtc = now },
+            new PlanFeature { PlanId = 3, FeatureKey = "domains.custom", IsEnabled = true, LimitValue = 20, CreatedAtUtc = now },
+
+            new PlanFeature { PlanId = 1, FeatureKey = "analytics.advanced", IsEnabled = false, CreatedAtUtc = now },
+            new PlanFeature { PlanId = 2, FeatureKey = "analytics.advanced", IsEnabled = true, CreatedAtUtc = now },
+            new PlanFeature { PlanId = 3, FeatureKey = "analytics.advanced", IsEnabled = true, CreatedAtUtc = now },
+
+            new PlanFeature { PlanId = 1, FeatureKey = "links.password_protection", IsEnabled = false, CreatedAtUtc = now },
+            new PlanFeature { PlanId = 2, FeatureKey = "links.password_protection", IsEnabled = true, CreatedAtUtc = now },
+            new PlanFeature { PlanId = 3, FeatureKey = "links.password_protection", IsEnabled = true, CreatedAtUtc = now },
+
+            new PlanFeature { PlanId = 1, FeatureKey = "links.expiration", IsEnabled = false, CreatedAtUtc = now },
+            new PlanFeature { PlanId = 2, FeatureKey = "links.expiration", IsEnabled = true, CreatedAtUtc = now },
+            new PlanFeature { PlanId = 3, FeatureKey = "links.expiration", IsEnabled = true, CreatedAtUtc = now },
+
+            new PlanFeature { PlanId = 1, FeatureKey = "links.click_limit", IsEnabled = false, CreatedAtUtc = now },
+            new PlanFeature { PlanId = 2, FeatureKey = "links.click_limit", IsEnabled = true, CreatedAtUtc = now },
+            new PlanFeature { PlanId = 3, FeatureKey = "links.click_limit", IsEnabled = true, CreatedAtUtc = now },
+
+            new PlanFeature { PlanId = 1, FeatureKey = "rules.targeting_advanced", IsEnabled = false, CreatedAtUtc = now },
+            new PlanFeature { PlanId = 2, FeatureKey = "rules.targeting_advanced", IsEnabled = true, CreatedAtUtc = now },
+            new PlanFeature { PlanId = 3, FeatureKey = "rules.targeting_advanced", IsEnabled = true, CreatedAtUtc = now }
+        };
+
+        foreach (var f in features)
+        {
+            var existing = await _dbContext.PlanFeatures.FirstOrDefaultAsync(x => x.PlanId == f.PlanId && x.FeatureKey == f.FeatureKey, cancellationToken);
+            if (existing is null)
+            {
+                _dbContext.PlanFeatures.Add(f);
+            }
+            else
+            {
+                existing.IsEnabled = f.IsEnabled;
+                existing.LimitValue = f.LimitValue;
+            }
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
     }

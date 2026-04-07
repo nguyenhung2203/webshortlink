@@ -71,7 +71,18 @@ public sealed class LinkService
 
         if (!string.IsNullOrWhiteSpace(request.Password))
         {
+            await _planCapabilityService.EnsureFeatureEnabledAsync(current.UserId, "links.password_protection", cancellationToken);
             link.PasswordHash = _passwordHasher.HashPassword(link, request.Password);
+        }
+        
+        if (request.ExpiresAtUtc.HasValue)
+        {
+            await _planCapabilityService.EnsureFeatureEnabledAsync(current.UserId, "links.expiration", cancellationToken);
+        }
+
+        if (request.ClickLimit.HasValue)
+        {
+            await _planCapabilityService.EnsureFeatureEnabledAsync(current.UserId, "links.click_limit", cancellationToken);
         }
 
         _dbContext.Links.Add(link);
@@ -143,11 +154,30 @@ public sealed class LinkService
         link.OriginalUrl = request.OriginalUrl.Trim();
         link.Description = request.Description?.Trim();
         link.Tag = request.Tag?.Trim();
+        if (request.ExpiresAtUtc.HasValue && request.ExpiresAtUtc != link.ExpiresAtUtc)
+        {
+            await _planCapabilityService.EnsureFeatureEnabledAsync(current.UserId, "links.expiration", cancellationToken);
+        }
         link.ExpiresAtUtc = request.ExpiresAtUtc;
+
+        if (request.ClickLimit.HasValue && request.ClickLimit != link.ClickLimit)
+        {
+            await _planCapabilityService.EnsureFeatureEnabledAsync(current.UserId, "links.click_limit", cancellationToken);
+        }
         link.ClickLimit = request.ClickLimit;
+
         link.UpdatedAtUtc = DateTime.UtcNow;
         link.UpdatedByUserId = current.UserId.ToString();
-        link.PasswordHash = string.IsNullOrWhiteSpace(request.Password) ? null : _passwordHasher.HashPassword(link, request.Password);
+
+        if (!string.IsNullOrWhiteSpace(request.Password))
+        {
+            await _planCapabilityService.EnsureFeatureEnabledAsync(current.UserId, "links.password_protection", cancellationToken);
+            link.PasswordHash = _passwordHasher.HashPassword(link, request.Password);
+        }
+        else if (request.Password == "")
+        {
+            link.PasswordHash = null;
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         if (!string.IsNullOrWhiteSpace(previousHost))

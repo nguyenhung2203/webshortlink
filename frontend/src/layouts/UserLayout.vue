@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
-import { Home, Link as LinkIcon, BarChart2, CreditCard, User, LogOut } from 'lucide-vue-next'
+import { Home, Link as LinkIcon, BarChart2, CreditCard, User, LogOut, Globe } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
@@ -16,6 +16,7 @@ const navItems = [
   { to: '/app/dashboard', label: 'Tổng quan', shortLabel: 'Tổng quan', icon: Home },
   { to: '/app/links', label: 'Quản lý Link', shortLabel: 'Links', icon: LinkIcon },
   { to: '/app/analytics', label: 'Phân tích', shortLabel: 'Phân tích', icon: BarChart2 },
+  { to: '/app/domains', label: 'Tên miền', shortLabel: 'Domain', icon: Globe },
   { to: '/app/billing', label: 'Gói dịch vụ', shortLabel: 'Dịch vụ', icon: CreditCard },
   { to: '/app/profile', label: 'Tài khoản', shortLabel: 'Tài khoản', icon: User },
 ] as const
@@ -36,6 +37,10 @@ const title = computed(() => {
       return 'Phân tích'
     case 'user-billing':
       return 'Gói dịch vụ'
+    case 'user-payments':
+      return 'Lịch sử thanh toán'
+    case 'user-domains':
+      return 'Tên miền riêng'
     case 'user-profile':
       return 'Tài khoản'
     default:

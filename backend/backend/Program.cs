@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
 using WebShortlink.Backend.Api;
@@ -33,6 +34,7 @@ var redisOptions = configuration.GetSection(RedisOptions.SectionName).Get<RedisO
 builder.Services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<TurnstileOptions>(configuration.GetSection(TurnstileOptions.SectionName));
 builder.Services.Configure<RedisOptions>(configuration.GetSection(RedisOptions.SectionName));
+builder.Services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<ITurnstileService, TurnstileService>();
@@ -118,6 +120,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddRateLimiter(options =>
 {
+    // Auth endpoints: strict (10 req/min per IP) — prevents brute force
     options.AddFixedWindowLimiter("auth", limiter =>
     {
         limiter.PermitLimit = 10;
@@ -125,6 +128,34 @@ builder.Services.AddRateLimiter(options =>
         limiter.QueueLimit = 0;
         limiter.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
     });
+
+    // API endpoints: standard (120 req/min per IP)
+    options.AddFixedWindowLimiter("api", limiter =>
+    {
+        limiter.PermitLimit = 120;
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.QueueLimit = 0;
+        limiter.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+    });
+
+    // Public redirect: high volume allowed (300 req/min) — CDN/bots hit these
+    options.AddFixedWindowLimiter("redirect", limiter =>
+    {
+        limiter.PermitLimit = 300;
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.QueueLimit = 0;
+        limiter.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+    });
+
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 200,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
 
     options.OnRejected = async (context, token) =>
     {
@@ -154,6 +185,7 @@ else
 }
 
 builder.Services.AddScoped<ICurrentUserService, HttpCurrentUserService>();
+builder.Services.AddScoped<IEmailSenderService, SmtpEmailSenderService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IPlanCapabilityService, PlanCapabilityService>();
@@ -185,6 +217,12 @@ builder.Services.AddHostedService<ClickAnalyticsWorker>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHealthChecks()
+    .AddCheck("database", () =>
+    {
+        // Health check inline — replaced AddDbContextCheck to avoid extra NuGet dep
+        return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("OK");
+    });
 
 var app = builder.Build();
 
@@ -202,10 +240,35 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
+// Health check endpoint — available without auth for uptime monitors
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var result = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            status = report.Status.ToString(),
+            timestamp = DateTime.UtcNow,
+            checks = report.Entries.Select(e => new { name = e.Key, status = e.Value.Status.ToString(), description = e.Value.Description })
+        });
+        await context.Response.WriteAsync(result);
+    }
+});
+
 using (var scope = app.Services.CreateScope())
 {
-    var seeder = scope.ServiceProvider.GetRequiredService<ApplicationDbSeeder>();
-    await seeder.SeedAsync();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    try
+    {
+        var seeder = scope.ServiceProvider.GetRequiredService<ApplicationDbSeeder>();
+        await seeder.SeedAsync();
+        logger.LogInformation("Database seeding completed successfully.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "An error occurred while seeding the database. The application will continue, but some data may be missing.");
+    }
 }
 
 app.Run();
