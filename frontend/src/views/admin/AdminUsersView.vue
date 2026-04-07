@@ -8,6 +8,7 @@ import WxPageHeader from '@/components/ui/WxPageHeader.vue'
 const authStore = useAuthStore()
 const data = ref<AdminUser[]>([])
 const error = ref('')
+const isActionLoading = ref(false)
 
 async function load() {
   try {
@@ -17,6 +18,23 @@ async function load() {
     data.value = await AdminService.getUsers(authStore.accessToken)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải danh sách khách hàng.'
+  }
+}
+
+async function toggleUserStatus(user: AdminUser) {
+  if (isActionLoading.value || !authStore.accessToken) return
+  
+  const action = user.status === 'Active' ? 'lock' : 'unlock'
+  if (!confirm(`Bạn có chắc chắn muốn ${action === 'lock' ? 'khóa' : 'mở khóa'} tài khoản ${user.email}?`)) return
+  
+  try {
+    isActionLoading.value = true
+    await AdminService.toggleUserLock(authStore.accessToken, user.id, action)
+    await load()
+  } catch (err) {
+    alert(err instanceof Error ? err.message : 'Lỗi khi thay đổi trạng thái user.')
+  } finally {
+    isActionLoading.value = false
   }
 }
 
@@ -34,7 +52,10 @@ onMounted(load)
       {{ error }}
     </div>
 
-    <div v-else class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+    <div v-else class="bg-white rounded-xl border border-gray-200 overflow-x-auto relative">
+      <div v-if="isActionLoading" class="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">
+        <span class="text-gray-500 font-medium">Đang xử lý...</span>
+      </div>
       <table class="w-full text-left text-sm whitespace-nowrap">
         <thead class="bg-gray-50 text-gray-600 border-b border-gray-200">
           <tr>
@@ -44,6 +65,7 @@ onMounted(load)
             <th class="p-4 font-medium">Trạng thái</th>
             <th class="p-4 font-medium">Lượng links</th>
             <th class="p-4 font-medium">Ngày tạo</th>
+            <th class="p-4 font-medium">Thao tác</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 text-gray-700">
@@ -58,9 +80,19 @@ onMounted(load)
             </td>
             <td class="p-4">{{ user.totalLinks }}</td>
             <td class="p-4">{{ new Date(user.createdAtUtc).toLocaleDateString('vi-VN') }}</td>
+            <td class="p-4">
+              <button 
+                @click="toggleUserStatus(user)"
+                :disabled="isActionLoading"
+                :class="user.status === 'Active' ? 'text-red-600 hover:text-red-800' : 'text-blue-600 hover:text-blue-800'"
+                class="font-semibold transition-colors focus:outline-none"
+              >
+                {{ user.status === 'Active' ? 'Khóa' : 'Mở khóa' }}
+              </button>
+            </td>
           </tr>
           <tr v-if="data.length === 0">
-            <td colspan="6" class="p-8 text-center text-gray-500">Chưa có người dùng nào.</td>
+            <td colspan="7" class="p-8 text-center text-gray-500">Chưa có người dùng nào.</td>
           </tr>
         </tbody>
       </table>

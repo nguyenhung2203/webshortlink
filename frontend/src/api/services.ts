@@ -16,6 +16,7 @@ import type {
   Subscription,
   UpgradeSubscriptionResponse,
   UserProfileProfile,
+  AdminAuditLog,
 } from '@/types/api'
 
 // ─── Auth ──────────────────────────────────────────────────────────────────────
@@ -117,4 +118,6 @@ export const AdminService = {
       method: 'PATCH',
       token,
     }),
+  getAuditLogs: (token: string) =>
+    apiRequest<AdminAuditLog[]>('/api/admin/audit-logs', { token }),
 } as const

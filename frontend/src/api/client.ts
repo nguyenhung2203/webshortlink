@@ -19,8 +19,12 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Đã có lỗi xảy ra.' }))
-    throw new Error(error.message ?? 'Đã có lỗi xảy ra.')
+    if (response.status === 401) {
+      localStorage.removeItem('webshortlink.auth')
+      throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng F5 tải lại trang để đăng nhập lại.')
+    }
+    const errorData = await response.json().catch(() => ({ message: 'Đã có lỗi xảy ra.' }))
+    throw new Error(errorData.message || errorData.title || 'Đã có lỗi xảy ra.')
   }
 
   return response.json() as Promise<T>

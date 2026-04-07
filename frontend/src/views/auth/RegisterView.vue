@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import WxButton from '@/components/ui/WxButton.vue'
 import WxInput from '@/components/ui/WxInput.vue'
@@ -15,6 +15,7 @@ const successMessage = ref('')
 const loading = ref(false)
 
 const authStore = useAuthStore()
+const router = useRouter()
 
 async function submit() {
   error.value = ''
@@ -41,7 +42,10 @@ async function submit() {
 
   try {
     const response = await authStore.register(fullName.value, email.value, password.value, confirmPassword.value)
-    successMessage.value = response.message || 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.'
+    successMessage.value = 'Đăng ký thành công! Đang chuyển hướng sang trang Đăng nhập...'
+    setTimeout(() => {
+      router.push('/auth/login')
+    }, 3000)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể đăng ký.'
   } finally {

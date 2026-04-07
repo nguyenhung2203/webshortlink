@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { LayoutDashboard, Users, Link as LinkIcon, LogOut } from 'lucide-vue-next'
+import { LayoutDashboard, Users, Link as LinkIcon, LogOut, ClipboardList } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -12,6 +12,7 @@ const navItems = [
   { to: '/admin', label: 'Tổng quan', shortLabel: 'Tổng quan', icon: LayoutDashboard },
   { to: '/admin/users', label: 'Khách hàng', shortLabel: 'Khách hàng', icon: Users },
   { to: '/admin/links', label: 'Quản lý Link', shortLabel: 'Links', icon: LinkIcon },
+  { to: '/admin/audit', label: 'Nhật ký (Audit)', shortLabel: 'Nhật ký', icon: ClipboardList },
 ]
 
 const title = computed(() => route.name?.toString().replaceAll('-', ' ') ?? 'Admin')

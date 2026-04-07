@@ -213,3 +213,12 @@ export interface AdminLink {
   highestRiskScore: number | null
   createdAtUtc: string
 }
+
+export interface AdminAuditLog {
+  id: string
+  action: string
+  resourceType: string | null
+  resourceId: string | null
+  actorType: string
+  createdAtUtc: string
+}

@@ -8,6 +8,7 @@ import WxPageHeader from '@/components/ui/WxPageHeader.vue'
 const authStore = useAuthStore()
 const data = ref<AdminLink[]>([])
 const error = ref('')
+const isActionLoading = ref(false)
 
 async function load() {
   try {
@@ -17,6 +18,23 @@ async function load() {
     data.value = await AdminService.getLinks(authStore.accessToken)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải danh sách links.'
+  }
+}
+
+async function toggleLinkStatus(link: AdminLink) {
+  if (isActionLoading.value || !authStore.accessToken) return
+  
+  const action = link.status === 'Active' ? 'block' : 'unblock'
+  if (!confirm(`Bạn có chắc chắn muốn ${action === 'block' ? 'vô hiệu hóa' : 'kích hoạt lại'} link /${link.slug}?`)) return
+  
+  try {
+    isActionLoading.value = true
+    await AdminService.toggleLinkBlock(authStore.accessToken, link.id, action)
+    await load()
+  } catch (err) {
+    alert(err instanceof Error ? err.message : 'Lỗi khi thay đổi trạng thái link.')
+  } finally {
+    isActionLoading.value = false
   }
 }
 
@@ -34,7 +52,10 @@ onMounted(load)
       {{ error }}
     </div>
 
-    <div v-else class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+    <div v-else class="bg-white rounded-xl border border-gray-200 overflow-x-auto relative">
+      <div v-if="isActionLoading" class="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">
+        <span class="text-gray-500 font-medium">Đang xử lý...</span>
+      </div>
       <table class="w-full text-left text-sm whitespace-nowrap">
         <thead class="bg-gray-50 text-gray-600 border-b border-gray-200">
           <tr>
@@ -45,6 +66,7 @@ onMounted(load)
             <th class="p-4 font-medium">Risk Score</th>
             <th class="p-4 font-medium">Trạng thái</th>
             <th class="p-4 font-medium">Ngày tạo</th>
+            <th class="p-4 font-medium">Thao tác</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 text-gray-700">
@@ -60,9 +82,19 @@ onMounted(load)
               </span>
             </td>
             <td class="p-4">{{ new Date(link.createdAtUtc).toLocaleDateString('vi-VN') }}</td>
+            <td class="p-4">
+              <button 
+                @click="toggleLinkStatus(link)"
+                :disabled="isActionLoading"
+                :class="link.status === 'Active' ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'"
+                class="font-semibold transition-colors focus:outline-none"
+              >
+                {{ link.status === 'Active' ? 'Khóa' : 'Mở khóa' }}
+              </button>
+            </td>
           </tr>
           <tr v-if="data.length === 0">
-            <td colspan="7" class="p-8 text-center text-gray-500">Chưa có dữ liệu link.</td>
+            <td colspan="8" class="p-8 text-center text-gray-500">Chưa có dữ liệu link.</td>
           </tr>
         </tbody>
       </table>
