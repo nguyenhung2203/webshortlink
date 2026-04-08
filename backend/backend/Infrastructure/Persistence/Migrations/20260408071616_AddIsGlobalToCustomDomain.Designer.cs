@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebShortlink.Backend.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using WebShortlink.Backend.Infrastructure.Persistence;
 namespace WebShortlink.Backend.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260408071616_AddIsGlobalToCustomDomain")]
+    partial class AddIsGlobalToCustomDomain
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -402,10 +405,6 @@ namespace WebShortlink.Backend.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<string>("NormalizedSource")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("OperatingSystem")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -429,15 +428,6 @@ namespace WebShortlink.Backend.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("UtmCampaign")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UtmMedium")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UtmSource")
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

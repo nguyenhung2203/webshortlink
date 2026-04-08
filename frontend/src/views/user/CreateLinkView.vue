@@ -22,6 +22,17 @@ const defaultForm = {
 
 const form = ref<any>({ ...defaultForm })
 const domains = ref<any[]>([])
+
+const defaultDomainHost = computed(() => {
+  const def = domains.value.find(d => d.isDefault)
+  return def ? def.host : 'wemake.link'
+})
+
+const selectedDomainHost = computed(() => {
+  if (!form.value.domainId) return defaultDomainHost.value;
+  const d = domains.value.find(x => x.id === form.value.domainId);
+  return d ? d.host : defaultDomainHost.value;
+})
 const copySuccess = ref(false)
 const showAdvanced = ref(false)
 
@@ -37,7 +48,7 @@ const loading = ref(false)
 onMounted(async () => {
   if (canUseCustomDomain.value && authStore.accessToken) {
     try {
-      domains.value = await UserService.getDomains(authStore.accessToken)
+      domains.value = await UserService.getAvailableDomains(authStore.accessToken)
     } catch {
       // ignore
     }
@@ -209,12 +220,12 @@ async function submit() {
                   v-model="form.domainId" 
                   class="ui-form-select"
                 >
-                  <option :value="null">weshort.link (Gốc)</option>
-                  <option v-for="d in domains" :key="d.id" :value="d.id">{{ d.host }}</option>
+                  <option :value="null">{{ defaultDomainHost }} (Mặc định)</option>
+                  <option v-for="d in domains.filter(d => !d.isDefault)" :key="d.id" :value="d.id">{{ d.host }}</option>
                 </select>
                 <input 
                   v-else
-                  value="weshort.link" 
+                  :value="defaultDomainHost" 
                   class="ui-form-input" 
                   disabled 
                   style="cursor: not-allowed; background: #f1f5f9; color: #64748b;"
@@ -237,7 +248,7 @@ async function submit() {
                   <Lock :size="10" style="display: inline;" /> Yêu cầu gói Pro/Plus
                 </p>
                 <p v-if="form.customSlug" style="font-size: 0.8rem; color: #3b82f6; margin: 0.35rem 0 0; font-weight: 500;">
-                  Bản xem trước: weshort.link/{{ form.customSlug }}
+                  Bản xem trước: {{ selectedDomainHost }}/{{ form.customSlug }}
                 </p>
               </div>
             </div>

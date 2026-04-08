@@ -10,6 +10,7 @@ public class CustomDomain : SoftDeleteEntity
     public bool IsVerified { get; set; }
     public string VerificationToken { get; set; } = string.Empty;
     public DateTime? VerifiedAtUtc { get; set; }
+    public bool IsGlobal { get; set; }
 
     public AppUser User { get; set; } = null!;
     public ICollection<Link> Links { get; set; } = new List<Link>();

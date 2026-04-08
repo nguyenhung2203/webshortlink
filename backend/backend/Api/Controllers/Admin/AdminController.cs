@@ -83,4 +83,49 @@ public sealed class AdminController : ControllerBase
     [HttpPatch("payments/{paymentId:guid}/approve")]
     public async Task<IActionResult> ApprovePayment(Guid paymentId, CancellationToken cancellationToken)
         => Ok(await _adminService.ApprovePaymentAsync(paymentId, cancellationToken));
+
+    [HttpGet("domains")]
+    public async Task<IActionResult> Domains(CancellationToken cancellationToken)
+        => Ok(await _adminService.GetDomainsAsync(cancellationToken));
+
+    [HttpPost("domains")]
+    public async Task<IActionResult> CreateDomain([FromBody] AdminCreateDomainForUserRequestDto request, CancellationToken cancellationToken)
+        => Ok(await _adminService.CreateDomainForUserAsync(request, cancellationToken));
+
+    [HttpGet("domains/{domainId:guid}/check-dns")]
+    public async Task<IActionResult> CheckDomainDns(Guid domainId, CancellationToken cancellationToken)
+        => Ok(await _adminService.CheckDomainDnsAsync(domainId, cancellationToken));
+
+    [HttpPatch("domains/{domainId:guid}/verify")]
+    public async Task<IActionResult> VerifyDomain(Guid domainId, CancellationToken cancellationToken)
+        => Ok(await _adminService.VerifyDomainAsync(domainId, cancellationToken));
+
+    [HttpPatch("domains/{domainId:guid}/set-default")]
+    public async Task<IActionResult> SetDefaultDomain(Guid domainId, CancellationToken cancellationToken)
+        => Ok(await _adminService.SetDefaultDomainAsync(domainId, cancellationToken));
+
+    [HttpDelete("domains/{domainId:guid}")]
+    public async Task<IActionResult> DeleteDomain(Guid domainId, CancellationToken cancellationToken)
+        => Ok(await _adminService.DeleteDomainAsync(domainId, cancellationToken));
+
+    // ─── Plans & Features ─────────────────────────────────────────────────────────
+    [HttpGet("plans")]
+    public async Task<IActionResult> GetPlans(CancellationToken cancellationToken)
+        => Ok(await _adminService.GetPlansWithFeaturesAsync(cancellationToken));
+
+    [HttpPatch("plans/{planId:int}/features/{featureKey}")]
+    public async Task<IActionResult> UpdatePlanFeature(int planId, string featureKey, [FromBody] AdminUpdateFeatureRequestDto request, CancellationToken cancellationToken)
+        => Ok(await _adminService.UpdatePlanFeatureAsync(planId, featureKey, request, cancellationToken));
+
+    [HttpGet("plans/feature-labels")]
+    public async Task<IActionResult> GetFeatureLabels(CancellationToken cancellationToken)
+        => Ok(await _adminService.GetFeatureLabelsAsync(cancellationToken));
+
+    [HttpPost("plans/feature-labels")]
+    public async Task<IActionResult> SaveFeatureLabel([FromBody] AdminSaveFeatureLabelDto request, CancellationToken cancellationToken)
+        => Ok(await _adminService.SaveFeatureLabelAsync(request, cancellationToken));
+
+    [HttpDelete("plans/feature-labels/{featureKey}")]
+    public async Task<IActionResult> DeleteFeatureLabel(string featureKey, CancellationToken cancellationToken)
+        => Ok(await _adminService.DeleteFeatureLabelAsync(featureKey, cancellationToken));
 }

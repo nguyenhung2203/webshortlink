@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using WebShortlink.Backend.Application.Abstractions;
 using WebShortlink.Backend.Application.Analytics;
 using WebShortlink.Backend.Application.Common;
+using WebShortlink.Backend.Application.Domains;
 using WebShortlink.Backend.Domain.Entities;
 using WebShortlink.Backend.Domain.Enums;
 using WebShortlink.Backend.Infrastructure.Options;
@@ -19,6 +20,7 @@ public sealed class AdminService
     private readonly IAnalyticsQueue _analyticsQueue;
     private readonly ILinkCacheService _linkCacheService;
     private readonly UserManager<AppUser> _userManager;
+    private readonly IDomainVerificationService _domainVerificationService;
     private readonly string _defaultHost;
 
     public AdminService(
@@ -28,7 +30,8 @@ public sealed class AdminService
         IAnalyticsQueue analyticsQueue,
         ILinkCacheService linkCacheService,
         UserManager<AppUser> userManager,
-        IOptions<AppOptions> appOptions)
+        IOptions<AppOptions> appOptions,
+        IDomainVerificationService domainVerificationService)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
@@ -36,6 +39,7 @@ public sealed class AdminService
         _analyticsQueue = analyticsQueue;
         _linkCacheService = linkCacheService;
         _userManager = userManager;
+        _domainVerificationService = domainVerificationService;
         _defaultHost = appOptions.Value.DefaultDomain;
     }
 
@@ -411,9 +415,299 @@ public sealed class AdminService
         return new MessageResponseDto("Đã duyệt thanh toán và kích hoạt gói thành công.");
     }
 
+    public async Task<IReadOnlyCollection<AdminDomainListItemDto>> GetDomainsAsync(CancellationToken cancellationToken)
+    {
+        var defaultDomainHost = await _dbContext.SystemSettings
+            .Where(x => x.SettingKey == "DefaultDomain")
+            .Select(x => x.SettingValue)
+            .FirstOrDefaultAsync(cancellationToken);
+            
+        var defaultHost = defaultDomainHost ?? string.Empty;
+
+        return await _dbContext.Domains.AsNoTracking()
+            .Include(x => x.User)
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .Where(x => !x.IsDeleted)
+            .Select(x => new AdminDomainListItemDto(
+                x.Id,
+                x.Host,
+                x.IsVerified,
+                x.VerificationToken,
+                x.VerifiedAtUtc,
+                x.CreatedAtUtc,
+                x.User.Email!,
+                x.Links.LongCount(l => !l.IsDeleted),
+                x.IsGlobal,
+                x.Host == defaultHost))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<MessageResponseDto> SetDefaultDomainAsync(Guid domainId, CancellationToken cancellationToken)
+    {
+        var current = _currentUserService.GetRequired();
+        var domain = await _dbContext.Domains.FirstOrDefaultAsync(x => x.Id == domainId && !x.IsDeleted, cancellationToken)
+            ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy domain", StatusCodes.Status404NotFound);
+
+        if (!domain.IsGlobal || !domain.IsVerified)
+        {
+            throw new AppException(ErrorCodes.ValidationFailed, "Chỉ có thể đặt Default Domain cho các domain hệ thống (GLOBAL) và đã được Verified.", StatusCodes.Status400BadRequest);
+        }
+
+        var setting = await _dbContext.SystemSettings.FirstOrDefaultAsync(x => x.SettingKey == "DefaultDomain", cancellationToken);
+        if (setting == null)
+        {
+            setting = new SystemSetting
+            {
+                Id = Guid.NewGuid(),
+                SettingKey = "DefaultDomain",
+                SettingValue = domain.Host,
+                GroupName = "Domains",
+                CreatedAtUtc = DateTime.UtcNow,
+                CreatedByUserId = current.UserId.ToString()
+            };
+            _dbContext.SystemSettings.Add(setting);
+        }
+        else
+        {
+            setting.SettingValue = domain.Host;
+            setting.UpdatedAtUtc = DateTime.UtcNow;
+            setting.UpdatedByUserId = current.UserId.ToString();
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-DOMAIN-SET-DEFAULT", "SystemSetting", setting.Id.ToString(), current.UserId, current.IpAddress, new { domain.Host }, cancellationToken);
+
+        return new MessageResponseDto("Đã đặt tên miền này thành mặc định (System Default Domain).");
+    }
+
+    public async Task<MessageResponseDto> VerifyDomainAsync(Guid domainId, CancellationToken cancellationToken)
+    {
+        var current = _currentUserService.GetRequired();
+        var domain = await _dbContext.Domains.FirstOrDefaultAsync(x => x.Id == domainId && !x.IsDeleted, cancellationToken)
+            ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy domain", StatusCodes.Status404NotFound);
+
+        domain.IsVerified = true;
+        domain.VerifiedAtUtc = DateTime.UtcNow;
+        domain.UpdatedAtUtc = DateTime.UtcNow;
+        domain.UpdatedByUserId = current.UserId.ToString();
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-DOMAIN-VERIFY", "Domain", domain.Id.ToString(), current.UserId, current.IpAddress, new { domain.Host }, cancellationToken);
+
+        return new MessageResponseDto("Đã chuyển trạng thái domain thành Verified.");
+    }
+
+    public async Task<MessageResponseDto> DeleteDomainAsync(Guid domainId, CancellationToken cancellationToken)
+    {
+        var current = _currentUserService.GetRequired();
+        var domain = await _dbContext.Domains.FirstOrDefaultAsync(x => x.Id == domainId && !x.IsDeleted, cancellationToken)
+            ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy domain", StatusCodes.Status404NotFound);
+
+        domain.IsDeleted = true;
+        domain.DeletedAtUtc = DateTime.UtcNow;
+        domain.DeletedByUserId = current.UserId.ToString();
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-DOMAIN-DELETE", "Domain", domain.Id.ToString(), current.UserId, current.IpAddress, new { domain.Host }, cancellationToken);
+
+        return new MessageResponseDto("Đã xóa domain.");
+    }
+
+    /// <summary>Admin: Gọi DNS check thật sự (HTTP/.well-known) để kiểm tra domain đã trỏ đúng chưa.</summary>
+    public async Task<AdminDomainDnsCheckResultDto> CheckDomainDnsAsync(Guid domainId, CancellationToken cancellationToken)
+    {
+        var domain = await _dbContext.Domains.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == domainId && !x.IsDeleted, cancellationToken)
+            ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy domain", StatusCodes.Status404NotFound);
+
+        var verified = await _domainVerificationService.VerifyDomainOwnershipAsync(domain.Host, domain.VerificationToken, cancellationToken);
+
+        if (verified && !domain.IsVerified)
+        {
+            // Tự động cập nhật trạng thái nếu DNS đã đúng
+            var tracked = await _dbContext.Domains.FirstAsync(x => x.Id == domainId, cancellationToken);
+            tracked.IsVerified = true;
+            tracked.VerifiedAtUtc = DateTime.UtcNow;
+            tracked.UpdatedAtUtc = DateTime.UtcNow;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return new AdminDomainDnsCheckResultDto(
+            verified,
+            domain.Host,
+            verified
+                ? "DNS hợp lệ. File /.well-known/webshortlink-verification.txt trả về đúng token."
+                : "DNS chưa đúng. Domain chưa trỏ về server hoặc file verification chưa tồn tại.");
+    }
+
+    /// <summary>Admin: Tạo domain thay cho một user bất kỳ (Hoặc tạo System Global Domain).</summary>
+    public async Task<AdminDomainListItemDto> CreateDomainForUserAsync(AdminCreateDomainForUserRequestDto request, CancellationToken cancellationToken)
+    {
+        var current = _currentUserService.GetRequired();
+
+        // Nếu là System Domain (IsGlobal) mà không gán user, mặc định gán cho admin hiện tại
+        var targetUserId = request.UserId ?? current.UserId;
+
+        var user = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == targetUserId, cancellationToken)
+            ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy user.", StatusCodes.Status404NotFound);
+
+        var normalizedHost = Domains.DomainService.NormalizeHost(request.Host);
+
+        var exists = await _dbContext.Domains.AnyAsync(x => x.Host == normalizedHost && !x.IsDeleted, cancellationToken);
+        if (exists)
+            throw new AppException(ErrorCodes.Conflict, "Domain đã tồn tại trong hệ thống.", StatusCodes.Status409Conflict);
+
+        var domain = new CustomDomain
+        {
+            Id = Guid.NewGuid(),
+            UserId = targetUserId,
+            Host = normalizedHost,
+            VerificationToken = Convert.ToHexString(Guid.NewGuid().ToByteArray()).ToLowerInvariant(),
+            IsVerified = false,
+            IsGlobal = request.IsGlobal,
+            CreatedAtUtc = DateTime.UtcNow,
+            CreatedByUserId = current.UserId.ToString()
+        };
+
+        _dbContext.Domains.Add(domain);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-DOMAIN-CREATE", "Domain", domain.Id.ToString(), current.UserId, current.IpAddress, new { domain.Host, targetUserId, request.IsGlobal }, cancellationToken);
+
+        return new AdminDomainListItemDto(domain.Id, domain.Host, domain.IsVerified, domain.VerificationToken, domain.VerifiedAtUtc, domain.CreatedAtUtc, user.Email!, 0, domain.IsGlobal);
+    }
+
     private string BuildShortUrl(string host, string slug)
     {
         var scheme = host.StartsWith("localhost") || host.StartsWith("127.0.0.1") ? "http" : "https";
         return $"{scheme}://{host}/{slug}";
+    }
+
+    public async Task<IReadOnlyCollection<AdminPlanDetailDto>> GetPlansWithFeaturesAsync(CancellationToken cancellationToken)
+    {
+        var plans = await _dbContext.Plans.AsNoTracking()
+            .Include(p => p.Features)
+            .OrderBy(p => p.Id)
+            .ToListAsync(cancellationToken);
+
+        return plans.Select(p => new AdminPlanDetailDto(
+            p.Id,
+            p.Code,
+            p.Name,
+            p.MonthlyPrice,
+            p.IsActive,
+            p.Features.Select(f => new AdminPlanFeatureDto(
+                f.Id,
+                f.FeatureKey,
+                f.IsEnabled,
+                f.LimitValue,
+                f.FeatureValue)).ToList()
+        )).ToList();
+    }
+
+    public async Task<MessageResponseDto> UpdatePlanFeatureAsync(int planId, string featureKey, AdminUpdateFeatureRequestDto request, CancellationToken cancellationToken)
+    {
+        var current = _currentUserService.GetRequired();
+        var plan = await _dbContext.Plans.FirstOrDefaultAsync(x => x.Id == planId, cancellationToken)
+            ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy gói dịch vụ.", StatusCodes.Status404NotFound);
+
+        var feature = await _dbContext.PlanFeatures
+            .FirstOrDefaultAsync(x => x.PlanId == planId && x.FeatureKey == featureKey, cancellationToken);
+
+        if (feature == null)
+        {
+            feature = new PlanFeature
+            {
+                PlanId = planId,
+                FeatureKey = featureKey,
+                IsEnabled = request.IsEnabled,
+                LimitValue = request.LimitValue,
+                FeatureValue = request.FeatureValue,
+                CreatedAtUtc = DateTime.UtcNow,
+                CreatedByUserId = current.UserId.ToString()
+            };
+            _dbContext.PlanFeatures.Add(feature);
+        }
+        else
+        {
+            feature.IsEnabled = request.IsEnabled;
+            feature.LimitValue = request.LimitValue;
+            feature.FeatureValue = request.FeatureValue;
+            feature.UpdatedAtUtc = DateTime.UtcNow;
+            feature.UpdatedByUserId = current.UserId.ToString();
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-PLAN-FEATURE-UPDATE", "PlanFeature", feature.Id.ToString(), current.UserId, current.IpAddress, new { planId, featureKey, request }, cancellationToken);
+
+        return new MessageResponseDto($"Đã cập nhật tính năng '{featureKey}' cho gói '{plan.Name}'.");
+    }
+
+    public async Task<IReadOnlyCollection<AdminFeatureLabelDto>> GetFeatureLabelsAsync(CancellationToken cancellationToken)
+    {
+        const string prefix = "FeatureLabel:";
+        var settings = await _dbContext.SystemSettings
+            .AsNoTracking()
+            .Where(x => x.SettingKey.StartsWith(prefix))
+            .ToListAsync(cancellationToken);
+
+        return settings.Select(s =>
+        {
+            var parts = (s.SettingValue ?? "").Split('|');
+            return new AdminFeatureLabelDto(
+                s.SettingKey[prefix.Length..],   // strip prefix
+                parts.Length > 0 ? parts[0] : s.SettingKey,
+                parts.Length > 1 ? parts[1] : "",
+                parts.Length > 2 ? parts[2] : "toggle");
+        }).ToList();
+    }
+
+    public async Task<MessageResponseDto> SaveFeatureLabelAsync(AdminSaveFeatureLabelDto request, CancellationToken cancellationToken)
+    {
+        var current = _currentUserService.GetRequired();
+        const string prefix = "FeatureLabel:";
+        var key = prefix + request.FeatureKey;
+        var value = $"{request.Label}|{request.Description}|{request.FeatureType}";
+
+        var setting = await _dbContext.SystemSettings.FirstOrDefaultAsync(x => x.SettingKey == key, cancellationToken);
+        if (setting == null)
+        {
+            setting = new SystemSetting { Id = Guid.NewGuid(), SettingKey = key, SettingValue = value, GroupName = "PlanFeatureLabels", CreatedAtUtc = DateTime.UtcNow, CreatedByUserId = current.UserId.ToString() };
+            _dbContext.SystemSettings.Add(setting);
+        }
+        else
+        {
+            setting.SettingValue = value;
+            setting.UpdatedAtUtc = DateTime.UtcNow;
+            setting.UpdatedByUserId = current.UserId.ToString();
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return new MessageResponseDto($"Đã lưu nhãn cho tính năng '{request.FeatureKey}'.");
+    }
+
+    public async Task<MessageResponseDto> DeleteFeatureLabelAsync(string featureKey, CancellationToken cancellationToken)
+    {
+        var current = _currentUserService.GetRequired();
+        const string prefix = "FeatureLabel:";
+        var key = prefix + featureKey;
+
+        var setting = await _dbContext.SystemSettings.FirstOrDefaultAsync(x => x.SettingKey == key, cancellationToken);
+        if (setting != null)
+        {
+            _dbContext.SystemSettings.Remove(setting);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        // Also delete related PlanFeatures across all plans
+        var planFeatures = await _dbContext.PlanFeatures.Where(x => x.FeatureKey == featureKey).ToListAsync(cancellationToken);
+        if (planFeatures.Any())
+        {
+            _dbContext.PlanFeatures.RemoveRange(planFeatures);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-FEATURE-DELETE", "PlanFeature", featureKey, current.UserId, current.IpAddress, new { featureKey }, cancellationToken);
+        return new MessageResponseDto($"Đã xóa tính năng '{featureKey}' khỏi tất cả các gói.");
     }
 }

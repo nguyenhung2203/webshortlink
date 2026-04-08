@@ -34,10 +34,33 @@ public sealed class DomainService
     public async Task<IReadOnlyCollection<DomainListItemDto>> GetMineAsync(CancellationToken cancellationToken)
     {
         var current = _currentUserService.GetRequired();
+        var defaultDomainHost = await _dbContext.SystemSettings
+            .Where(x => x.SettingKey == "DefaultDomain")
+            .Select(x => x.SettingValue)
+            .FirstOrDefaultAsync(cancellationToken);
+        var defaultHost = defaultDomainHost ?? string.Empty;
+
         return await _dbContext.Domains.AsNoTracking()
             .Where(x => x.UserId == current.UserId && !x.IsDeleted)
             .OrderByDescending(x => x.CreatedAtUtc)
-            .Select(x => new DomainListItemDto(x.Id, x.Host, x.IsVerified, x.VerificationToken, x.VerifiedAtUtc, x.CreatedAtUtc))
+            .Select(x => new DomainListItemDto(x.Id, x.Host, x.IsVerified, x.VerificationToken, x.VerifiedAtUtc, x.CreatedAtUtc, x.Host == defaultHost))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<DomainListItemDto>> GetAvailableAsync(CancellationToken cancellationToken)
+    {
+        var current = _currentUserService.GetRequired();
+        var defaultDomainHost = await _dbContext.SystemSettings
+            .Where(x => x.SettingKey == "DefaultDomain")
+            .Select(x => x.SettingValue)
+            .FirstOrDefaultAsync(cancellationToken);
+        var defaultHost = defaultDomainHost ?? string.Empty;
+
+        return await _dbContext.Domains.AsNoTracking()
+            .Where(x => (x.UserId == current.UserId || x.IsGlobal) && !x.IsDeleted && x.IsVerified)
+            .OrderByDescending(x => x.IsGlobal) // Đưa Global lên đầu
+            .ThenByDescending(x => x.CreatedAtUtc)
+            .Select(x => new DomainListItemDto(x.Id, x.Host, x.IsVerified, x.VerificationToken, x.VerifiedAtUtc, x.CreatedAtUtc, x.Host == defaultHost))
             .ToListAsync(cancellationToken);
     }
 
@@ -73,7 +96,8 @@ public sealed class DomainService
         _dbContext.Domains.Add(domain);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return new DomainListItemDto(domain.Id, domain.Host, domain.IsVerified, domain.VerificationToken, domain.VerifiedAtUtc, domain.CreatedAtUtc);
+        return new DomainListItemDto(domain.Id, domain.Host, domain.IsVerified, domain.VerificationToken, domain.VerifiedAtUtc, domain.CreatedAtUtc,
+            domain.Host == (await _dbContext.SystemSettings.Where(x => x.SettingKey == "DefaultDomain").Select(x => x.SettingValue).FirstOrDefaultAsync(cancellationToken)));
     }
 
     public async Task<VerifyDomainResponseDto> VerifyAsync(Guid domainId, VerifyDomainRequestDto request, CancellationToken cancellationToken)
