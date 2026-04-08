@@ -11,9 +11,9 @@ const app = createApp(App)
 const pinia = createPinia()
 
 app.use(pinia)
-app.use(router)
-
 const authStore = useAuthStore(pinia)
 authStore.restore()
+
+app.use(router)
 
 app.mount('#app')

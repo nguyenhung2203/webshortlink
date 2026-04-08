@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using WebShortlink.Backend.Application.Abstractions;
 using WebShortlink.Backend.Application.Common;
+using WebShortlink.Backend.Infrastructure.Options;
 using WebShortlink.Backend.Infrastructure.Persistence;
 
 namespace WebShortlink.Backend.Application.Analytics;
@@ -10,15 +12,17 @@ public sealed class AnalyticsService
     private readonly ApplicationDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly IPlanCapabilityService _planCapabilityService;
+    private readonly string _defaultHost;
 
     // Default retention fallback if plan feature not configured
     private const int DefaultRetentionDays = 30;
 
-    public AnalyticsService(ApplicationDbContext dbContext, ICurrentUserService currentUserService, IPlanCapabilityService planCapabilityService)
+    public AnalyticsService(ApplicationDbContext dbContext, ICurrentUserService currentUserService, IPlanCapabilityService planCapabilityService, IOptions<AppOptions> appOptions)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
         _planCapabilityService = planCapabilityService;
+        _defaultHost = appOptions.Value.DefaultDomain;
     }
 
     public async Task<AnalyticsOverviewDto> GetOverviewAsync(CancellationToken cancellationToken)
@@ -55,7 +59,7 @@ public sealed class AnalyticsService
             dailyStats.Select(x => new TrendPointDto(x.StatDate.ToString("yyyy-MM-dd"), x.TotalClicks, x.UniqueClicks, x.BotClicks)).ToList(),
             links.OrderByDescending(x => x.TotalClicks)
                 .Take(5)
-                .Select(x => new TopLinkDto(x.Id, $"https://sho.rt/{x.Slug}", x.TotalClicks, x.UniqueClicks, x.Status.ToString()))
+                .Select(x => new TopLinkDto(x.Id, BuildShortUrl(_defaultHost, x.Slug), x.TotalClicks, x.UniqueClicks, x.Status.ToString()))
                 .ToList());
     }
 
@@ -124,5 +128,11 @@ public sealed class AnalyticsService
         var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
         var fileName = $"analytics_{link.Slug}_{DateTime.UtcNow:yyyyMMdd}.csv";
         return (bytes, fileName);
+    }
+
+    private static string BuildShortUrl(string host, string slug)
+    {
+        var scheme = host.StartsWith("localhost") || host.StartsWith("127.0.0.1") ? "http" : "https";
+        return $"{scheme}://{host}/{slug}";
     }
 }

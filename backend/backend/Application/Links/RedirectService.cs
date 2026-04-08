@@ -11,7 +11,7 @@ namespace WebShortlink.Backend.Application.Links;
 
 public sealed class RedirectService
 {
-    private const string DefaultHost = "sho.rt";
+    private readonly string _defaultHost;
     private readonly ApplicationDbContext _dbContext;
     private readonly ILinkCacheService _linkCacheService;
     private readonly IAnalyticsQueue _analyticsQueue;
@@ -21,12 +21,14 @@ public sealed class RedirectService
         ApplicationDbContext dbContext,
         ILinkCacheService linkCacheService,
         IAnalyticsQueue analyticsQueue,
-        IPasswordHasher<Link> passwordHasher)
+        IPasswordHasher<Link> passwordHasher,
+        Microsoft.Extensions.Options.IOptions<WebShortlink.Backend.Infrastructure.Options.AppOptions> appOptions)
     {
         _dbContext = dbContext;
         _linkCacheService = linkCacheService;
         _analyticsQueue = analyticsQueue;
         _passwordHasher = passwordHasher;
+        _defaultHost = appOptions.Value.DefaultDomain;
     }
 
     public async Task<PublicRedirectAccessResponseDto> ResolveAsync(string host, string slug, string? password, HttpContext httpContext, CancellationToken cancellationToken)
@@ -85,7 +87,7 @@ public sealed class RedirectService
             .FirstOrDefaultAsync(
                 x => x.Slug == slug
                     && !x.IsDeleted
-                    && ((host == DefaultHost && x.DomainId == null)
+                    && ((host == _defaultHost && x.DomainId == null)
                         || (x.Domain != null && !x.Domain.IsDeleted && x.Domain.IsVerified && x.Domain.Host == host)),
                 cancellationToken);
 
@@ -94,7 +96,7 @@ public sealed class RedirectService
             return null;
         }
 
-        var dto = new CachedLinkDto(link.Id, link.UserId, link.Domain?.Host ?? DefaultHost, link.Slug, link.OriginalUrl, link.Status.ToString(), link.ExpiresAtUtc, link.ClickLimit, link.PasswordHash, link.TotalClicks);
+        var dto = new CachedLinkDto(link.Id, link.UserId, link.Domain?.Host ?? _defaultHost, link.Slug, link.OriginalUrl, link.Status.ToString(), link.ExpiresAtUtc, link.ClickLimit, link.PasswordHash, link.TotalClicks);
         await _linkCacheService.SetAsync(dto, cancellationToken);
         return dto;
     }
@@ -159,9 +161,9 @@ public sealed class RedirectService
         return link.OriginalUrl;
     }
 
-    private static string NormalizeHost(string host)
+    private string NormalizeHost(string host)
     {
-        var normalized = string.IsNullOrWhiteSpace(host) ? DefaultHost : host.Trim().ToLowerInvariant();
+        var normalized = string.IsNullOrWhiteSpace(host) ? _defaultHost : host.Trim().ToLowerInvariant();
         if (normalized.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || normalized.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
             normalized = DomainService.NormalizeHost(normalized);
@@ -174,7 +176,7 @@ public sealed class RedirectService
 
         if (normalized is "localhost" or "127.0.0.1" or "::1" or "default")
         {
-            return DefaultHost;
+            return _defaultHost;
         }
 
         return normalized;
