@@ -123,12 +123,13 @@ const pageTitle = computed(() => {
 
     </div>
 
-    <style>
-      @media (max-width: 768px) {
-        .admin-sidebar {
-          display: none !important;
-        }
-      }
-    </style>
   </div>
 </template>
+
+<style>
+  @media (max-width: 768px) {
+    .admin-sidebar {
+      display: none !important;
+    }
+  }
+</style>
