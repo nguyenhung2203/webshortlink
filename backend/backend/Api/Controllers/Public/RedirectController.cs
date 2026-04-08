@@ -33,8 +33,26 @@ public sealed class RedirectController : ControllerBase
     [HttpGet("/{slug}")]
     public async Task<IActionResult> RedirectBySlug(string slug, CancellationToken cancellationToken)
     {
-        var response = await _redirectService.ResolveAsync(ResolveHost(), slug, Request.Query["password"], HttpContext, cancellationToken);
-        return Redirect(response.RedirectUrl);
+        try
+        {
+            var needsPassword = Request.Query.ContainsKey("p");
+            var password = needsPassword ? Request.Query["p"].ToString() : null;
+            var response = await _redirectService.ResolveAsync(ResolveHost(), slug, password, HttpContext, cancellationToken);
+            return Redirect(response.RedirectUrl);
+        }
+        catch (AppException ex)
+        {
+            var feBaseUrl = "http://localhost:5173";
+            return ex.ErrorCode switch
+            {
+                ErrorCodes.NotFound      => Redirect($"{feBaseUrl}/link-not-found"),
+                ErrorCodes.LinkExpired   => Redirect($"{feBaseUrl}/link-expired"),
+                ErrorCodes.LinkDisabled  => Redirect($"{feBaseUrl}/link-disabled"),
+                ErrorCodes.ClickLimitReached => Redirect($"{feBaseUrl}/link-limit-reached"),
+                ErrorCodes.PasswordRequired  => Redirect($"{feBaseUrl}/link/{slug}/unlock"),
+                _ => Redirect($"{feBaseUrl}/link-not-found"),
+            };
+        }
     }
 
     private string ResolveHost()

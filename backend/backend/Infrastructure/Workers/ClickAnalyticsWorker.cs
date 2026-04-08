@@ -68,7 +68,9 @@ public sealed class ClickAnalyticsWorker : BackgroundService
                     CreatedAtUtc = DateTime.UtcNow
                 });
 
-                var link = await dbContext.Links.FirstOrDefaultAsync(x => x.Id == message.LinkId, stoppingToken);
+                var link = await dbContext.Links
+                    .Include(x => x.Domain)
+                    .FirstOrDefaultAsync(x => x.Id == message.LinkId, stoppingToken);
                 if (link is null)
                 {
                     _logger.LogWarning("Khong tim thay link {LinkId} de aggregate analytics.", message.LinkId);
@@ -124,7 +126,7 @@ public sealed class ClickAnalyticsWorker : BackgroundService
                     new Application.Links.CachedLinkDto(
                         link.Id,
                         link.UserId,
-                        "default",
+                        link.Domain?.Host ?? message.Host,
                         link.Slug,
                         link.OriginalUrl,
                         link.Status.ToString(),
@@ -134,10 +136,17 @@ public sealed class ClickAnalyticsWorker : BackgroundService
                         link.TotalClicks),
                     stoppingToken);
             }
+            catch (OperationCanceledException)
+            {
+                // Host is shutting down, ignore
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Analytics worker gặp lỗi khi xử lý click event.");
-                await Task.Delay(1000, stoppingToken);
+                if (!stoppingToken.IsCancellationRequested)
+                {
+                    await Task.Delay(1000, stoppingToken);
+                }
             }
         }
     }

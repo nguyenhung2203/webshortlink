@@ -12,3 +12,12 @@ public sealed record UpgradeSubscriptionResponseDto(
     DateTime StartAtUtc,
     DateTime EndAtUtc,
     string Message);
+
+public sealed record PaymentHistoryDto(
+    Guid Id,
+    string PlanName,
+    decimal Amount,
+    string Currency,
+    string Status,
+    DateTime CreatedAtUtc,
+    DateTime? PaidAtUtc);

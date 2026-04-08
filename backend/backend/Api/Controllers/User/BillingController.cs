@@ -19,4 +19,8 @@ public sealed class BillingController : ControllerBase
     [HttpPost("upgrade")]
     public async Task<IActionResult> Upgrade([FromBody] UpgradeSubscriptionRequestDto request, CancellationToken cancellationToken)
         => Ok(await _billingService.UpgradeAsync(request, cancellationToken));
+
+    [HttpGet("payments/{id:guid}")]
+    public async Task<IActionResult> GetPayment(Guid id, CancellationToken cancellationToken)
+        => Ok(await _billingService.GetPaymentDetailAsync(id, cancellationToken));
 }

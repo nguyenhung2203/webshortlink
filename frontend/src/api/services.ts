@@ -80,12 +80,54 @@ export const LinkService = {
     apiRequest<ApiMessageResponse>(`/api/user/links/${id}`, { method: 'DELETE', token }),
 }
 
+export const LinkRuleService = {
+  list: (token: string, linkId: string) =>
+    apiRequest<any[]>(`/api/user/links/${linkId}/rules`, { token }),
+  create: (token: string, linkId: string, data: {
+    ruleType: string
+    ruleValue: string
+    targetUrl: string
+    priority: number
+    isActive: boolean
+  }) =>
+    apiRequest<any>(`/api/user/links/${linkId}/rules`, { method: 'POST', body: data, token }),
+  update: (token: string, linkId: string, ruleId: string, data: {
+    ruleType: string
+    ruleValue: string
+    targetUrl: string
+    priority: number
+    isActive: boolean
+  }) =>
+    apiRequest<any>(`/api/user/links/${linkId}/rules/${ruleId}`, { method: 'PUT', body: data, token }),
+  delete: (token: string, linkId: string, ruleId: string) =>
+    apiRequest<ApiMessageResponse>(`/api/user/links/${linkId}/rules/${ruleId}`, { method: 'DELETE', token }),
+}
+
 // ─── User / Analytics / Profile / Plans ────────────────────────────────────────
 export const UserService = {
   getDashboard: (token: string) =>
     apiRequest<DashboardMetrics>('/api/user/analytics/overview', { token }),
   getLinkAnalytics: (token: string, id: string) =>
     apiRequest<LinkAnalytics>(`/api/user/analytics/links/${id}`, { token }),
+  /** FIX-019: Download CSV export (Pro/Plus plans only) */
+  exportLinkAnalyticsCsv: async (token: string, id: string): Promise<void> => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5130'
+    const response = await fetch(`${API_BASE_URL}/api/user/analytics/links/${id}/export-csv`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ message: 'Lỗi xuất dữ liệu.' }))
+      throw new Error(err.message || 'Lỗi xuất dữ liệu.')
+    }
+    const blob = await response.blob()
+    const fileName = response.headers.get('Content-Disposition')?.match(/filename="?(.+)"?/)?.[1] ?? 'analytics.csv'
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    a.click()
+    URL.revokeObjectURL(url)
+  },
   getProfile: (token: string) =>
     apiRequest<UserProfileProfile>('/api/user/profile', { token }),
   updateProfile: (token: string, fullName: string) =>
@@ -106,6 +148,8 @@ export const UserService = {
     apiRequest<Subscription>('/api/user/subscription', { token }),
   getPayments: (token: string) =>
     apiRequest<any[]>('/api/user/payments', { token }),
+  getPaymentDetail: (token: string, paymentId: string) =>
+    apiRequest<any>('/api/user/billing/payments/' + paymentId, { token }),
   upgradeSubscription: (token: string, planId: number) =>
     apiRequest<UpgradeSubscriptionResponse>('/api/user/billing/upgrade', {
       method: 'POST',
@@ -114,6 +158,17 @@ export const UserService = {
     }),
   getDomains: (token: string) =>
     apiRequest<any[]>('/api/user/domains', { token }),
+}
+
+export const DomainService = {
+  list: (token: string) =>
+    apiRequest<any[]>('/api/user/domains', { token }),
+  create: (token: string, host: string) =>
+    apiRequest<any>('/api/user/domains', { method: 'POST', body: { host }, token }),
+  verify: (token: string, domainId: string, verificationToken: string) =>
+    apiRequest<any>(`/api/user/domains/${domainId}/verify`, { method: 'POST', body: { verificationToken }, token }),
+  delete: (token: string, domainId: string) =>
+    apiRequest<ApiMessageResponse>(`/api/user/domains/${domainId}`, { method: 'DELETE', token }),
 }
 
 // ─── Admin ──────────────────────────────────────────────────────────────────────
@@ -137,4 +192,22 @@ export const AdminService = {
     }),
   getAuditLogs: (token: string) =>
     apiRequest<AdminAuditLog[]>('/api/admin/audit-logs', { token }),
+  getUserDetail: (token: string, userId: string) =>
+    apiRequest<any>(`/api/admin/users/${userId}`, { token }),
+  changeUserPlan: (token: string, userId: string, planId: number) =>
+    apiRequest<ApiMessageResponse>(`/api/admin/users/${userId}/plan`, {
+      method: 'PATCH',
+      body: { planId },
+      token,
+    }),
+  getLinkDetail: (token: string, linkId: string) =>
+    apiRequest<any>(`/api/admin/links/${linkId}`, { token }),
+  getReports: (token: string) =>
+    apiRequest<any>('/api/admin/reports', { token }),
+  getSecurity: (token: string) =>
+    apiRequest<any>('/api/admin/security', { token }),
+  getPayments: (token: string) =>
+    apiRequest<any[]>('/api/admin/payments', { token }),
+  approvePayment: (token: string, paymentId: string) =>
+    apiRequest<ApiMessageResponse>('/api/admin/payments/' + paymentId + '/approve', { method: 'PATCH', token }),
 } as const

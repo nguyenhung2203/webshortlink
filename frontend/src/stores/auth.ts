@@ -14,12 +14,16 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => Boolean(accessToken.value && user.value))
   const role = computed(() => user.value?.role ?? null)
 
+  /** True if the stored access token is expired or within 60 seconds of expiry */
+  const isTokenExpired = computed(() => {
+    if (!expiresAtUtc.value) return false
+    const expiry = new Date(expiresAtUtc.value).getTime()
+    return Date.now() >= expiry - 60_000
+  })
+
   function restore() {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) {
-      return
-    }
-
+    if (!raw) return
     try {
       const parsed = JSON.parse(raw) as AuthResponseDto
       accessToken.value = parsed.accessToken
@@ -36,18 +40,37 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.removeItem(STORAGE_KEY)
       return
     }
-
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       accessToken: accessToken.value,
       refreshToken: refreshToken.value,
       expiresAtUtc: expiresAtUtc.value,
-      user: user.value
+      user: user.value,
     }))
   }
 
+  /** Sync in-memory token when client.ts performs a silent refresh */
+  function _onTokenRefreshed(event: Event) {
+    const detail = (event as CustomEvent).detail
+    if (detail.accessToken) accessToken.value = detail.accessToken
+    if (detail.refreshToken) refreshToken.value = detail.refreshToken
+    if (detail.expiresAtUtc) expiresAtUtc.value = detail.expiresAtUtc
+    if (detail.user && user.value) user.value = { ...user.value, ...detail.user }
+  }
+
+  /** Handle expired session (silent refresh failed) — redirect to login */
+  function _onSessionExpired() {
+    accessToken.value = null
+    refreshToken.value = null
+    expiresAtUtc.value = null
+    user.value = null
+    window.location.href = '/auth/login'
+  }
+
+  window.addEventListener('auth:token-refreshed', _onTokenRefreshed)
+  window.addEventListener('auth:session-expired', _onSessionExpired)
+
   async function login(email: string, password: string) {
     const payload = await AuthService.login(email, password)
-
     accessToken.value = payload.accessToken
     refreshToken.value = payload.refreshToken
     expiresAtUtc.value = payload.expiresAtUtc
@@ -56,8 +79,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function register(fullName: string, email: string, password: string, confirmPassword: string) {
-    const payload = await AuthService.register(fullName, email, password, confirmPassword)
-    return payload // returns MessageResponseDto
+    return AuthService.register(fullName, email, password, confirmPassword)
   }
 
   async function refreshSession() {
@@ -78,7 +100,7 @@ export const useAuthStore = defineStore('auth', () => {
       try {
         await AuthService.logout(accessToken.value, refreshToken.value || undefined)
       } catch {
-        // Ignore API failures on logout
+        // Ignore
       }
     }
     accessToken.value = null
@@ -95,6 +117,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     role,
     isAuthenticated,
+    isTokenExpired,
     restore,
     login,
     register,

@@ -20,4 +20,10 @@ public sealed class InMemoryAnalyticsQueue : IAnalyticsQueue
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult(_queue.TryDequeue(out var message) ? message : null);
     }
+
+    public Task<long> GetPendingCountAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult((long)_queue.Count);
+    }
 }

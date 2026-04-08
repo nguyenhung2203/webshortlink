@@ -60,11 +60,27 @@ public sealed class AdminController : ControllerBase
     public async Task<IActionResult> ReportsBasic(CancellationToken cancellationToken)
         => Ok(await _adminService.GetReportsBasicAsync(cancellationToken));
 
+    [HttpGet("reports")]
+    public async Task<IActionResult> Reports(CancellationToken cancellationToken)
+        => Ok(await _adminService.GetReportsBasicAsync(cancellationToken));
+
     [HttpGet("security/basic")]
     public async Task<IActionResult> SecurityBasic(CancellationToken cancellationToken)
+        => Ok(await _adminService.GetSecurityOpsBasicAsync(cancellationToken));
+
+    [HttpGet("security")]
+    public async Task<IActionResult> Security(CancellationToken cancellationToken)
         => Ok(await _adminService.GetSecurityOpsBasicAsync(cancellationToken));
 
     [HttpGet("audit-logs")]
     public async Task<IActionResult> AuditLogs(CancellationToken cancellationToken)
         => Ok(await _adminService.GetAuditLogsAsync(cancellationToken));
+
+    [HttpGet("payments")]
+    public async Task<IActionResult> Payments(CancellationToken cancellationToken)
+        => Ok(await _adminService.GetPaymentsAsync(cancellationToken));
+
+    [HttpPatch("payments/{paymentId:guid}/approve")]
+    public async Task<IActionResult> ApprovePayment(Guid paymentId, CancellationToken cancellationToken)
+        => Ok(await _adminService.ApprovePaymentAsync(paymentId, cancellationToken));
 }

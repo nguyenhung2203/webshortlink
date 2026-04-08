@@ -14,6 +14,7 @@ public sealed class AdminService
     private readonly ApplicationDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditLogService _auditLogService;
+    private readonly IAnalyticsQueue _analyticsQueue;
     private readonly ILinkCacheService _linkCacheService;
     private readonly UserManager<AppUser> _userManager;
 
@@ -21,12 +22,14 @@ public sealed class AdminService
         ApplicationDbContext dbContext,
         ICurrentUserService currentUserService,
         IAuditLogService auditLogService,
+        IAnalyticsQueue analyticsQueue,
         ILinkCacheService linkCacheService,
         UserManager<AppUser> userManager)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
         _auditLogService = auditLogService;
+        _analyticsQueue = analyticsQueue;
         _linkCacheService = linkCacheService;
         _userManager = userManager;
     }
@@ -49,11 +52,14 @@ public sealed class AdminService
         var botClicks = await _dbContext.ClickEvents.LongCountAsync(x => x.IsBot, cancellationToken);
         var suspiciousClicks = await _dbContext.ClickEvents.LongCountAsync(x => x.IsSuspicious, cancellationToken);
         var monthlyRevenue = await _dbContext.Payments.Where(x => x.Status == PaymentStatus.Paid).SumAsync(x => (decimal?)x.Amount, cancellationToken) ?? 0m;
+        var queueLag = await _analyticsQueue.GetPendingCountAsync(cancellationToken);
+        var errorRate = await CalculateRedirectErrorRateAsync(cancellationToken);
+        var redirectLatencyP95 = await CalculateRedirectLatencyP95Async(cancellationToken);
 
         return new AdminOverviewDto(
             new BusinessOverviewDto(totalUsers, paidUsers, totalUsers == 0 ? 0 : Math.Round((decimal)paidUsers / totalUsers * 100, 2), monthlyRevenue),
             new ProductOverviewDto(totalLinks, activeLinks, totalClicks, uniqueClicks),
-            new OperationsOverviewDto(botClicks, suspiciousClicks, 0.2m, 2, 45));
+            new OperationsOverviewDto(botClicks, suspiciousClicks, errorRate, (int)Math.Min(queueLag, int.MaxValue), redirectLatencyP95));
     }
 
     public async Task<IReadOnlyCollection<AdminUserListItemDto>> GetUsersAsync(CancellationToken cancellationToken)
@@ -214,31 +220,60 @@ public sealed class AdminService
         link.UpdatedAtUtc = DateTime.UtcNow;
         link.UpdatedByUserId = current.UserId.ToString();
         await _dbContext.SaveChangesAsync(cancellationToken);
-        await _linkCacheService.RemoveAsync("sho.rt", link.Slug, cancellationToken);
+        await _linkCacheService.RemoveAsync(link.Domain?.Host ?? "sho.rt", link.Slug, cancellationToken);
 
         await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-009:ToggleLink", "Link", linkId.ToString(), current.UserId, current.IpAddress, new { enable }, cancellationToken);
         return new MessageResponseDto("Cập nhật trạng thái link thành công.");
     }
 
-    public async Task<object> GetReportsBasicAsync(CancellationToken cancellationToken)
+    public async Task<AdminReportsDto> GetReportsBasicAsync(CancellationToken cancellationToken)
     {
+        var totalUsers = await _dbContext.Users.LongCountAsync(cancellationToken);
+        var totalLinks = await _dbContext.Links.LongCountAsync(x => !x.IsDeleted, cancellationToken);
+        var totalClicks = await _dbContext.ClickEvents.LongCountAsync(cancellationToken);
+        var activeSubscriptions = await _dbContext.Subscriptions.LongCountAsync(x => x.Status == SubscriptionStatus.Active, cancellationToken);
+
         var topPlans = await _dbContext.Users.AsNoTracking()
             .GroupBy(x => x.CurrentPlanId)
-            .Select(x => new { PlanId = x.Key, Users = x.LongCount() })
+            .Select(x => new { PlanId = x.Key, Count = x.LongCount() })
             .ToListAsync(cancellationToken);
 
-        return new { topPlans };
+        var planNames = await _dbContext.Plans.AsNoTracking()
+            .ToDictionaryAsync(x => x.Id, x => x.Name, cancellationToken);
+
+        var breakdown = topPlans
+            .Select(x => new AdminPlanBreakdownDto(
+                x.PlanId,
+                planNames.GetValueOrDefault(x.PlanId, "Unknown"),
+                x.Count,
+                totalUsers == 0 ? 0 : Math.Round((decimal)x.Count / totalUsers * 100, 2)))
+            .OrderByDescending(x => x.Count)
+            .ToList();
+
+        return new AdminReportsDto(totalUsers, totalLinks, totalClicks, activeSubscriptions, breakdown);
     }
 
-    public async Task<object> GetSecurityOpsBasicAsync(CancellationToken cancellationToken)
+    public async Task<AdminSecurityDto> GetSecurityOpsBasicAsync(CancellationToken cancellationToken)
     {
-        var latestAudit = await _dbContext.AuditLogs.AsNoTracking().OrderByDescending(x => x.CreatedAtUtc).Take(10).ToListAsync(cancellationToken);
-        return new
+        var sinceUtc = DateTime.UtcNow.Date;
+        var failedLoginsToday = await _dbContext.AuditLogs.LongCountAsync(
+            x => x.Action == "PUB-API-002:LoginFailed" && x.CreatedAtUtc >= sinceUtc,
+            cancellationToken);
+        var suspiciousClicks = await _dbContext.ClickEvents.LongCountAsync(x => x.IsSuspicious, cancellationToken);
+        var lockedAccounts = await _dbContext.Users.LongCountAsync(x => x.AccountStatus == UserAccountStatus.Locked, cancellationToken);
+        var queueLag = await _analyticsQueue.GetPendingCountAsync(cancellationToken);
+        var errorRate = await CalculateRedirectErrorRateAsync(cancellationToken);
+        var redirectLatencyP95 = await CalculateRedirectLatencyP95Async(cancellationToken);
+
+        var healthItems = new List<AdminSystemHealthItemDto>
         {
-            botClicks = await _dbContext.ClickEvents.LongCountAsync(x => x.IsBot, cancellationToken),
-            suspiciousClicks = await _dbContext.ClickEvents.LongCountAsync(x => x.IsSuspicious, cancellationToken),
-            auditLogs = latestAudit.Select(x => new { x.Action, x.ResourceType, x.ResourceId, x.CreatedAtUtc })
+            new("Redis Analytics Queue", queueLag > 30 ? "WARN" : "OK", $"{queueLag} pending"),
+            new("Redirect Error Rate", errorRate > 5 ? "WARN" : "OK", $"{errorRate:0.##}%"),
+            new("Redirect Latency P95", redirectLatencyP95 > 250 ? "WARN" : "OK", $"{redirectLatencyP95} ms"),
+            new("Locked Accounts", lockedAccounts > 0 ? "WARN" : "OK", lockedAccounts.ToString())
         };
+
+        return new AdminSecurityDto(failedLoginsToday, suspiciousClicks, lockedAccounts, healthItems);
     }
 
     public async Task<IReadOnlyCollection<AdminAuditLogItemDto>> GetAuditLogsAsync(CancellationToken cancellationToken)
@@ -255,5 +290,106 @@ public sealed class AdminService
                 select new { userRole.UserId, role.Name })
             .GroupBy(x => x.UserId)
             .ToDictionaryAsync(x => x.Key, x => x.Select(y => y.Name!).FirstOrDefault() ?? AppRoles.User, cancellationToken);
+    }
+
+    private async Task<decimal> CalculateRedirectErrorRateAsync(CancellationToken cancellationToken)
+    {
+        var totalEvents = await _dbContext.ClickEvents.LongCountAsync(cancellationToken);
+        if (totalEvents == 0)
+        {
+            return 0;
+        }
+
+        var failedEvents = await _dbContext.ClickEvents.LongCountAsync(x => x.EventStatus != ClickEventStatus.Redirected, cancellationToken);
+        return Math.Round((decimal)failedEvents / totalEvents * 100, 2);
+    }
+
+    private async Task<int> CalculateRedirectLatencyP95Async(CancellationToken cancellationToken)
+    {
+        var latencies = await _dbContext.ClickEvents.AsNoTracking()
+            .OrderByDescending(x => x.ClickedAtUtc)
+            .Select(x => x.ResponseTimeMs)
+            .Take(500)
+            .ToListAsync(cancellationToken);
+
+        if (latencies.Count == 0)
+        {
+            return 0;
+        }
+
+        latencies.Sort();
+        var index = (int)Math.Ceiling(latencies.Count * 0.95) - 1;
+        index = Math.Max(0, Math.Min(index, latencies.Count - 1));
+        return latencies[index];
+    }
+
+    public async Task<IReadOnlyCollection<AdminPaymentListItemDto>> GetPaymentsAsync(CancellationToken cancellationToken)
+    {
+        var payments = await _dbContext.Payments.AsNoTracking()
+            .Include(x => x.Subscription)
+                .ThenInclude(x => x.Plan)
+            .Include(x => x.Subscription.User)
+            .OrderBy(x => x.Status == PaymentStatus.Pending ? 0 : 1)
+            .ThenByDescending(x => x.CreatedAtUtc)
+            .Select(x => new AdminPaymentListItemDto(
+                x.Id,
+                x.Subscription.User.Email!,
+                x.Subscription.Plan.Name,
+                x.Amount,
+                x.Status.ToString(),
+                x.Provider,
+                x.CreatedAtUtc,
+                x.PaidAtUtc))
+            .ToListAsync(cancellationToken);
+
+        return payments;
+    }
+
+    public async Task<MessageResponseDto> ApprovePaymentAsync(Guid paymentId, CancellationToken cancellationToken)
+    {
+        var current = _currentUserService.GetRequired();
+        
+        var payment = await _dbContext.Payments
+            .Include(x => x.Subscription)
+                .ThenInclude(x => x.User)
+            .FirstOrDefaultAsync(x => x.Id == paymentId, cancellationToken)
+            ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy giao dịch", StatusCodes.Status404NotFound);
+
+        if (payment.Status != PaymentStatus.Pending)
+        {
+            throw new AppException(ErrorCodes.ValidationFailed, "Giao dịch này không ở trạng thái chờ duyệt.", StatusCodes.Status400BadRequest);
+        }
+
+        payment.Status = PaymentStatus.Paid;
+        payment.PaidAtUtc = DateTime.UtcNow;
+        payment.UpdatedAtUtc = DateTime.UtcNow;
+        payment.UpdatedByUserId = current.UserId.ToString();
+
+        var subscription = payment.Subscription;
+        subscription.Status = SubscriptionStatus.Active;
+        subscription.StartAtUtc = DateTime.UtcNow;
+        subscription.EndAtUtc = DateTime.UtcNow.AddMonths(1);
+        subscription.UpdatedAtUtc = DateTime.UtcNow;
+        subscription.UpdatedByUserId = current.UserId.ToString();
+
+        var user = subscription.User;
+        user.CurrentPlanId = subscription.PlanId;
+
+        var activeSubscriptions = await _dbContext.Subscriptions
+            .Where(x => x.UserId == user.Id && x.Status == SubscriptionStatus.Active && x.Id != subscription.Id)
+            .ToListAsync(cancellationToken);
+
+        foreach (var activeSub in activeSubscriptions)
+        {
+            activeSub.Status = SubscriptionStatus.Expired;
+            activeSub.EndAtUtc = DateTime.UtcNow;
+            activeSub.UpdatedAtUtc = DateTime.UtcNow;
+            activeSub.UpdatedByUserId = current.UserId.ToString();
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-BILLING-APPROVE", "Payment", payment.Id.ToString(), current.UserId, current.IpAddress, new { paymentId, user.Email, user.CurrentPlanId }, cancellationToken);
+
+        return new MessageResponseDto("Đã duyệt thanh toán và kích hoạt gói thành công.");
     }
 }

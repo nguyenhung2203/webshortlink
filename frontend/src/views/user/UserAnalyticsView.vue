@@ -27,6 +27,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const isAdvancedAnalyticsEnabled = computed(() => (authStore.user?.currentPlanId ?? 1) >= 2)
 
 const links = ref<ShortLink[]>([])
 const selectedLinkId = ref('')
@@ -85,6 +86,11 @@ async function loadLinks() {
 async function loadAnalytics() {
   if (!authStore.accessToken || !selectedLinkId.value) {
     analytics.value = null
+    return
+  }
+  if (!isAdvancedAnalyticsEnabled.value) {
+    analytics.value = null
+    error.value = ''
     return
   }
   loadingDetails.value = true
@@ -171,6 +177,16 @@ onMounted(bootstrap)
               @update:model-value="handleLinkChange"
             />
           </div>
+        </div>
+      </WxCard>
+
+      <WxCard v-if="!isAdvancedAnalyticsEnabled" padding="md">
+        <div class="space-y-3 text-sm">
+          <h3 class="text-lg font-semibold text-on-surface">Analytics nâng cao</h3>
+          <p class="text-on-surface-variant">
+            Breakdown theo quốc gia, thiết bị, referrer và time-series chi tiết chỉ mở cho gói Pro hoặc Plus.
+          </p>
+          <WxButton variant="primary" @click="router.push('/app/billing')">Nâng cấp để xem analytics nâng cao</WxButton>
         </div>
       </WxCard>
 

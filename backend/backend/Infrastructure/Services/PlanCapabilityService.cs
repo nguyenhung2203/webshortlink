@@ -19,7 +19,7 @@ public sealed class PlanCapabilityService : IPlanCapabilityService
         var feature = await GetFeatureAsync(userId, featureKey, cancellationToken);
         if (feature is null || !feature.IsEnabled)
         {
-            throw new AppException(ErrorCodes.PlanFeatureDenied, "Gói hiện tại không hỗ trợ tính năng này.", StatusCodes.Status403Forbidden);
+           throw new AppException(ErrorCodes.PlanFeatureDenied, "Gói hiện tại không hỗ trợ tính năng này.", StatusCodes.Status403Forbidden);
         }
     }
 

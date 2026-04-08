@@ -78,3 +78,10 @@ public sealed record LinkRuleItemDto(
     int Priority,
     bool IsActive,
     DateTime CreatedAtUtc);
+
+public sealed record UpdateLinkRuleRequestDto(
+    string RuleType,
+    string RuleValue,
+    string TargetUrl,
+    int Priority,
+    bool IsActive);

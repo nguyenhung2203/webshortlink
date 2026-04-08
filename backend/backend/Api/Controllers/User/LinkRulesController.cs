@@ -24,6 +24,10 @@ public sealed class LinkRulesController : ControllerBase
     public async Task<IActionResult> Create(Guid linkId, [FromBody] CreateLinkRuleRequestDto request, CancellationToken cancellationToken)
         => Ok(await _linkRuleService.CreateRuleAsync(linkId, request, cancellationToken));
 
+    [HttpPut("{ruleId:guid}")]
+    public async Task<IActionResult> Update(Guid linkId, Guid ruleId, [FromBody] UpdateLinkRuleRequestDto request, CancellationToken cancellationToken)
+        => Ok(await _linkRuleService.UpdateRuleAsync(linkId, ruleId, request, cancellationToken));
+
     [HttpDelete("{ruleId:guid}")]
     public async Task<IActionResult> Delete(Guid linkId, Guid ruleId, CancellationToken cancellationToken)
         => Ok(await _linkRuleService.DeleteRuleAsync(linkId, ruleId, cancellationToken));
