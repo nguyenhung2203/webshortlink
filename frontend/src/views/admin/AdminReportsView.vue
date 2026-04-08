@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { AdminService } from '@/api/services'
-import { useAuthStore } from '@/store/auth'
+import { useAuthStore } from '@/stores/auth'
 import { BarChart2, Users, Link2, MousePointerClick, TrendingUp, AlertCircle, RefreshCw, PieChart } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
