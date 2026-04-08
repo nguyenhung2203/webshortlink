@@ -29,6 +29,7 @@ public sealed record LinkListItemDto(
     string OriginalUrl,
     string Status,
     string? Tag,
+    string? Description,
     long TotalClicks,
     long UniqueClicks,
     long BotClicks,
@@ -85,3 +86,16 @@ public sealed record UpdateLinkRuleRequestDto(
     string TargetUrl,
     int Priority,
     bool IsActive);
+
+public sealed class UserLinkFilterDto
+{
+    public string? Search { get; set; }
+    public string? Status { get; set; }
+    public string? Tag { get; set; }
+    public string? Description { get; set; }
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+    public string? SortBy { get; set; }
+    public int PageIndex { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+}

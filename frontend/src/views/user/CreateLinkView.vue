@@ -241,6 +241,18 @@ async function submit() {
                 </p>
               </div>
             </div>
+
+            <!-- Tags & Notes -->
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.5rem;">
+              <div class="ui-form-group" style="flex: 1; min-width: 200px; margin: 0;">
+                <label class="ui-form-label">Tag phân loại</label>
+                <input v-model="form.tag" type="text" class="ui-form-input" placeholder="Vd: marketing_fb" />
+              </div>
+              <div class="ui-form-group" style="flex: 2; min-width: 200px; margin: 0;">
+                <label class="ui-form-label">Ghi chú cá nhân</label>
+                <input v-model="form.description" type="text" class="ui-form-input" placeholder="Dùng để nhớ link này tạo ra làm gì..." />
+              </div>
+            </div>
           </div>
 
           <hr style="border: 0; border-top: 1px dotted #cbd5e1; margin: 0;" />
@@ -271,17 +283,9 @@ async function submit() {
                   <label class="ui-form-label">Ngày hết hạn</label>
                   <input v-model="form.expiresAtUtc" type="datetime-local" class="ui-form-input" :disabled="!canUsePremiumLinkSettings" />
                 </div>
-                <div class="ui-form-group" style="margin: 0;">
+                <div class="ui-form-group" style="margin: 0; grid-column: 1 / -1;">
                   <label class="ui-form-label">Giới hạn Click</label>
                   <input v-model="form.clickLimit" type="number" min="1" class="ui-form-input" placeholder="Vd: 100" :disabled="!canUsePremiumLinkSettings" />
-                </div>
-                <div class="ui-form-group" style="margin: 0;">
-                  <label class="ui-form-label">Tag phân loại</label>
-                  <input v-model="form.tag" type="text" class="ui-form-input" placeholder="Vd: marketing_fb" />
-                </div>
-                <div class="ui-form-group" style="margin: 0; grid-column: 1 / -1;">
-                  <label class="ui-form-label">Ghi chú cá nhân</label>
-                  <input v-model="form.description" type="text" class="ui-form-input" placeholder="Dùng để nhớ link này tạo ra làm gì..." />
                 </div>
               </div>
             </div>

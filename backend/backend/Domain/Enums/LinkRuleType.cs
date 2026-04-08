@@ -7,5 +7,6 @@ public enum LinkRuleType
     BrowserTargeting = 3,
     OsTargeting = 4,
     Rotation = 5,
-    DeepLink = 6
+    DeepLink = 6,
+    Percentage = 7
 }

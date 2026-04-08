@@ -17,3 +17,20 @@ public sealed record PublicRedirectAccessRequestDto(string Password);
 public sealed record PublicRedirectAccessResponseDto(string RedirectUrl);
 
 public sealed record MessageResponseDto(string Message, string? Code = null);
+
+public sealed class PaginatedResponseDto<T>
+{
+    public IReadOnlyCollection<T> Items { get; init; } = Array.Empty<T>();
+    public int TotalCount { get; init; }
+    public int PageIndex { get; init; }
+    public int PageSize { get; init; }
+
+    public PaginatedResponseDto() { }
+    public PaginatedResponseDto(IReadOnlyCollection<T> items, int totalCount, int pageIndex, int pageSize)
+    {
+        Items = items;
+        TotalCount = totalCount;
+        PageIndex = pageIndex;
+        PageSize = pageSize;
+    }
+}

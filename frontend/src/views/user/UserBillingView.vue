@@ -178,11 +178,12 @@ onMounted(load)
         <div class="card-action">
           <button 
             @click="upgrade(plan.id)" 
-            :disabled="subscription?.planId === plan.id || !plan.isActive"
+            :disabled="subscription?.planId === plan.id || !plan.isActive || (subscription?.planId !== 1 && subscription?.planId !== plan.id)"
             class="cta-btn"
           >
             <span v-if="subscription?.planId === plan.id">Gói hiện tại của bạn</span>
             <span v-else-if="!plan.isActive">Tạm khóa nâng cấp</span>
+            <span v-else-if="subscription?.planId !== 1 && subscription?.planId !== plan.id">Đang sử dụng gói khác</span>
             <span v-else-if="plan.monthlyPrice === 0">Bắt đầu miễn phí</span>
             <span v-else class="flex items-center justify-center gap-2">
               Nâng cấp lên {{ plan.name }} <ArrowRight :size="16" />
@@ -205,7 +206,6 @@ onMounted(load)
     max-width: 1000px;
     margin: 0 auto;
     padding: 1.5rem;
-    font-family: 'Inter', sans-serif;
   }
 
   /* Hero */

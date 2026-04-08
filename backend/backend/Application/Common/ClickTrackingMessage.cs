@@ -11,4 +11,8 @@ public sealed class ClickTrackingMessage
     public string UserAgent { get; init; } = string.Empty;
     public int ResponseTimeMs { get; init; }
     public string EventStatus { get; init; } = string.Empty;
+    public string NormalizedSource { get; init; } = "Direct";
+    public string? UtmSource { get; init; }
+    public string? UtmMedium { get; init; }
+    public string? UtmCampaign { get; init; }
 }

@@ -115,7 +115,12 @@ const timeseriesChartOptions = {
 
 async function loadLinks() {
   if (!authStore.accessToken) throw new Error('Chưa xác thực.')
-  links.value = await LinkService.list(authStore.accessToken)
+  
+  // LinkService.list now returns paginated data: { items: ShortLink[], totalCount: number, ... }
+  // We request a large page size (e.g. 1000) so we can populate the dropdown.
+  const res = await LinkService.list(authStore.accessToken, { pageIndex: 1, pageSize: 1000 })
+  links.value = Array.isArray(res) ? res : (res.items || [])
+  
   const requestedId = typeof route.query.linkId === 'string' ? route.query.linkId : ''
   selectedLinkId.value = requestedId || links.value[0]?.id || ''
 }
@@ -302,23 +307,44 @@ onMounted(bootstrap)
           </div>
         </div>
 
-        <!-- Breakdown Block 3 Cols -->
-        <div class="ui-card-grid ui-card-grid-3">
+        <!-- Breakdown Block 2x2 Grid -->
+        <div class="ui-card-grid" style="grid-template-columns: 1fr 1fr;">
           
           <div class="ui-panel">
             <div class="ui-panel-header">
               <div style="display: flex; gap: 0.5rem; align-items: center;">
                 <Share2 :size="16" style="color: #64748b;"/>
-                <h3 class="ui-panel-title">Nguồn truy cập (Referrer)</h3>
+                <h3 class="ui-panel-title">Nguồn truy cập (Nền tảng / UTM)</h3>
               </div>
             </div>
-            <div class="ui-panel-body" style="padding: 0;">
+            <div class="ui-panel-body" style="padding: 0; max-height: 250px; overflow-y: auto;">
               <div v-if="analytics.topReferrers.length === 0" style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.85rem;">Chưa biên dịch đủ dữ liệu.</div>
               <div v-else>
                 <div v-for="(item, idx) in analytics.topReferrers" :key="item.label" style="display: flex; justify-content: space-between; padding: 0.75rem 1.25rem; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;">
                   <div style="display: flex; gap: 0.5rem; color: #475569;">
                     <span style="font-weight: 700; color: #cbd5e1; width: 14px;">{{idx + 1}}</span>
-                    <span style="overflow: hidden; text-overflow: ellipsis; max-width: 15ch; white-space: nowrap;">{{ item.label || 'Direct' }}</span>
+                    <span style="overflow: hidden; text-overflow: ellipsis; max-width: 25ch; white-space: nowrap;">{{ item.label || 'Direct' }}</span>
+                  </div>
+                  <strong style="color: #0f172a;">{{ item.value }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ui-panel">
+            <div class="ui-panel-header">
+              <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <Share2 :size="16" style="color: #64748b;"/>
+                <h3 class="ui-panel-title">Chiến dịch (UTM Campaign)</h3>
+              </div>
+            </div>
+            <div class="ui-panel-body" style="padding: 0; max-height: 250px; overflow-y: auto;">
+              <div v-if="!analytics.topCampaigns || analytics.topCampaigns.length === 0" style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.85rem;">Không có dữ liệu UTM Campaign.</div>
+              <div v-else>
+                <div v-for="(item, idx) in analytics.topCampaigns" :key="item.label" style="display: flex; justify-content: space-between; padding: 0.75rem 1.25rem; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;">
+                  <div style="display: flex; gap: 0.5rem; color: #475569;">
+                    <span style="font-weight: 700; color: #cbd5e1; width: 14px;">{{idx + 1}}</span>
+                    <span style="overflow: hidden; text-overflow: ellipsis; max-width: 25ch; white-space: nowrap;">{{ item.label }}</span>
                   </div>
                   <strong style="color: #0f172a;">{{ item.value }}</strong>
                 </div>
@@ -333,7 +359,7 @@ onMounted(bootstrap)
                 <h3 class="ui-panel-title">Thiết bị (Device)</h3>
               </div>
             </div>
-            <div class="ui-panel-body" style="padding: 0;">
+            <div class="ui-panel-body" style="padding: 0; max-height: 250px; overflow-y: auto;">
               <div v-if="analytics.topDevices.length === 0" style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.85rem;">Chưa biên dịch đủ dữ liệu.</div>
               <div v-else>
                 <div v-for="(item, idx) in analytics.topDevices" :key="item.label" style="display: flex; justify-content: space-between; padding: 0.75rem 1.25rem; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;">
@@ -354,7 +380,7 @@ onMounted(bootstrap)
                 <h3 class="ui-panel-title">Quốc gia (Country)</h3>
               </div>
             </div>
-            <div class="ui-panel-body" style="padding: 0;">
+            <div class="ui-panel-body" style="padding: 0; max-height: 250px; overflow-y: auto;">
               <div v-if="analytics.topCountries.length === 0" style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.85rem;">Chưa biên dịch đủ dữ liệu.</div>
               <div v-else>
                 <div v-for="(item, idx) in analytics.topCountries" :key="item.label" style="display: flex; justify-content: space-between; padding: 0.75rem 1.25rem; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;">

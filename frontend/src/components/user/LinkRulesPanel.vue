@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { LinkRuleService } from '@/api/services'
@@ -24,6 +24,7 @@ const ruleTypes = [
   { value: 'BrowserTargeting', label: '🌐 Trình duyệt' },
   { value: 'OsTargeting', label: '💻 Hệ điều hành' },
   { value: 'Rotation', label: '🔄 Xoay vòng URL' },
+  { value: 'Percentage', label: '⚖️ Phân bổ theo trọng số (Weighted)' },
 ]
 
 const form = ref({
@@ -41,6 +42,7 @@ const ruleValueHint = computed(() => {
     case 'BrowserTargeting': return 'VD: Chrome,Safari,Firefox'
     case 'OsTargeting': return 'VD: Android,iOS,Windows'
     case 'Rotation': return 'VD: https://url1.com (rule tiếp theo sẽ là URL 2, xoay vòng đều)'
+    case 'Percentage': return 'VD: 50 (Trọng số. VD: Rule A trọng số 7, Rule B trọng số 3 => tỷ lệ 70/30)'
     default: return ''
   }
 })
@@ -78,13 +80,16 @@ async function addRule() {
   }
 }
 
+const confirmDeleteId = ref<string | null>(null)
+
 async function deleteRule(ruleId: string) {
-  if (!authStore.accessToken || !confirm('Xóa rule này?')) return
+  if (!authStore.accessToken) return
   try {
     await LinkRuleService.delete(authStore.accessToken, props.linkId, ruleId)
+    confirmDeleteId.value = null
     await load()
   } catch (err) {
-    alert(err instanceof Error ? err.message : 'Không thể xóa rule.')
+    error.value = err instanceof Error ? err.message : 'Không thể xóa rule.'
   }
 }
 
@@ -174,20 +179,28 @@ onMounted(load)
           <p class="text-sm text-on-surface font-medium truncate">{{ rule.ruleValue }}</p>
           <p class="text-xs text-on-surface-variant truncate">→ {{ rule.targetUrl }}</p>
         </div>
-        <button
-          v-if="isPro"
-          @click="editRule(rule)"
-          class="text-primary hover:bg-primary/10 rounded-lg p-1.5 transition-colors shrink-0"
-        >
-          Sửa
-        </button>
-        <button
-          v-if="isPro"
-          @click="deleteRule(rule.id)"
-          class="text-danger hover:bg-danger/10 rounded-lg p-1.5 transition-colors shrink-0"
-        >
-          <Trash2 :size="15" />
-        </button>
+        <!-- Editing / Deleting Actions -->
+        <div class="flex items-center gap-2 shrink-0">
+          <template v-if="confirmDeleteId === rule.id">
+            <span class="text-xs text-danger font-medium">Chắc chắn xóa?</span>
+            <button @click="deleteRule(rule.id)" class="text-xs text-white bg-danger rounded px-2 py-1">Xóa</button>
+            <button @click="confirmDeleteId = null" class="text-xs text-on-surface-variant hover:bg-surface-container-high rounded px-2 py-1">Hủy</button>
+          </template>
+          <template v-else-if="isPro">
+            <button
+              @click="editRule(rule)"
+              class="text-primary hover:bg-primary/10 rounded-lg p-1.5 transition-colors"
+            >
+              Sửa
+            </button>
+            <button
+              @click="confirmDeleteId = rule.id"
+              class="text-danger hover:bg-danger/10 rounded-lg p-1.5 transition-colors"
+            >
+              <Trash2 :size="15" />
+            </button>
+          </template>
+        </div>
       </div>
     </div>
   </div>

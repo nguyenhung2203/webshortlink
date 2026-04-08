@@ -21,8 +21,8 @@ public sealed class LinksController : ControllerBase
         => Ok(await _linkService.CreateAsync(request, cancellationToken));
 
     [HttpGet]
-    public async Task<IActionResult> GetMine(CancellationToken cancellationToken)
-        => Ok(await _linkService.GetMineAsync(cancellationToken));
+    public async Task<IActionResult> GetMine([FromQuery] UserLinkFilterDto filter, CancellationToken cancellationToken)
+        => Ok(await _linkService.GetMineAsync(filter, cancellationToken));
 
     [HttpGet("{linkId:guid}")]
     public async Task<IActionResult> GetDetail(Guid linkId, CancellationToken cancellationToken)

@@ -22,6 +22,10 @@ public class ClickEvent : AuditableEntity
     public bool IsBot { get; set; }
     public bool IsSuspicious { get; set; }
     public int ResponseTimeMs { get; set; }
+    public string NormalizedSource { get; set; } = "Direct";
+    public string? UtmSource { get; set; }
+    public string? UtmMedium { get; set; }
+    public string? UtmCampaign { get; set; }
 
     public Link Link { get; set; } = null!;
 }

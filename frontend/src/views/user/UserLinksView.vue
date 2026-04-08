@@ -1,22 +1,26 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import { LinkService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
 import type { ShortLink } from '@/types/api'
 import { useRouter } from 'vue-router'
 import {
-  Search,
   ArrowUpDown,
+  Search,
   MousePointerClick,
   Copy,
   ExternalLink,
   Plus,
   Link as LinkIcon,
   Calendar,
-  MoreVertical,
   Activity,
   Pause,
-  AlertCircle
+  AlertCircle,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  Tag,
+  FileText
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -25,25 +29,48 @@ const authStore = useAuthStore()
 const links = ref<ShortLink[]>([])
 const loading = ref(true)
 const error = ref('')
-const search = ref('')
-const sortKey = ref<'createdAt' | 'clicks'>('createdAt')
+
+const filter = ref({
+  search: '',
+  status: '',
+  tag: '',
+  description: '',
+  startDate: '',
+  endDate: '',
+  sortBy: 'createdAt',
+  pageIndex: 1,
+  pageSize: 5 // Tạm thời để 5 để user test phân trang
+})
+const totalCount = ref(0)
 const copySuccessId = ref<string | null>(null)
 
-// Stats for toolbar
-const summary = computed(() => {
-  return {
-    total: links.value.length,
-    active: links.value.filter(l => l.status === 'Active').length,
-    paused: links.value.filter(l => l.status === 'Paused').length,
-  }
-})
+const totalPages = computed(() => Math.ceil(totalCount.value / filter.value.pageSize) || 1)
 
 async function load() {
   loading.value = true
   error.value = ''
   try {
     if (!authStore.accessToken) throw new Error('Chưa xác thực')
-    links.value = await LinkService.list(authStore.accessToken)
+    // Remove empty values from filter
+    const activeFilter: Record<string, any> = { ...filter.value }
+    if (!activeFilter.search) delete activeFilter.search
+    if (!activeFilter.status) delete activeFilter.status
+    if (!activeFilter.tag) delete activeFilter.tag
+    if (!activeFilter.description) delete activeFilter.description
+    if (!activeFilter.startDate) delete activeFilter.startDate
+    if (!activeFilter.endDate) delete activeFilter.endDate
+
+    const res = await LinkService.list(authStore.accessToken, activeFilter)
+    
+    // Fallback if the backend updates haven't propagated correctly yet
+    if (Array.isArray(res)) {
+      links.value = res
+      totalCount.value = res.length
+    } else {
+      links.value = res.items || []
+      totalCount.value = res.totalCount || 0
+      filter.value.pageIndex = res.pageIndex || 1
+    }
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải danh sách link.'
   } finally {
@@ -51,11 +78,52 @@ async function load() {
   }
 }
 
+function handleSearch() {
+  filter.value.pageIndex = 1
+  load()
+}
+
+function clearFilters() {
+  filter.value.search = ''
+  filter.value.status = ''
+  filter.value.tag = ''
+  filter.value.description = ''
+  filter.value.startDate = ''
+  filter.value.endDate = ''
+  filter.value.sortBy = 'createdAt'
+  filter.value.pageIndex = 1
+  load()
+}
+
+function toggleSort() {
+  filter.value.sortBy = filter.value.sortBy === 'createdAt' ? 'clicks' : 'createdAt'
+  filter.value.pageIndex = 1
+  load()
+}
+
+function nextPage() {
+  if (filter.value.pageIndex < totalPages.value) {
+    filter.value.pageIndex++
+    load()
+  }
+}
+
+function prevPage() {
+  if (filter.value.pageIndex > 1) {
+    filter.value.pageIndex--
+    load()
+  }
+}
+
+watch(() => [filter.value.status, filter.value.startDate, filter.value.endDate], () => {
+    filter.value.pageIndex = 1
+    load()
+})
+
 async function toggleStatus(link: ShortLink) {
   try {
     if (!authStore.accessToken) throw new Error('Chưa xác thực')
     await LinkService.updateStatus(authStore.accessToken, link.id, link.status !== 'Active')
-    // Cập nhật local state nhanh thay vì reload lại toàn bộ
     link.status = link.status === 'Active' ? 'Paused' : 'Active'
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể cập nhật trạng thái.'
@@ -84,28 +152,6 @@ function formatNumber(n: number): string {
   return String(n)
 }
 
-const filtered = computed(() => {
-  let list = links.value
-  if (search.value.trim()) {
-    const q = search.value.trim().toLowerCase()
-    list = list.filter(
-      (l) => l.slug.toLowerCase().includes(q) || l.originalUrl.toLowerCase().includes(q) || (l.shortUrl || '').toLowerCase().includes(q)
-    )
-  }
-  if (sortKey.value === 'clicks') {
-    list = [...list].sort((a, b) => (b.totalClicks ?? 0) - (a.totalClicks ?? 0))
-  } else {
-    list = [...list].sort(
-      (a, b) => new Date(b.createdAtUtc ?? 0).getTime() - new Date(a.createdAtUtc ?? 0).getTime()
-    )
-  }
-  return list
-})
-
-function toggleSort() {
-  sortKey.value = sortKey.value === 'createdAt' ? 'clicks' : 'createdAt'
-}
-
 onMounted(load)
 </script>
 
@@ -116,7 +162,7 @@ onMounted(load)
     <div class="lk-header">
       <div class="lk-header-left">
         <h1 class="lk-title">Quản lý Link</h1>
-        <p class="lk-subtitle">Tạo, theo dõi hiệu suất và cấu hình các shortlink của bạn.</p>
+        <p class="lk-subtitle">Tạo, chia sẻ và theo dõi hiệu suất các đường dẫn của bạn.</p>
       </div>
       <button class="lk-btn lk-btn-primary" @click="router.push('/app/links/create')">
         <Plus :size="16" />
@@ -130,9 +176,55 @@ onMounted(load)
       <span>{{ error }}</span>
     </div>
 
+    <!-- ── Filter & Toolbar ── -->
+    <div class="lk-toolbar">
+      <div class="lk-toolbar-top">
+        <div class="lk-toolbar-search">
+          <Search :size="15" class="lk-search-icon" />
+          <input
+            v-model="filter.search"
+            type="text"
+            placeholder="Tìm kiếm slug, link, mô tả..."
+            class="lk-search-input"
+            @keydown.enter="handleSearch"
+          />
+        </div>
+        <button class="lk-btn lk-btn-primary" style="padding: 0 1rem;" @click="handleSearch">Tìm</button>
+        <button class="lk-btn lk-btn-outline" style="padding: 0 1rem;" @click="clearFilters">Xóa lọc</button>
+      </div>
+
+      <div class="lk-toolbar-bottom">
+        <div class="lk-filter-group">
+          <Filter :size="14" class="text-slate-400" />
+          <select v-model="filter.status" class="lk-select" @change="handleSearch">
+            <option value="">Tất cả trạng thái</option>
+            <option value="Active">Đang hoạt động</option>
+            <option value="Paused">Đã tạm dừng</option>
+          </select>
+
+          <input v-model="filter.tag" type="text" placeholder="Tag..." class="lk-select" style="width: 100px;" @keydown.enter="handleSearch" />
+          <input v-model="filter.description" type="text" placeholder="Ghi chú..." class="lk-select" style="width: 120px;" @keydown.enter="handleSearch" />
+
+          <div class="lk-date-group">
+            <span class="text-xs text-slate-500 font-medium">Từ:</span>
+            <input type="date" v-model="filter.startDate" class="lk-date-input" />
+            <span class="text-xs text-slate-500 font-medium">Đến:</span>
+            <input type="date" v-model="filter.endDate" class="lk-date-input" />
+          </div>
+        </div>
+        <div class="lk-summary">
+          <span style="margin-right: 0.5rem;">Tổng số: <strong>{{ totalCount }}</strong> link</span>
+          |
+          <button class="lk-btn lk-btn-outline" style="padding: 0.2rem 0.5rem; height: 28px; line-height: 1; border: none; box-shadow: none;" @click="toggleSort">
+            <ArrowUpDown :size="14" />
+            Sắp xếp: {{ filter.sortBy === 'createdAt' ? 'Mới nhất' : 'Nhiều Click' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Loading State ── -->
     <template v-if="loading">
-      <div class="lk-toolbar-skeleton" />
       <div class="lk-list">
         <div v-for="i in 3" :key="i" class="lk-card-skeleton" />
       </div>
@@ -141,35 +233,9 @@ onMounted(load)
     <!-- ── Content ── -->
     <template v-else>
       
-      <!-- Toolbar -->
-      <div v-if="links.length > 0" class="lk-toolbar">
-        <div class="lk-toolbar-search">
-          <Search :size="15" class="lk-search-icon" />
-          <input
-            v-model="search"
-            type="text"
-            placeholder="Tìm theo slug, đích đến, URL..."
-            class="lk-search-input"
-          />
-        </div>
-        
-        <div class="lk-toolbar-actions">
-          <div class="lk-summary">
-            <span class="lk-summary-item" title="Tổng số link">Trang này: <strong>{{ summary.total }}</strong></span>
-            <span class="lk-summary-item text-green" title="Đang hoạt động"><Activity :size="13"/> {{ summary.active }}</span>
-            <span class="lk-summary-item text-amber" title="Tạm dừng"><Pause :size="13"/> {{ summary.paused }}</span>
-          </div>
-          <div class="lk-divider" />
-          <button class="lk-btn lk-btn-outline" @click="toggleSort">
-            <ArrowUpDown :size="14" />
-            Sắp xếp: {{ sortKey === 'createdAt' ? 'Mới nhất' : 'Clicks' }}
-          </button>
-        </div>
-      </div>
-
       <!-- Links List -->
-      <div v-if="links.length > 0 && filtered.length > 0" class="lk-list">
-        <div v-for="link in filtered" :key="link.id" class="lk-card">
+      <div v-if="links.length > 0" class="lk-list">
+        <div v-for="link in links" :key="link.id" class="lk-card">
           
           <div class="lk-card-main">
             <!-- Icon -->
@@ -189,6 +255,15 @@ onMounted(load)
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                 {{ link.originalUrl }}
               </a>
+
+              <div v-if="link.tag || link.description" style="display: flex; gap: 0.75rem; align-items: center; margin-top: 0.25rem;">
+                <span v-if="link.tag" style="font-size: 0.7rem; font-weight: 600; color: #3b82f6; background: #eff6ff; padding: 0.15rem 0.5rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 0.2rem;">
+                  <Tag :size="10" /> {{ link.tag }}
+                </span>
+                <span v-if="link.description" style="font-size: 0.75rem; color: #94a3b8; display: inline-flex; align-items: center; gap: 0.2rem;">
+                  <FileText :size="12" /> {{ link.description }}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -240,22 +315,24 @@ onMounted(load)
         </div>
       </div>
 
-      <!-- No Results from Search -->
-      <div v-else-if="links.length > 0 && filtered.length === 0" class="lk-empty lk-empty-search">
+      <!-- No Results -->
+      <div v-else class="lk-empty lk-empty-search">
         <div class="lk-empty-icon"><Search :size="32" /></div>
         <h3 class="lk-empty-title">Không tìm thấy kết quả</h3>
-        <p class="lk-empty-desc">Không có link nào khớp với từ khóa "<strong>{{ search }}</strong>".</p>
+        <p class="lk-empty-desc">Thử điều chỉnh thanh tìm kiếm hoặc thay đổi bộ lọc ở trên.</p>
       </div>
 
-      <!-- Completely Empty State -->
-      <div v-else-if="links.length === 0" class="lk-empty lk-empty-main">
-        <div class="lk-empty-illus">🔗</div>
-        <h3 class="lk-empty-title">Chưa có shortlink nào</h3>
-        <p class="lk-empty-desc">Tạo link rút gọn đầu tiên của bạn để chia sẻ và theo dõi hiệu suất dễ dàng.</p>
-        <button class="lk-btn lk-btn-primary mt-4" @click="router.push('/app/links/create')">
-          <Plus :size="16" />
-          Tạo Shortlink ngay
-        </button>
+      <!-- ── Pagination ── -->
+      <div v-if="totalPages > 1" class="lk-pagination">
+        <span class="lk-page-info">Trang {{ filter.pageIndex }} / {{ totalPages }}</span>
+        <div class="lk-page-controls">
+          <button class="lk-btn-page" :disabled="filter.pageIndex <= 1" @click="prevPage">
+            <ChevronLeft :size="16" /> Trước
+          </button>
+          <button class="lk-btn-page" :disabled="filter.pageIndex >= totalPages" @click="nextPage">
+            Sau <ChevronRight :size="16" />
+          </button>
+        </div>
       </div>
 
     </template>
@@ -279,7 +356,6 @@ onMounted(load)
   flex-wrap: wrap;
   padding-bottom: 0.5rem;
 }
-
 .lk-title {
   font-size: 1.65rem;
   font-weight: 800;
@@ -287,7 +363,6 @@ onMounted(load)
   line-height: 1.2;
   margin: 0;
 }
-
 .lk-subtitle {
   margin: 0.25rem 0 0;
   font-size: 0.875rem;
@@ -309,7 +384,6 @@ onMounted(load)
   white-space: nowrap;
   border: 1px solid transparent;
 }
-
 .lk-btn-primary {
   background: #3b82f6;
   color: #fff;
@@ -319,7 +393,6 @@ onMounted(load)
   background: #2563eb;
   transform: translateY(-1px);
 }
-
 .lk-btn-outline {
   background: #fff;
   border-color: #e2e8f0;
@@ -330,6 +403,47 @@ onMounted(load)
   background: #f8fafc;
   color: #0f172a;
   border-color: #cbd5e1;
+}
+
+/* Pagination Buttons */
+.lk-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  margin-top: 0.5rem;
+}
+.lk-page-info {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+}
+.lk-page-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+.lk-btn-page {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.4rem 0.8rem;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.lk-btn-page:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+.lk-btn-page:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ═══ Alerts ═════════════════════════════════════════════════════════════════ */
@@ -348,29 +462,27 @@ onMounted(load)
   color: #b91c1c;
 }
 
-/* ═══ Toolbar ════════════════════════════════════════════════════════════════ */
+/* ═══ Toolbar & Filter ═══════════════════════════════════════════════════════ */
 .lk-toolbar {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding: 1rem;
+  padding: 1.25rem;
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
 }
-@media (min-width: 768px) {
-  .lk-toolbar {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
+.lk-toolbar-top {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
 }
-
 .lk-toolbar-search {
   position: relative;
   flex: 1;
-  max-width: 400px;
+  min-width: 250px;
 }
 .lk-search-icon {
   position: absolute;
@@ -384,7 +496,7 @@ onMounted(load)
   height: 40px;
   padding: 0 1rem 0 2.4rem;
   background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #cbd5e1;
   border-radius: 10px;
   font-size: 0.85rem;
   color: #0f172a;
@@ -397,34 +509,55 @@ onMounted(load)
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.lk-toolbar-actions {
+.lk-toolbar-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed #e2e8f0;
+}
+.lk-filter-group {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
 }
-
-.lk-summary {
+.text-slate-400 { color: #94a3b8; }
+.text-slate-500 { color: #64748b; }
+.lk-select {
+  height: 36px;
+  padding: 0 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #334155;
+  background: #fff;
+  outline: none;
+}
+.lk-date-group {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  font-size: 0.8rem;
+  gap: 0.5rem;
+  background: #f8fafc;
+  padding: 0 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  height: 36px;
+}
+.lk-date-input {
+  border: none;
+  background: transparent;
+  font-size: 0.85rem;
+  color: #334155;
+  outline: none;
+}
+.lk-summary {
+  font-size: 0.85rem;
   color: #64748b;
 }
-.lk-summary-item {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-.text-green { color: #10b981; }
-.text-amber { color: #f59e0b; }
 .lk-summary strong { color: #0f172a; }
-
-.lk-divider {
-  width: 1px;
-  height: 20px;
-  background: #e2e8f0;
-}
 
 /* ═══ List & Cards ═══════════════════════════════════════════════════════════ */
 .lk-list {
@@ -432,7 +565,6 @@ onMounted(load)
   flex-direction: column;
   gap: 0.75rem;
 }
-
 .lk-card {
   display: flex;
   flex-direction: column;
@@ -476,6 +608,8 @@ onMounted(load)
 }
 .bg-green-soft { background: #ecfdf5; }
 .bg-amber-soft { background: #fffbeb; }
+.text-green { color: #10b981; }
+.text-amber { color: #f59e0b; }
 
 .lk-card-info {
   display: flex;
@@ -616,19 +750,11 @@ onMounted(load)
 }
 .lk-empty-search { padding: 3rem 1.5rem; border-style: solid; border-color: #e2e8f0; }
 
-.lk-empty-illus { font-size: 3rem; margin-bottom: 1rem; }
 .lk-empty-icon { color: #94a3b8; margin-bottom: 1rem; opacity: 0.7; }
 .lk-empty-title { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0 0 0.5rem; }
 .lk-empty-desc { font-size: 0.85rem; color: #64748b; margin: 0; max-width: 400px; }
 
 /* Skeletons */
-.lk-toolbar-skeleton {
-  height: 72px;
-  border-radius: 14px;
-  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s infinite;
-}
 .lk-card-skeleton {
   height: 80px;
   border-radius: 12px;
