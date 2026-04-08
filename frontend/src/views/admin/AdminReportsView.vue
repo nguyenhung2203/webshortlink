@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { AdminService } from '@/api/services'
-import { useAuthStore } from '@/stores/auth'
-import { BarChart2, Users, Link2, MousePointerClick, TrendingUp } from 'lucide-vue-next'
-import WxPageHeader from '@/components/ui/WxPageHeader.vue'
+import { useAuthStore } from '@/store/auth'
+import { BarChart2, Users, Link2, MousePointerClick, TrendingUp, AlertCircle, RefreshCw, PieChart } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const reports = ref<any>(null)
@@ -12,12 +11,12 @@ const loading = ref(true)
 
 async function load() {
   loading.value = true
+  error.value = ''
   try {
     if (!authStore.accessToken) throw new Error('Chưa xác thực.')
     reports.value = await AdminService.getReports(authStore.accessToken)
   } catch (err) {
-    // Reports might not have a dedicated endpoint yet - show what we have
-    error.value = err instanceof Error ? err.message : 'Không thể tải báo cáo.'
+    error.value = err instanceof Error ? err.message : 'Dịch vụ phân tích báo cáo đang bảo trì.'
   } finally {
     loading.value = false
   }
@@ -27,54 +26,108 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <WxPageHeader title="Báo cáo hệ thống" description="Thống kê tổng quan toàn bộ hoạt động của nền tảng." />
+  <div class="ui-root">
+    
+    <div class="ui-header">
+      <div class="ui-header-left">
+        <div class="ui-eyebrow"><BarChart2 :size="13" /> Hệ thống phân tích</div>
+        <h1 class="ui-title">Phân tích & Báo cáo</h1>
+        <p class="ui-subtitle">Dữ liệu thống kê tăng trưởng khách hàng và việc nâng cấp gói dịch vụ.</p>
+      </div>
+      <div>
+        <button class="ui-btn ui-btn-outline" @click="load" :disabled="loading">
+          <RefreshCw :size="14" :class="{'animate-spin': loading}" /> Làm mới
+        </button>
+      </div>
+    </div>
 
-    <div v-if="loading" class="text-center py-10 text-on-surface-variant">Đang tải báo cáo...</div>
+    <div v-if="error" class="ui-alert ui-alert-warning" style="background: white;">
+      <AlertCircle :size="16" /> {{ error }}
+    </div>
 
-    <div v-else-if="error" class="bg-surface-container rounded-2xl border border-outline p-8 text-center">
-      <BarChart2 :size="40" class="text-on-surface-variant mx-auto mb-3 opacity-40" />
-      <p class="text-on-surface-variant text-sm">Chức năng báo cáo nâng cao đang được phát triển.</p>
-      <p class="text-on-surface-variant/60 text-xs mt-1">Vui lòng xem dữ liệu tổng quan ở trang Dashboard.</p>
+    <div v-if="loading" style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <div class="ui-card-grid-4">
+        <div class="ui-skeleton" style="height: 120px;" v-for="i in 4" :key="`r-${i}`" />
+      </div>
+      <div class="ui-skeleton" style="height: 250px; border-radius: 12px;" />
     </div>
 
     <template v-else-if="reports">
-      <!-- Report metrics -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-surface-container rounded-xl border border-outline p-5 flex flex-col gap-2">
-          <Users :size="20" class="text-primary" />
-          <p class="text-2xl font-extrabold text-on-surface">{{ reports.totalUsers ?? 0 }}</p>
-          <p class="text-xs text-on-surface-variant">Tổng người dùng</p>
-        </div>
-        <div class="bg-surface-container rounded-xl border border-outline p-5 flex flex-col gap-2">
-          <Link2 :size="20" class="text-primary" />
-          <p class="text-2xl font-extrabold text-on-surface">{{ reports.totalLinks ?? 0 }}</p>
-          <p class="text-xs text-on-surface-variant">Tổng số link</p>
-        </div>
-        <div class="bg-surface-container rounded-xl border border-outline p-5 flex flex-col gap-2">
-          <MousePointerClick :size="20" class="text-primary" />
-          <p class="text-2xl font-extrabold text-on-surface">{{ reports.totalClicks ?? 0 }}</p>
-          <p class="text-xs text-on-surface-variant">Tổng số click</p>
-        </div>
-        <div class="bg-surface-container rounded-xl border border-outline p-5 flex flex-col gap-2">
-          <TrendingUp :size="20" class="text-primary" />
-          <p class="text-2xl font-extrabold text-on-surface">{{ reports.activeSubscriptions ?? 0 }}</p>
-          <p class="text-xs text-on-surface-variant">Gói đang hoạt động</p>
-        </div>
-      </div>
-
-      <!-- Plan breakdown -->
-      <div v-if="reports.planBreakdown" class="bg-surface-container rounded-2xl border border-outline p-6">
-        <h3 class="font-semibold text-on-surface mb-4">Phân bổ theo gói</h3>
-        <div class="flex flex-col gap-3">
-          <div v-for="item in reports.planBreakdown" :key="item.planName" class="flex items-center gap-3">
-            <span class="text-sm text-on-surface-variant w-16 shrink-0">{{ item.planName }}</span>
-            <div class="flex-1 bg-surface-container-high rounded-full h-2">
-              <div class="h-2 rounded-full bg-primary transition-all" :style="{ width: `${item.percent}%` }"></div>
+      
+      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        
+        <!-- Metrics -->
+        <div class="ui-card-grid ui-card-grid-4">
+          
+          <div class="ui-panel" style="background: white;">
+            <div class="ui-panel-body" style="display: flex; flex-direction: column; justify-content: center; padding: 1.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Người Dùng</span>
+                <Users :size="18" style="color: #3b82f6;" />
+              </div>
+              <div style="font-size: 2.25rem; font-weight: 800; color: #0f172a; line-height: 1;">{{ (reports.totalUsers ?? 0).toLocaleString() }}</div>
             </div>
-            <span class="text-sm font-bold text-on-surface w-10 text-right">{{ item.count }}</span>
+          </div>
+
+          <div class="ui-panel" style="background: white;">
+            <div class="ui-panel-body" style="display: flex; flex-direction: column; justify-content: center; padding: 1.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Lượng URL</span>
+                <Link2 :size="18" style="color: #10b981;" />
+              </div>
+              <div style="font-size: 2.25rem; font-weight: 800; color: #0f172a; line-height: 1;">{{ (reports.totalLinks ?? 0).toLocaleString() }}</div>
+            </div>
+          </div>
+
+          <div class="ui-panel" style="background: white;">
+            <div class="ui-panel-body" style="display: flex; flex-direction: column; justify-content: center; padding: 1.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Traffic Ingest</span>
+                <MousePointerClick :size="18" style="color: #8b5cf6;" />
+              </div>
+              <div style="font-size: 2.25rem; font-weight: 800; color: #0f172a; line-height: 1;">{{ (reports.totalClicks ?? 0).toLocaleString() }}</div>
+            </div>
+          </div>
+
+          <div class="ui-panel" style="background: white; border-top: 3px solid #f59e0b;">
+            <div class="ui-panel-body" style="display: flex; flex-direction: column; justify-content: center; padding: 1.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Subscriptions</span>
+                <TrendingUp :size="18" style="color: #f59e0b;" />
+              </div>
+              <div style="font-size: 2.25rem; font-weight: 800; color: #0f172a; line-height: 1;">{{ (reports.activeSubscriptions ?? 0).toLocaleString() }}</div>
+              <div style="margin-top: 0.75rem; font-size: 0.8rem; color: #64748b; font-weight: 500;">
+                Tỷ lệ phủ: <strong style="color: #0f172a;">{{ reports.totalUsers > 0 ? ((reports.activeSubscriptions / reports.totalUsers) * 100).toFixed(1) : 0 }}%</strong>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Breakdown Section -->
+        <div v-if="reports.planBreakdown" class="ui-panel" style="background: white; padding: 0;">
+          <div class="ui-panel-header" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #f1f5f9;">
+            <h3 class="ui-panel-title" style="display: flex; align-items: center; gap: 0.5rem;"><PieChart :size="16" style="color: #3b82f6;" /> Phân bổ Gói dịch vụ</h3>
+          </div>
+          <div class="ui-panel-body" style="padding: 1.5rem;">
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+              <div v-for="item in reports.planBreakdown" :key="item.planName" style="display: flex; align-items: center; gap: 1rem;">
+                <span style="font-size: 0.85rem; font-weight: 700; color: #475569; width: 80px; flex-shrink: 0; text-transform: uppercase;">{{ item.planName }}</span>
+                <div style="flex: 1; background: #e2e8f0; border-radius: 999px; height: 10px; overflow: hidden; display: flex;">
+                  <div 
+                    style="height: 100%; border-radius: 999px; transition: width 1s ease-out;" 
+                    :style="`width: ${Math.max(item.percent, 1)}%; background: ${item.planName.toLowerCase() === 'plus' ? '#f59e0b' : item.planName.toLowerCase() === 'pro' ? '#3b82f6' : '#94a3b8'};`"
+                  ></div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.75rem; width: 100px; justify-content: flex-end;">
+                  <span style="font-size: 0.95rem; font-weight: 800; color: #0f172a;">{{ item.count.toLocaleString() }}</span>
+                  <span style="font-size: 0.75rem; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 0.15rem 0.4rem; border-radius: 4px; min-width: 45px; text-align: center;">{{ item.percent.toFixed(1) }}%</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+
       </div>
     </template>
   </div>
