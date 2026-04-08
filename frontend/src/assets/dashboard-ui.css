@@ -1,0 +1,266 @@
+/* 
+  Dashboard UI Shared Styles 
+  A modern, unified styling system for the dashboard user area.
+*/
+
+/* ═══ Root & Typography ══════════════════════════════════════════════════ */
+.ui-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ═══ Header ════════════════════════════════════════════════════════════ */
+.ui-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.5rem;
+}
+
+.ui-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ui-title {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.ui-subtitle {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.ui-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #3b82f6;
+  margin-bottom: 0.2rem;
+}
+
+/* ═══ Buttons ═══════════════════════════════════════════════════════════ */
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  outline: none;
+  text-decoration: none;
+}
+.ui-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ui-btn-primary {
+  background: #3b82f6;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+.ui-btn-primary:hover:not(:disabled) {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.ui-btn-outline {
+  background: #fff;
+  border-color: #e2e8f0;
+  color: #475569;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.ui-btn-outline:hover:not(:disabled) {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.ui-btn-danger {
+  background: #ef4444;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+.ui-btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+.ui-btn-ghost {
+  background: transparent;
+  color: #475569;
+}
+.ui-btn-ghost:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* ═══ Alerts ════════════════════════════════════════════════════════════ */
+.ui-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.ui-alert-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+.ui-alert-success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+}
+.ui-alert-warning {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #b45309;
+}
+.ui-alert-info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
+/* ═══ Badges ════════════════════════════════════════════════════════════ */
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.ui-badge-success { background: #dcfce7; color: #166534; }
+.ui-badge-warning { background: #fef3c7; color: #92400e; }
+.ui-badge-error   { background: #fee2e2; color: #b91c1c; }
+.ui-badge-info    { background: #dbeafe; color: #1e40af; }
+.ui-badge-neutral { background: #f1f5f9; color: #475569; }
+
+/* ═══ Cards & Panels ════════════════════════════════════════════════════ */
+.ui-panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  overflow: hidden;
+}
+
+.ui-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.25rem 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ui-panel-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.ui-panel-body {
+  padding: 1.25rem;
+}
+
+.ui-card-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 768px) {
+  .ui-card-grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .ui-card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .ui-card-grid-4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ═══ Empty / Loading Skeletons ═════════════════════════════════════════ */
+.ui-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 1.5rem;
+  text-align: center;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px dashed #cbd5e1;
+}
+.ui-empty-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.8; color: #94a3b8; }
+.ui-empty-title { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0 0 0.5rem; }
+.ui-empty-desc { font-size: 0.85rem; color: #64748b; margin: 0; max-width: 400px; }
+
+.ui-skeleton {
+  border-radius: 12px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ═══ Forms ═════════════════════════════════════════════════════════════ */
+.ui-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+.ui-form-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+.ui-form-input, .ui-form-select, .ui-form-textarea {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #0f172a;
+  transition: all 0.2s;
+}
+.ui-form-input:focus, .ui-form-select:focus, .ui-form-textarea:focus {
+  outline: none;
+  background: #fff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+.ui-form-hint {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.2rem;
+}

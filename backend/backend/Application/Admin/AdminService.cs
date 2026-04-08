@@ -170,23 +170,36 @@ public sealed class AdminService
 
     public async Task<IReadOnlyCollection<AdminLinkListItemDto>> GetLinksAsync(CancellationToken cancellationToken)
     {
-        return await _dbContext.Links.AsNoTracking()
+        var rawLinks = await _dbContext.Links.AsNoTracking()
             .Include(x => x.User)
             .Include(x => x.Domain)
             .OrderByDescending(x => x.CreatedAtUtc)
             .Where(x => !x.IsDeleted)
-            .Select(x => new AdminLinkListItemDto(
+            .Select(x => new {
                 x.Id,
-                BuildShortUrl(_defaultHost, x.Slug),
+                x.Slug,
+                x.OriginalUrl,
+                x.Status,
+                UserEmail = x.User.Email,
+                x.TotalClicks,
+                BotClicks = x.ClickEvents.LongCount(y => y.IsBot),
+                HighestRiskScore = x.AbuseReports.OrderByDescending(y => y.RiskScore).Select(y => (int?)y.RiskScore).FirstOrDefault(),
+                x.CreatedAtUtc,
+                DomainHost = x.Domain != null ? x.Domain.Host : null
+            })
+            .ToListAsync(cancellationToken);
+
+        return rawLinks.Select(x => new AdminLinkListItemDto(
+                x.Id,
+                BuildShortUrl(x.DomainHost ?? _defaultHost, x.Slug),
                 x.Slug,
                 x.OriginalUrl,
                 x.Status.ToString(),
-                x.User.Email!,
+                x.UserEmail!,
                 x.TotalClicks,
-                x.ClickEvents.LongCount(y => y.IsBot),
-                x.AbuseReports.OrderByDescending(y => y.RiskScore).Select(y => (int?)y.RiskScore).FirstOrDefault(),
-                x.CreatedAtUtc))
-            .ToListAsync(cancellationToken);
+                x.BotClicks,
+                x.HighestRiskScore,
+                x.CreatedAtUtc)).ToList();
     }
 
     public async Task<AdminLinkDetailDto> GetLinkDetailAsync(Guid linkId, CancellationToken cancellationToken)
