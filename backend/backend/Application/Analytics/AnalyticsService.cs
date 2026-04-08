@@ -36,9 +36,14 @@ public sealed class AnalyticsService
             .ToListAsync(cancellationToken);
 
         var linkIds = links.Select(x => x.Id).ToList();
+        // Use JOIN instead of Contains() to avoid OPENJSON WITH syntax (requires SQL Server compat level 130+)
         var dailyStats = await _dbContext.LinkDailyStats
             .AsNoTracking()
-            .Where(x => linkIds.Contains(x.LinkId) && x.StatDate >= DateOnly.FromDateTime(retentionCutoff))
+            .Join(_dbContext.Links.Where(l => l.UserId == current.UserId && !l.IsDeleted),
+                  stat => stat.LinkId,
+                  link => link.Id,
+                  (stat, link) => stat)
+            .Where(x => x.StatDate >= DateOnly.FromDateTime(retentionCutoff))
             .OrderBy(x => x.StatDate)
             .ToListAsync(cancellationToken);
 
