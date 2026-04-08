@@ -96,7 +96,7 @@ public sealed class LegacyCompatibilityController : ControllerBase
     public async Task<IActionResult> LegacyLinks(
         [FromServices] LinkService linkService,
         CancellationToken cancellationToken)
-        => Ok(await linkService.GetMineAsync(cancellationToken));
+        => Ok(await linkService.GetMineAsync(new UserLinkFilterDto(), cancellationToken));
 
     [HttpPost("/api/links")]
     [Authorize(Roles = Domain.Enums.AppRoles.User)]

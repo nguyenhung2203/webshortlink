@@ -66,8 +66,27 @@ export const AuthService = {
 
 // ─── Links ─────────────────────────────────────────────────────────────────────
 export const LinkService = {
-  list: (token: string) =>
-    apiRequest<ShortLink[]>('/api/user/links', { token }),
+  list: (token: string, filter?: { search?: string, status?: string, tag?: string, description?: string, startDate?: string, endDate?: string, sortBy?: string, pageIndex?: number, pageSize?: number }) => {
+    const params = new URLSearchParams()
+    if (filter) {
+      if (filter.search) params.append('search', filter.search)
+      if (filter.status) params.append('status', filter.status)
+      if (filter.tag) params.append('tag', filter.tag)
+      if (filter.description) params.append('description', filter.description)
+      if (filter.startDate) params.append('startDate', filter.startDate)
+      if (filter.endDate) params.append('endDate', filter.endDate)
+      if (filter.sortBy) params.append('sortBy', filter.sortBy)
+      if (filter.pageIndex) params.append('pageIndex', filter.pageIndex.toString())
+      if (filter.pageSize) params.append('pageSize', filter.pageSize.toString())
+    }
+    const q = params.toString() ? `?${params.toString()}` : ''
+    return apiRequest<{
+      items: ShortLink[]
+      totalCount: number
+      pageIndex: number
+      pageSize: number
+    }>(`/api/user/links${q}`, { token })
+  },
   detail: (token: string, id: string) =>
     apiRequest<LinkDetail>(`/api/user/links/${id}`, { token }),
   create: (token: string, data: CreateLinkRequest) =>

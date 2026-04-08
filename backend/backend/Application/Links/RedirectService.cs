@@ -61,6 +61,14 @@ public sealed class RedirectService
 
         var responseTimeMs = (int)(Environment.TickCount64 - startedAt);
         var targetUrl = await ResolveTargetUrlAsync(link, httpContext, cancellationToken);
+        
+        WebShortlink.Backend.Application.Analytics.AnalyticsSourceHelper.ParseAnalyticsFromRequest(
+            httpContext.Request, 
+            out var referrer, 
+            out var normalizedSource, 
+            out var utmSource, 
+            out var utmMedium, 
+            out var utmCampaign);
 
         await _analyticsQueue.EnqueueAsync(new ClickTrackingMessage
         {
@@ -69,10 +77,14 @@ public sealed class RedirectService
             Host = normalizedHost,
             Slug = slug,
             IpAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            Referrer = httpContext.Request.Headers.Referer.ToString(),
+            Referrer = string.IsNullOrWhiteSpace(referrer) ? "direct" : referrer,
             UserAgent = httpContext.Request.Headers.UserAgent.ToString(),
             ResponseTimeMs = responseTimeMs,
-            EventStatus = ClickEventStatus.Redirected.ToString()
+            EventStatus = ClickEventStatus.Redirected.ToString(),
+            NormalizedSource = normalizedSource,
+            UtmSource = utmSource,
+            UtmMedium = utmMedium,
+            UtmCampaign = utmCampaign
         }, cancellationToken);
 
         return new PublicRedirectAccessResponseDto(targetUrl);
@@ -148,6 +160,28 @@ public sealed class RedirectService
             if (MatchesRule(rule, country, device, browser, operatingSystem))
             {
                 return rule.TargetUrl;
+            }
+        }
+
+        var percentageRules = rules.Where(x => x.RuleType == LinkRuleType.Percentage).ToList();
+        if (percentageRules.Count > 0)
+        {
+            var totalWeight = percentageRules.Sum(x => int.TryParse(x.RuleValue, out var val) ? Math.Max(0, val) : 0);
+            if (totalWeight > 0)
+            {
+                var rand = Random.Shared.Next(0, totalWeight);
+                var current = 0;
+                foreach (var rule in percentageRules)
+                {
+                    var weight = int.TryParse(rule.RuleValue, out var val) ? Math.Max(0, val) : 0;
+                    if (weight <= 0) continue;
+                    
+                    current += weight;
+                    if (rand < current)
+                    {
+                        return rule.TargetUrl;
+                    }
+                }
             }
         }
 

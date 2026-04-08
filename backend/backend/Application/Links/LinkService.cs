@@ -105,15 +105,73 @@ public sealed class LinkService
         return MapDetail(link, domain?.Host, defaultHost);
     }
 
-    public async Task<IReadOnlyCollection<LinkListItemDto>> GetMineAsync(CancellationToken cancellationToken)
+    public async Task<PaginatedResponseDto<LinkListItemDto>> GetMineAsync(UserLinkFilterDto filter, CancellationToken cancellationToken)
     {
         var current = _currentUserService.GetRequired();
         var defaultHost = await GetSystemDefaultHostAsync(cancellationToken);
         
         var items = await _dbContext.Links
             .AsNoTracking()
-            .Where(x => x.UserId == current.UserId && !x.IsDeleted)
-            .OrderByDescending(x => x.CreatedAtUtc)
+            .Include(x => x.Domain)
+            .Where(x => x.UserId == current.UserId && !x.IsDeleted);
+
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+        {
+            var search = filter.Search.Trim().ToLower();
+            query = query.Where(x => 
+                x.Slug.ToLower().Contains(search) || 
+                x.OriginalUrl.ToLower().Contains(search) || 
+                (!string.IsNullOrEmpty(x.Description) && x.Description.ToLower().Contains(search)) ||
+                (!string.IsNullOrEmpty(x.Tag) && x.Tag.ToLower().Contains(search))
+            );
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Status))
+        {
+            if (Enum.TryParse<LinkStatus>(filter.Status, true, out var statusEnum))
+            {
+                query = query.Where(x => x.Status == statusEnum);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Tag))
+        {
+            var tag = filter.Tag.Trim().ToLower();
+            query = query.Where(x => !string.IsNullOrEmpty(x.Tag) && x.Tag.ToLower().Contains(tag));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Description))
+        {
+            var desc = filter.Description.Trim().ToLower();
+            query = query.Where(x => !string.IsNullOrEmpty(x.Description) && x.Description.ToLower().Contains(desc));
+        }
+
+        if (filter.StartDate.HasValue)
+        {
+            var start = filter.StartDate.Value.Date;
+            query = query.Where(x => x.CreatedAtUtc >= start);
+        }
+
+        if (filter.EndDate.HasValue)
+        {
+            var end = filter.EndDate.Value.Date.AddDays(1).AddTicks(-1);
+            query = query.Where(x => x.CreatedAtUtc <= end);
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        if (filter.SortBy?.ToLower() == "clicks")
+        {
+            query = query.OrderByDescending(x => x.TotalClicks);
+        }
+        else
+        {
+            query = query.OrderByDescending(x => x.CreatedAtUtc);
+        }
+
+        var items = await query
+            .Skip((filter.PageIndex - 1) * filter.PageSize)
+            .Take(filter.PageSize)
             .Select(x => new LinkListItemDto(
                 x.Id,
                 BuildShortUrl(x.Domain != null ? x.Domain.Host : defaultHost, x.Slug),
@@ -122,6 +180,7 @@ public sealed class LinkService
                 x.OriginalUrl,
                 x.Status.ToString(),
                 x.Tag,
+                x.Description,
                 x.TotalClicks,
                 x.UniqueClicks,
                 x.ClickEvents.LongCount(y => y.IsBot),
@@ -129,7 +188,7 @@ public sealed class LinkService
                 x.UpdatedAtUtc))
             .ToListAsync(cancellationToken);
 
-        return items;
+        return new PaginatedResponseDto<LinkListItemDto>(items, totalCount, filter.PageIndex, filter.PageSize);
     }
 
     public async Task<LinkDetailDto> GetMyDetailAsync(Guid linkId, CancellationToken cancellationToken)

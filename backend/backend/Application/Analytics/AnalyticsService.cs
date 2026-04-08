@@ -94,7 +94,8 @@ public sealed class AnalyticsService
             trends.Select(x => new TrendPointDto(x.StatDate.ToString("yyyy-MM-dd"), x.TotalClicks, x.UniqueClicks, x.BotClicks)).ToList(),
             events.GroupBy(x => x.CountryCode ?? "Unknown").OrderByDescending(x => x.Count()).Take(5).Select(x => new KeyValueMetricDto(x.Key, x.LongCount())).ToList(),
             events.GroupBy(x => x.DeviceType).OrderByDescending(x => x.Count()).Take(5).Select(x => new KeyValueMetricDto(x.Key, x.LongCount())).ToList(),
-            events.GroupBy(x => x.Referrer).OrderByDescending(x => x.Count()).Take(5).Select(x => new KeyValueMetricDto(x.Key, x.LongCount())).ToList());
+            events.GroupBy(x => x.NormalizedSource).OrderByDescending(x => x.Count()).Take(5).Select(x => new KeyValueMetricDto(x.Key, x.LongCount())).ToList(),
+            events.Where(x => !string.IsNullOrEmpty(x.UtmCampaign)).GroupBy(x => x.UtmCampaign!).OrderByDescending(x => x.Count()).Take(5).Select(x => new KeyValueMetricDto(x.Key, x.LongCount())).ToList());
     }
 
     /// <summary>

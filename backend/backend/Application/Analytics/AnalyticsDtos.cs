@@ -20,6 +20,7 @@ public sealed record LinkAnalyticsDto(
     IReadOnlyCollection<TrendPointDto> Trends,
     IReadOnlyCollection<KeyValueMetricDto> TopCountries,
     IReadOnlyCollection<KeyValueMetricDto> TopDevices,
-    IReadOnlyCollection<KeyValueMetricDto> TopReferrers);
+    IReadOnlyCollection<KeyValueMetricDto> TopReferrers,
+    IReadOnlyCollection<KeyValueMetricDto> TopCampaigns);
 
 public sealed record KeyValueMetricDto(string Label, long Value);

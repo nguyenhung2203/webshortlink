@@ -66,16 +66,18 @@ public sealed class ProfileService
     public async Task<SubscriptionDto> GetCurrentSubscriptionAsync(CancellationToken cancellationToken)
     {
         var current = _currentUserService.GetRequired();
+        var user = await _dbContext.Users.AsNoTracking().FirstAsync(x => x.Id == current.UserId, cancellationToken);
+
         var subscription = await _dbContext.Subscriptions
             .AsNoTracking()
             .Include(x => x.Plan)
             .OrderByDescending(x => x.StartAtUtc)
-            .FirstOrDefaultAsync(x => x.UserId == current.UserId && x.Status == Domain.Enums.SubscriptionStatus.Active, cancellationToken);
+            .FirstOrDefaultAsync(x => x.UserId == current.UserId 
+                                   && x.PlanId == user.CurrentPlanId 
+                                   && x.Status == Domain.Enums.SubscriptionStatus.Active, cancellationToken);
 
         if (subscription is null)
         {
-            var user = await _dbContext.Users.AsNoTracking()
-                .FirstAsync(x => x.Id == current.UserId, cancellationToken);
             var plan = await _dbContext.Plans.AsNoTracking()
                 .FirstAsync(x => x.Id == user.CurrentPlanId, cancellationToken);
 

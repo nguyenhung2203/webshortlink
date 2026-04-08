@@ -87,6 +87,7 @@ export interface ShortLink {
   host: string
   originalUrl: string
   status: string
+  description?: string
   tag: string | null
   totalClicks: number
   uniqueClicks: number
@@ -163,6 +164,7 @@ export interface LinkAnalytics {
   topCountries: AnalyticsBreakdownItem[]
   topDevices: AnalyticsBreakdownItem[]
   topReferrers: AnalyticsBreakdownItem[]
+  topCampaigns: AnalyticsBreakdownItem[]
 }
 
 // ─── Admin ──────────────────────────────────────────────────────────────────────

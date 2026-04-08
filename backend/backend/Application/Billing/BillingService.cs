@@ -37,6 +37,42 @@ public sealed class BillingService
         }
 
         var isPaidPlan = targetPlan.MonthlyPrice > 0;
+
+        if (isPaidPlan)
+        {
+            var validExistingSub = await _dbContext.Subscriptions
+                .FirstOrDefaultAsync(x => x.UserId == current.UserId 
+                                       && x.PlanId == targetPlan.Id 
+                                       && x.Status == SubscriptionStatus.Active 
+                                       && x.EndAtUtc > DateTime.UtcNow, cancellationToken);
+            if (validExistingSub != null)
+            {
+                user.CurrentPlanId = targetPlan.Id;
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                
+                await _auditLogService.WriteAsync(
+                    AuditActorType.User,
+                    "USR-API-BILLING-RESTORE",
+                    nameof(Subscription),
+                    validExistingSub.Id.ToString(),
+                    current.UserId,
+                    current.IpAddress,
+                    new { request.PlanId, targetPlan.Code },
+                    cancellationToken);
+
+                return new UpgradeSubscriptionResponseDto(
+                    validExistingSub.Id,
+                    targetPlan.Id,
+                    targetPlan.Code,
+                    targetPlan.Name,
+                    targetPlan.MonthlyPrice,
+                    "VND",
+                    validExistingSub.StartAtUtc,
+                    validExistingSub.EndAtUtc,
+                    "Đã khôi phục gói cước bạn đã mua trước đó vì vẫn còn hạn.");
+            }
+        }
+
         var subscriptionStatus = isPaidPlan ? SubscriptionStatus.Pending : SubscriptionStatus.Active;
 
         var subscription = new Subscription
@@ -59,19 +95,7 @@ public sealed class BillingService
         if (!isPaidPlan)
         {
             user.CurrentPlanId = targetPlan.Id;
-            
-            // Re-cancel existing if it's a free downgrade etc
-            var activeSubscriptions = await _dbContext.Subscriptions
-                .Where(x => x.UserId == current.UserId && x.Status == SubscriptionStatus.Active && x.Id != subscription.Id)
-                .ToListAsync(cancellationToken);
-
-            foreach (var activeSubscription in activeSubscriptions)
-            {
-                activeSubscription.Status = SubscriptionStatus.Expired;
-                activeSubscription.EndAtUtc = DateTime.UtcNow;
-                activeSubscription.UpdatedAtUtc = DateTime.UtcNow;
-                activeSubscription.UpdatedByUserId = current.UserId.ToString();
-            }
+            // Removed premature expiration of active subscriptions so user can restore them later.
         }
 
         Payment? payment = null;
