@@ -20,20 +20,21 @@ async function submit() {
   error.value = ''
   loading.value = true
   try {
-    const res = await fetch(`/api/public/resolve/${slug}/password`, {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5130'
+    const res = await fetch(`${API_BASE_URL}/api/public/resolve/${slug}/password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: password.value }),
     })
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
-      error.value = data.message || 'Mật khẩu không đúng, vui lòng thử lại.'
+      error.value = data.title || data.message || 'Mật khẩu không đúng, vui lòng thử lại.'
       return
     }
     const data = await res.json()
     // Redirect to the original URL
-    if (data?.originalUrl) {
-      window.location.href = data.originalUrl
+    if (data?.redirectUrl) {
+      window.location.href = data.redirectUrl
     } else {
       error.value = 'Không thể lấy đường dẫn gốc.'
     }
