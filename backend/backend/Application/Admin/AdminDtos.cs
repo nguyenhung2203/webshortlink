@@ -28,6 +28,39 @@ public sealed record AdminPlanBreakdownDto(
     long Count,
     decimal Percent);
 
+// Plan management DTOs
+public sealed record AdminPlanFeatureDto(
+    int Id,
+    string FeatureKey,
+    bool IsEnabled,
+    int? LimitValue,
+    string? FeatureValue);
+
+public sealed record AdminPlanDetailDto(
+    int Id,
+    string Code,
+    string Name,
+    decimal MonthlyPrice,
+    bool IsActive,
+    IReadOnlyCollection<AdminPlanFeatureDto> Features);
+
+public sealed record AdminUpdateFeatureRequestDto(
+    bool IsEnabled,
+    int? LimitValue,
+    string? FeatureValue);
+
+public sealed record AdminFeatureLabelDto(
+    string FeatureKey,
+    string Label,
+    string Description,
+    string FeatureType);  // "toggle" or "number"
+
+public sealed record AdminSaveFeatureLabelDto(
+    string FeatureKey,
+    string Label,
+    string Description,
+    string FeatureType);
+
 public sealed record AdminSecurityDto(
     long FailedLoginsToday,
     long SuspiciousClicks,
@@ -110,3 +143,23 @@ public sealed record AdminPaymentListItemDto(
     string Provider,
     DateTime CreatedAtUtc,
     DateTime? PaidAtUtc);
+
+public sealed record AdminDomainListItemDto(
+    Guid Id,
+    string Host,
+    bool IsVerified,
+    string VerificationToken,
+    DateTime? VerifiedAtUtc,
+    DateTime CreatedAtUtc,
+    string UserEmail,
+    long LinksCount,
+    bool IsGlobal,
+    bool IsDefault = false);
+
+public sealed record AdminDomainDnsCheckResultDto(
+    bool Verified,
+    string Host,
+    string Message);
+
+public sealed record AdminCreateDomainForUserRequestDto(Guid? UserId, string Host, bool IsGlobal);
+

@@ -98,23 +98,27 @@ public sealed class LinkService
 
         _dbContext.Links.Add(link);
         await _dbContext.SaveChangesAsync(cancellationToken);
-        await SetCacheAsync(link, domain?.Host, cancellationToken);
+        
+        var defaultHost = await GetSystemDefaultHostAsync(cancellationToken);
+        await SetCacheAsync(link, domain?.Host, defaultHost, cancellationToken);
 
-        return MapDetail(link, domain?.Host, _defaultHost);
+        return MapDetail(link, domain?.Host, defaultHost);
     }
 
     public async Task<IReadOnlyCollection<LinkListItemDto>> GetMineAsync(CancellationToken cancellationToken)
     {
         var current = _currentUserService.GetRequired();
+        var defaultHost = await GetSystemDefaultHostAsync(cancellationToken);
+        
         var items = await _dbContext.Links
             .AsNoTracking()
             .Where(x => x.UserId == current.UserId && !x.IsDeleted)
             .OrderByDescending(x => x.CreatedAtUtc)
             .Select(x => new LinkListItemDto(
                 x.Id,
-                BuildShortUrl(x.Domain != null ? x.Domain.Host : _defaultHost, x.Slug),
+                BuildShortUrl(x.Domain != null ? x.Domain.Host : defaultHost, x.Slug),
                 x.Slug,
-                x.Domain != null ? x.Domain.Host : _defaultHost,
+                x.Domain != null ? x.Domain.Host : defaultHost,
                 x.OriginalUrl,
                 x.Status.ToString(),
                 x.Tag,
@@ -135,7 +139,9 @@ public sealed class LinkService
             .Include(x => x.Domain)
             .FirstOrDefaultAsync(x => x.Id == linkId && x.UserId == current.UserId && !x.IsDeleted, cancellationToken)
             ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy link.", StatusCodes.Status404NotFound);
-        return MapDetail(link, link.Domain?.Host, _defaultHost);
+            
+        var defaultHost = await GetSystemDefaultHostAsync(cancellationToken);
+        return MapDetail(link, link.Domain?.Host, defaultHost);
     }
 
     public async Task<LinkDetailDto> UpdateAsync(Guid linkId, UpdateLinkRequestDto request, CancellationToken cancellationToken)
@@ -196,9 +202,10 @@ public sealed class LinkService
             await _linkCacheService.RemoveAsync(previousHost, link.Slug, cancellationToken);
         }
 
-        await SetCacheAsync(link, domain?.Host, cancellationToken);
+        var defaultHost = await GetSystemDefaultHostAsync(cancellationToken);
+        await SetCacheAsync(link, domain?.Host, defaultHost, cancellationToken);
 
-        return MapDetail(link, domain?.Host, _defaultHost);
+        return MapDetail(link, domain?.Host, defaultHost);
     }
 
     public async Task<MessageResponseDto> ToggleAsync(Guid linkId, ToggleLinkStatusRequestDto request, CancellationToken cancellationToken)
@@ -213,7 +220,8 @@ public sealed class LinkService
         link.UpdatedAtUtc = DateTime.UtcNow;
         link.UpdatedByUserId = current.UserId.ToString();
         await _dbContext.SaveChangesAsync(cancellationToken);
-        await SetCacheAsync(link, link.Domain?.Host, cancellationToken);
+        var defaultHost = await GetSystemDefaultHostAsync(cancellationToken);
+        await SetCacheAsync(link, link.Domain?.Host, defaultHost, cancellationToken);
 
         return new MessageResponseDto("Cập nhật trạng thái link thành công.");
     }
@@ -231,7 +239,8 @@ public sealed class LinkService
         link.DeletedByUserId = current.UserId.ToString();
         link.Status = LinkStatus.Paused;
         await _dbContext.SaveChangesAsync(cancellationToken);
-        await _linkCacheService.RemoveAsync(link.Domain?.Host ?? _defaultHost, link.Slug, cancellationToken);
+        var defaultHost = await GetSystemDefaultHostAsync(cancellationToken);
+        await _linkCacheService.RemoveAsync(link.Domain?.Host ?? defaultHost, link.Slug, cancellationToken);
 
         return new MessageResponseDto("Đã xóa link.");
     }
@@ -243,25 +252,42 @@ public sealed class LinkService
             return null;
         }
 
-        await _planCapabilityService.EnsureFeatureEnabledAsync(userId, DomainsFeatureKey, cancellationToken);
         var domain = await _dbContext.Domains.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == domainId.Value && x.UserId == userId && !x.IsDeleted, cancellationToken)
-            ?? throw new AppException(ErrorCodes.NotFound, "Khong tim thay domain.", StatusCodes.Status404NotFound);
+            .FirstOrDefaultAsync(x => x.Id == domainId.Value && !x.IsDeleted, cancellationToken)
+            ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy domain.", StatusCodes.Status404NotFound);
+
+        // Nêú không phải Global Domain thì user bắt buộc phải là chủ sở hữu, và phải có gói premium.
+        if (!domain.IsGlobal)
+        {
+            if (domain.UserId != userId)
+            {
+                throw new AppException(ErrorCodes.NotFound, "Không tìm thấy domain.", StatusCodes.Status404NotFound);
+            }
+            await _planCapabilityService.EnsureFeatureEnabledAsync(userId, DomainsFeatureKey, cancellationToken);
+        }
 
         if (!domain.IsVerified)
         {
-            throw new AppException(ErrorCodes.DomainNotVerified, "Domain chua duoc xac minh.", StatusCodes.Status400BadRequest);
+            throw new AppException(ErrorCodes.DomainNotVerified, "Domain chưa được xác minh.", StatusCodes.Status400BadRequest);
         }
 
         return domain;
     }
 
-    private async Task SetCacheAsync(Link link, string? host, CancellationToken cancellationToken)
+    private async Task<string> GetSystemDefaultHostAsync(CancellationToken cancellationToken = default)
+    {
+        var setting = await _dbContext.SystemSettings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.SettingKey == "DefaultDomain", cancellationToken);
+        return setting?.SettingValue ?? _defaultHost;
+    }
+
+    private async Task SetCacheAsync(Link link, string? host, string defaultHost, CancellationToken cancellationToken)
     {
         await _linkCacheService.SetAsync(new CachedLinkDto(
             link.Id,
             link.UserId,
-            host ?? _defaultHost,
+            host ?? defaultHost,
             link.Slug,
             link.OriginalUrl,
             link.Status.ToString(),

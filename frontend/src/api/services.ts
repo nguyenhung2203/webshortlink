@@ -125,6 +125,8 @@ export const UserService = {
     const a = document.createElement('a')
     a.href = url
     a.download = fileName
+
+
     a.click()
     URL.revokeObjectURL(url)
   },
@@ -158,6 +160,8 @@ export const UserService = {
     }),
   getDomains: (token: string) =>
     apiRequest<any[]>('/api/user/domains', { token }),
+  getAvailableDomains: (token: string) =>
+    apiRequest<any[]>('/api/user/domains/available', { token }),
 }
 
 export const DomainService = {
@@ -210,4 +214,26 @@ export const AdminService = {
     apiRequest<any[]>('/api/admin/payments', { token }),
   approvePayment: (token: string, paymentId: string) =>
     apiRequest<ApiMessageResponse>('/api/admin/payments/' + paymentId + '/approve', { method: 'PATCH', token }),
+  getDomains: (token: string) =>
+    apiRequest<any[]>('/api/admin/domains', { token }),
+  createDomain: (token: string, userId: string | null, host: string, isGlobal: boolean = false) =>
+    apiRequest<any>('/api/admin/domains', { method: 'POST', body: { userId: userId || null, host, isGlobal }, token }),
+  checkDomainDns: (token: string, domainId: string) =>
+    apiRequest<any>('/api/admin/domains/' + domainId + '/check-dns', { token }),
+  verifyDomain: (token: string, domainId: string) =>
+    apiRequest<ApiMessageResponse>('/api/admin/domains/' + domainId + '/verify', { method: 'PATCH', token }),
+  setDefaultDomain: (token: string, domainId: string) =>
+    apiRequest<ApiMessageResponse>('/api/admin/domains/' + domainId + '/set-default', { method: 'PATCH', token }),
+  deleteDomain: (token: string, domainId: string) =>
+    apiRequest<ApiMessageResponse>('/api/admin/domains/' + domainId, { method: 'DELETE', token }),
+  getPlans: (token: string) =>
+    apiRequest<any[]>('/api/admin/plans', { token }),
+  updatePlanFeature: (token: string, planId: number, featureKey: string, data: { isEnabled: boolean; limitValue: number | null; featureValue: string | null }) =>
+    apiRequest<ApiMessageResponse>(`/api/admin/plans/${planId}/features/${featureKey}`, { method: 'PATCH', body: data, token }),
+  getFeatureLabels: (token: string) =>
+    apiRequest<any[]>('/api/admin/plans/feature-labels', { token }),
+  saveFeatureLabel: (token: string, data: { featureKey: string; label: string; description: string; featureType: string }) =>
+    apiRequest<ApiMessageResponse>('/api/admin/plans/feature-labels', { method: 'POST', body: data, token }),
+  deleteFeatureLabel: (token: string, featureKey: string) =>
+    apiRequest<ApiMessageResponse>('/api/admin/plans/feature-labels/' + featureKey, { method: 'DELETE', token }),
 } as const

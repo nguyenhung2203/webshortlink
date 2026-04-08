@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { LayoutDashboard, Users, Link as LinkIcon, LogOut, ClipboardList, BarChart2, ShieldCheck, CreditCard, TerminalSquare, Search } from 'lucide-vue-next'
+import { LayoutDashboard, Users, Link as LinkIcon, LogOut, ClipboardList, BarChart2, ShieldCheck, CreditCard, TerminalSquare, Search, Globe, Package } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -12,6 +12,8 @@ const navItems = [
   { to: '/admin', label: 'Cổng thông tin', shortLabel: 'Overview', icon: LayoutDashboard },
   { to: '/admin/users', label: 'Khách hàng', shortLabel: 'Users', icon: Users },
   { to: '/admin/links', label: 'Hệ thống Link', shortLabel: 'Links', icon: LinkIcon },
+  { to: '/admin/domains', label: 'Tên miền', shortLabel: 'Domains', icon: Globe },
+  { to: '/admin/plans', label: 'Gói & Tính năng', shortLabel: 'Plans', icon: Package },
   { to: '/admin/payments', label: 'Giao dịch', shortLabel: 'Payments', icon: CreditCard },
   { to: '/admin/reports', label: 'Báo cáo', shortLabel: 'Reports', icon: BarChart2 },
   { to: '/admin/security', label: 'Bảo mật', shortLabel: 'Security', icon: ShieldCheck },
@@ -31,6 +33,8 @@ const pageTitle = computed(() => {
     'admin-user-detail': 'Chi tiết Khách hàng',
     'admin-links': 'Quản lý Liên kết',
     'admin-link-detail': 'Cấu hình Liên kết',
+    'admin-domains': 'Kiểm duyệt Tên miền',
+    'admin-plans': 'Quản lý Gói & Tính năng',
     'admin-payments': 'Đối soát Giao dịch',
     'admin-reports': 'Phân tích & Báo cáo',
     'admin-security': 'Phòng thủ & Bảo mật',
@@ -123,12 +127,13 @@ const pageTitle = computed(() => {
 
     </div>
 
-    <style>
-      @media (max-width: 768px) {
-        .admin-sidebar {
-          display: none !important;
-        }
-      }
-    </style>
   </div>
 </template>
+
+<style scoped>
+  @media (max-width: 768px) {
+    .admin-sidebar {
+      display: none !important;
+    }
+  }
+</style>

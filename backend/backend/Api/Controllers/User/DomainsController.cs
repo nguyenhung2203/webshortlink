@@ -20,6 +20,10 @@ public sealed class DomainsController : ControllerBase
     public async Task<IActionResult> GetMine(CancellationToken cancellationToken)
         => Ok(await _domainService.GetMineAsync(cancellationToken));
 
+    [HttpGet("available")]
+    public async Task<IActionResult> GetAvailable(CancellationToken cancellationToken)
+        => Ok(await _domainService.GetAvailableAsync(cancellationToken));
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateDomainRequestDto request, CancellationToken cancellationToken)
         => Ok(await _domainService.CreateAsync(request, cancellationToken));

@@ -15,4 +15,5 @@ public sealed record DomainListItemDto(
     bool IsVerified,
     string VerificationToken,
     DateTime? VerifiedAtUtc,
-    DateTime CreatedAtUtc);
+    DateTime CreatedAtUtc,
+    bool IsDefault = false);
