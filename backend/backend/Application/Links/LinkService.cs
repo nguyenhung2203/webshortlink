@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using WebShortlink.Backend.Application.Abstractions;
 using WebShortlink.Backend.Application.Common;
 using WebShortlink.Backend.Application.Domains;
 using WebShortlink.Backend.Domain.Entities;
 using WebShortlink.Backend.Domain.Enums;
+using WebShortlink.Backend.Infrastructure.Options;
 using WebShortlink.Backend.Infrastructure.Persistence;
 
 namespace WebShortlink.Backend.Application.Links;
@@ -14,25 +16,27 @@ public sealed class LinkService
     private const string LinkLimitFeatureKey = "links.max_count";
     private const string CustomSlugFeatureKey = "links.custom_slug";
     private const string DomainsFeatureKey = "domains.custom";
-    private const string DefaultHost = "sho.rt";
     private readonly ApplicationDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILinkCacheService _linkCacheService;
     private readonly IPlanCapabilityService _planCapabilityService;
     private readonly IPasswordHasher<Link> _passwordHasher;
+    private readonly string _defaultHost;
 
     public LinkService(
         ApplicationDbContext dbContext,
         ICurrentUserService currentUserService,
         ILinkCacheService linkCacheService,
         IPlanCapabilityService planCapabilityService,
-        IPasswordHasher<Link> passwordHasher)
+        IPasswordHasher<Link> passwordHasher,
+        IOptions<AppOptions> appOptions)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
         _linkCacheService = linkCacheService;
         _planCapabilityService = planCapabilityService;
         _passwordHasher = passwordHasher;
+        _defaultHost = appOptions.Value.DefaultDomain;
     }
 
     public async Task<LinkDetailDto> CreateAsync(CreateLinkRequestDto request, CancellationToken cancellationToken)
@@ -96,7 +100,7 @@ public sealed class LinkService
         await _dbContext.SaveChangesAsync(cancellationToken);
         await SetCacheAsync(link, domain?.Host, cancellationToken);
 
-        return MapDetail(link, domain?.Host);
+        return MapDetail(link, domain?.Host, _defaultHost);
     }
 
     public async Task<IReadOnlyCollection<LinkListItemDto>> GetMineAsync(CancellationToken cancellationToken)
@@ -108,9 +112,9 @@ public sealed class LinkService
             .OrderByDescending(x => x.CreatedAtUtc)
             .Select(x => new LinkListItemDto(
                 x.Id,
-                BuildShortUrl(x.Domain != null ? x.Domain.Host : DefaultHost, x.Slug),
+                BuildShortUrl(x.Domain != null ? x.Domain.Host : _defaultHost, x.Slug),
                 x.Slug,
-                x.Domain != null ? x.Domain.Host : DefaultHost,
+                x.Domain != null ? x.Domain.Host : _defaultHost,
                 x.OriginalUrl,
                 x.Status.ToString(),
                 x.Tag,
@@ -131,7 +135,7 @@ public sealed class LinkService
             .Include(x => x.Domain)
             .FirstOrDefaultAsync(x => x.Id == linkId && x.UserId == current.UserId && !x.IsDeleted, cancellationToken)
             ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy link.", StatusCodes.Status404NotFound);
-        return MapDetail(link, link.Domain?.Host);
+        return MapDetail(link, link.Domain?.Host, _defaultHost);
     }
 
     public async Task<LinkDetailDto> UpdateAsync(Guid linkId, UpdateLinkRequestDto request, CancellationToken cancellationToken)
@@ -194,7 +198,7 @@ public sealed class LinkService
 
         await SetCacheAsync(link, domain?.Host, cancellationToken);
 
-        return MapDetail(link, domain?.Host);
+        return MapDetail(link, domain?.Host, _defaultHost);
     }
 
     public async Task<MessageResponseDto> ToggleAsync(Guid linkId, ToggleLinkStatusRequestDto request, CancellationToken cancellationToken)
@@ -227,7 +231,7 @@ public sealed class LinkService
         link.DeletedByUserId = current.UserId.ToString();
         link.Status = LinkStatus.Paused;
         await _dbContext.SaveChangesAsync(cancellationToken);
-        await _linkCacheService.RemoveAsync(link.Domain?.Host ?? DefaultHost, link.Slug, cancellationToken);
+        await _linkCacheService.RemoveAsync(link.Domain?.Host ?? _defaultHost, link.Slug, cancellationToken);
 
         return new MessageResponseDto("Đã xóa link.");
     }
@@ -257,7 +261,7 @@ public sealed class LinkService
         await _linkCacheService.SetAsync(new CachedLinkDto(
             link.Id,
             link.UserId,
-            host ?? DefaultHost,
+            host ?? _defaultHost,
             link.Slug,
             link.OriginalUrl,
             link.Status.ToString(),
@@ -286,11 +290,15 @@ public sealed class LinkService
         return new string(Enumerable.Range(0, 7).Select(_ => chars[Random.Shared.Next(chars.Length)]).ToArray());
     }
 
-    private static string BuildShortUrl(string host, string slug) => $"https://{host}/{slug}";
-
-    private static LinkDetailDto MapDetail(Link link, string? host)
+    private static string BuildShortUrl(string host, string slug)
     {
-        var resolvedHost = host ?? DefaultHost;
+        var scheme = host.StartsWith("localhost") || host.StartsWith("127.0.0.1") ? "http" : "https";
+        return $"{scheme}://{host}/{slug}";
+    }
+
+    private static LinkDetailDto MapDetail(Link link, string? host, string defaultHost)
+    {
+        var resolvedHost = host ?? defaultHost;
         return new LinkDetailDto(
             link.Id,
             BuildShortUrl(resolvedHost, link.Slug),

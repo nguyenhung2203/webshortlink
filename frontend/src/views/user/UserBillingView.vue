@@ -4,9 +4,7 @@ import { useRouter } from 'vue-router'
 import { UserService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
 import type { Plan, Subscription } from '@/types/api'
-import WxPageHeader from '@/components/ui/WxPageHeader.vue'
-import WxCard from '@/components/ui/WxCard.vue'
-import WxButton from '@/components/ui/WxButton.vue'
+import { Check, Zap, ArrowRight, History, Crown, CheckCircle2, AlertCircle } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -16,25 +14,39 @@ const error = ref('')
 const loading = ref(true)
 const actionMessage = ref('')
 
-const planFeatures: Record<string, string[]> = {
-  'regular': [
-    'Tạo tối đa 100 links ngẫu nhiên',
-    'Phân tích Analytics giới hạn cơ bản',
-    'Không hỗ trợ trỏ Tên miền riêng'
-  ],
-  'pro': [
-    'Tạo tối đa 5,000 links tuỳ chỉnh (Custom Slug)',
-    'Phân tích Analytics nâng cao (Quốc gia, Nguồn, KH)',
-    'Hỗ trợ gắn tối đa 3 Tên miền độc quyền',
-    'Tốc độ Redirect cực nhanh'
-  ],
-  'plus': [
-    'Tạo tối đa 50,000 links (Gần như không giới hạn)',
-    'Báo cáo Analytics phân tích đa chiều Export CSV',
-    'Hỗ trợ gắn lên đến 20 Tên miền độc quyền',
-    'Quyền ưu tiên xử lý Support 24/7',
-    'Tùy chỉnh sâu tham số Click'
-  ]
+const planDetails: Record<string, { desc: string, iconColor: string, features: { title: string, hint?: string }[] }> = {
+  'regular': {
+    desc: 'Bắt đầu hành trình của bạn với các công cụ cơ bản hoàn toàn miễn phí.',
+    iconColor: '#64748b',
+    features: [
+      { title: 'Tạo tối đa 100 links' },
+      { title: 'Định tuyến siêu tốc' },
+      { title: 'Thống kê click cơ bản' },
+      { title: 'Hỗ trợ cộng đồng' }
+    ]
+  },
+  'pro': {
+    desc: 'Sức mạnh tùy chỉnh tối đa dành cho Marketer và Creator chuyên nghiệp.',
+    iconColor: '#3b82f6',
+    features: [
+      { title: 'Lên tới 5,000 Custom Links' },
+      { title: 'Báo cáo Analytics chi tiết', hint: 'Nguồn, Quốc gia, Thiết bị' },
+      { title: 'Bảo vệ Link bằng Mật khẩu' },
+      { title: 'Gắn tối đa 3 Tên miền riêng' },
+      { title: 'Hỗ trợ kỹ thuật 24/7' }
+    ]
+  },
+  'plus': {
+    desc: 'Giải pháp vô hạn với dữ liệu phân tích chuyên sâu cho Doanh nghiệp.',
+    iconColor: '#f59e0b',
+    features: [
+      { title: 'Quy mô lên đến 50,000 links' },
+      { title: 'Xuất dữ liệu Analytics (CSV)' },
+      { title: 'Tối đa 20 Tên miền riêng' },
+      { title: 'API Truy cập hệ thống' },
+      { title: 'Cam kết SLA 99.99% Uptime' }
+    ]
+  }
 }
 
 async function load() {
@@ -47,7 +59,7 @@ async function load() {
     plans.value = await UserService.getPlans(authStore.accessToken)
     subscription.value = await UserService.getSubscription(authStore.accessToken)
   } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Không thể tải billing.'
+    error.value = err instanceof Error ? err.message : 'Dịch vụ nâng cấp tạm thời không phản hồi.'
   } finally {
     loading.value = false
   }
@@ -67,7 +79,7 @@ async function upgrade(planId: number) {
       await load()
     }
   } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Không thể nâng cấp gói.'
+    error.value = err instanceof Error ? err.message : 'Khởi tạo thanh toán thất bại.'
     loading.value = false
   }
 }
@@ -76,71 +88,516 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <WxPageHeader
-      title="Tiện ích & Gói dịch vụ (Billing)"
-      subtitle="Quản lý và Nâng cấp Hạng thành viên để tối đa hoá tiềm năng đường link của bạn."
-    />
-
-    <p v-if="error && !loading" class="text-danger text-sm">{{ error }}</p>
-    <p v-if="actionMessage" class="rounded-lg border border-success/20 bg-success/10 p-3 text-sm font-medium text-success">{{ actionMessage }}</p>
+  <div class="pricing-container">
     
-    <div v-if="loading" class="flex justify-center p-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    <!-- Hero Section -->
+    <div class="pricing-hero">
+      <div class="pricing-hero-badge">NÂNG CẤP DỊCH VỤ</div>
+      <h1 class="pricing-hero-title">Chọn Gói Phù Hợp Với Bạn</h1>
+      <p class="pricing-hero-subtitle">Mở khóa tên miền riêng, phân tích chuyên sâu và nhiều quyền lợi khác. Nâng cấp ngay hôm nay để đẩy nhanh hiệu suất chiến dịch.</p>
+      
+      <div class="pricing-actions">
+        <button class="pricing-history-btn" @click="router.push('/app/payments')">
+          <History :size="16" /> Lịch sử thanh toán
+        </button>
+      </div>
     </div>
 
-    <!-- Active Subscription Summary -->
-    <WxCard v-if="subscription" title="Tình trạng Tài khoản" class="p-6 border-l-4 border-l-primary bg-primary/5">
-      <div class="flex flex-col sm:flex-row gap-8">
-        <div>
-          <p class="text-sm font-medium text-on-surface-variant uppercase tracking-wider mb-1">Gói hiện tại</p>
-          <p class="text-2xl font-black text-primary uppercase">{{ subscription.planName }}</p>
+    <div v-if="error && !loading" class="pricing-alert error">
+      <AlertCircle :size="18" /> {{ error }}
+    </div>
+    <div v-if="actionMessage" class="pricing-alert success">
+      <CheckCircle2 :size="18"/> {{ actionMessage }}
+    </div>
+
+    <!-- Active Subscription Banner -->
+    <div v-if="subscription && !loading" class="active-plan-banner">
+      <div class="banner-content">
+        <div class="banner-icon">
+          <CheckCircle2 :size="24" stroke-width="2.5" />
         </div>
-        <div>
-          <p class="text-sm font-medium text-on-surface-variant uppercase tracking-wider mb-1">Trạng thái</p>
-          <p class="text-lg font-bold text-success">{{ subscription.status === 'Active' ? 'Đang hoạt động' : subscription.status }}</p>
-        </div>
-        <div class="flex items-end">
-          <div class="sm:ml-auto">
-            <RouterLink to="/app/payments" class="text-sm text-primary font-semibold hover:underline">
-              Xem lịch sử thanh toán →
-            </RouterLink>
-          </div>
+        <div class="banner-text">
+          <span class="banner-label">TRẠNG THÁI TÀI KHOẢN HIỆN TẠI</span>
+          <h2 class="banner-plan-name">Gói {{ subscription.planName.toUpperCase() }} 
+            <span class="status-pill">{{ subscription.status === 'Active' ? 'ĐANG HOẠT ĐỘNG' : subscription.status.toUpperCase() }}</span>
+          </h2>
         </div>
       </div>
-    </WxCard>
+      <div class="banner-end">
+        <span class="banner-cycle">Chu kỳ gia hạn: <strong>30 ngày</strong></span>
+      </div>
+    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mt-4" v-if="!loading">
-      <WxCard 
+    <!-- Loading Skeleton -->
+    <div v-if="loading" class="pricing-grid loading-state">
+      <div class="skeleton-card" v-for="i in 3" :key="i"></div>
+    </div>
+
+    <!-- Pricing Grid -->
+    <div v-else class="pricing-grid">
+      <div 
         v-for="plan in plans" 
         :key="plan.id" 
-        :title="plan.name" 
-        class="transition-all duration-300 flex flex-col pt-6 px-6 pb-8 border-2"
-        :class="subscription?.planId === plan.id ? 'border-primary ring-4 ring-primary/10 scale-[1.02] bg-white' : 'border-gray-100 hover:border-gray-300 hover:-translate-y-1 bg-gray-50/50'"
+        :class="['pricing-card', `plan-${plan.code.toLowerCase()}`, { 'is-current': subscription?.planId === plan.id }]"
       >
-        <div class="flex-col pb-4 border-b border-gray-100 mb-6">
-          <p class="text-4xl font-black text-gray-900 tracking-tight">{{ plan.monthlyPrice === 0 ? 'Miễn phí' : plan.monthlyPrice.toLocaleString('vi-VN') + 'đ' }}<span v-if="plan.monthlyPrice > 0" class="text-sm font-medium text-gray-500 ml-1 tracking-normal">/tháng</span></p>
-          <span v-if="plan.code === 'pro'" class="inline-block mt-3 text-xs font-bold bg-primary/10 text-primary px-3 py-1 rounded-full">Phổ biến nhất</span>
-          <span v-if="plan.code === 'plus'" class="inline-block mt-3 text-xs font-bold bg-amber-500/10 text-amber-600 px-3 py-1 rounded-full">Cao cấp nhất</span>
+        <!-- Highlight labels -->
+        <div v-if="plan.code === 'pro'" class="popular-label">
+          <Zap :size="14" fill="currentColor" /> ĐƯỢC ƯA CHUỘNG NHẤT
         </div>
-        
-        <ul class="flex flex-col gap-4 mb-8 flex-1">
-          <li v-for="(feature, idx) in planFeatures[plan.code] || []" :key="idx" class="flex items-start gap-3 text-sm text-gray-700 font-medium leading-tight">
-             <!-- Icon Check -->
-            <svg class="w-5 h-5 text-primary shrink-0 drop-shadow-sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-            <span>{{ feature }}</span>
-          </li>
-        </ul>
+        <div v-if="plan.code === 'plus'" class="enterprise-label">
+          <Crown :size="14" /> DÀNH CHO DOANH NGHIỆP
+        </div>
 
-        <WxButton 
-          :variant="subscription?.planId === plan.id ? 'secondary' : (plan.code === 'pro' ? 'primary' : 'cta')" 
-          class="mt-auto w-full py-3.5 font-bold text-base shadow-sm hover:shadow-md" 
-          @click="upgrade(plan.id)" 
-          :disabled="subscription?.planId === plan.id || !plan.isActive"
-        >
-          {{ subscription?.planId === plan.id ? 'Tài khoản gốc' : 'Bắt đầu với ' + plan.name }}
-        </WxButton>
-      </WxCard>
+        <!-- Header -->
+        <div class="card-header">
+          <h3 class="plan-name">{{ plan.name }}</h3>
+          <p class="plan-desc">{{ planDetails[plan.code]?.desc || 'Mở khóa tính năng.' }}</p>
+          
+          <div class="plan-price-box">
+            <span class="price-val">{{ plan.monthlyPrice === 0 ? 'Miễn phí' : (plan.monthlyPrice / 1000).toLocaleString() + 'k' }}</span>
+            <span v-if="plan.monthlyPrice > 0" class="price-cycle">/tháng</span>
+            <span v-if="plan.monthlyPrice > 0" class="price-currency">VND</span>
+          </div>
+        </div>
+
+        <!-- Features -->
+        <div class="card-features">
+          <div class="feature-title">Bao gồm các quyền lợi:</div>
+          <ul class="feature-list">
+            <li v-for="(feat, idx) in planDetails[plan.code]?.features || []" :key="idx" class="feature-item">
+              <Check :size="18" class="check-icon" stroke-width="3" />
+              <div class="feat-text">
+                <span class="feat-main">{{ feat.title }}</span>
+                <span v-if="feat.hint" class="feat-hint">{{ feat.hint }}</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- CTA Action -->
+        <div class="card-action">
+          <button 
+            @click="upgrade(plan.id)" 
+            :disabled="subscription?.planId === plan.id || !plan.isActive"
+            class="cta-btn"
+          >
+            <span v-if="subscription?.planId === plan.id">Gói hiện tại của bạn</span>
+            <span v-else-if="!plan.isActive">Tạm khóa nâng cấp</span>
+            <span v-else-if="plan.monthlyPrice === 0">Bắt đầu miễn phí</span>
+            <span v-else class="flex items-center justify-center gap-2">
+              Nâng cấp lên {{ plan.name }} <ArrowRight :size="16" />
+            </span>
+          </button>
+        </div>
+      </div>
     </div>
+
+    <!-- Trust Note -->
+    <div v-if="!loading" class="pricing-footer">
+      <p>Thanh toán bảo vệ an toàn qua cổng chuyển khoản quốc gia (VietQR). Kích hoạt ngay tự động trong 5 giây.</p>
+    </div>
+
   </div>
 </template>
+
+<style scoped>
+  .pricing-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 1.5rem;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Hero */
+  .pricing-hero {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  .pricing-hero-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: #e0e7ff;
+    color: #4f46e5;
+    font-weight: 800;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    border-radius: 999px;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+  }
+  .pricing-hero-title {
+    font-size: 2rem;
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.75rem;
+    line-height: 1.2;
+  }
+  .pricing-hero-subtitle {
+    font-size: 0.95rem;
+    color: #64748b;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+  .pricing-actions {
+    margin-top: 1.5rem;
+  }
+  .pricing-history-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .pricing-history-btn:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a;
+  }
+
+  /* Alerts */
+  .pricing-alert {
+    max-width: 900px;
+    margin: 0 auto 1.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+  .pricing-alert.error { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; }
+  .pricing-alert.success { background: #ecfdf5; color: #10b981; border: 1px solid #a7f3d0; }
+
+  /* Banner */
+  .active-plan-banner {
+    max-width: 900px;
+    margin: 0 auto 2rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    box-shadow: 0 2px 4px -1px rgba(0,0,0,0.05);
+  }
+  .banner-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .banner-icon {
+    width: 44px;
+    height: 44px;
+    background: #10b981;
+    color: white;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 4px 10px rgba(16,185,129,0.3);
+  }
+  .banner-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #64748b;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 0.15rem;
+  }
+  .banner-plan-name {
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: #0f172a;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .status-pill {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+  }
+  .banner-cycle {
+    font-size: 0.85rem;
+    color: #475569;
+  }
+  .banner-cycle strong { color: #0f172a; }
+
+  /* Grid */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    max-width: 900px;
+    margin: 0 auto;
+    align-items: stretch;
+  }
+
+  /* Skeleton */
+  .loading-state {
+    gap: 1.5rem;
+  }
+  .skeleton-card {
+    background: #f1f5f9;
+    height: 400px;
+    border-radius: 16px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .5; }
+  }
+
+  /* Card Base */
+  .pricing-card {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .pricing-card.is-current {
+    box-shadow: inset 0 0 0 2px #10b981;
+  }
+  
+  /* Plan: Pro (The Highlighted Card) */
+  .pricing-card.plan-pro {
+    background: #0f172a;
+    border: none;
+    color: white;
+    transform: scale(1.03);
+    box-shadow: 0 15px 30px -10px rgba(15,23,42,0.5);
+    z-index: 10;
+  }
+  /* Pro specific overrides */
+  .plan-pro .plan-name { color: white; }
+  .plan-pro .plan-desc { color: #94a3b8; border-color: #1e293b; }
+  .plan-pro .price-val { color: white; }
+  .plan-pro .price-cycle, .plan-pro .price-currency { color: #94a3b8; }
+  .plan-pro .feature-title { color: #f8fafc; }
+  .plan-pro .feat-main { color: #f1f5f9; }
+  .plan-pro .feat-hint { color: #64748b; }
+  .plan-pro .check-icon { color: #38bdf8; }
+  
+  /* Badges */
+  .popular-label {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    padding: 0.25rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(37,99,235,0.4);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    white-space: nowrap;
+  }
+  .enterprise-label {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: #fffbeb;
+    color: #b45309;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    border: 1px solid #fde68a;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  /* Card Header */
+  .card-header {
+    margin-bottom: 1.25rem;
+  }
+  .plan-name {
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: #0f172a;
+    margin: 0 0 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .plan-desc {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.4;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .plan-price-box {
+    margin-top: 1rem;
+    display: flex;
+    align-items: flex-end;
+    gap: 0.2rem;
+  }
+  .price-val {
+    font-size: 2.25rem;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .price-cycle {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+  }
+  .price-currency {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #94a3b8;
+    margin-bottom: 0.25rem;
+    margin-left: 0.15rem;
+  }
+
+  /* Rules */
+  .card-features {
+    flex: 1;
+    margin-bottom: 1.5rem;
+  }
+  .feature-title {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.75rem;
+  }
+  .feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+  .feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .check-icon {
+    flex-shrink: 0;
+    color: #10b981;
+    margin-top: 0.1rem;
+  }
+  .feat-text {
+    display: flex;
+    flex-direction: column;
+  }
+  .feat-main {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.3;
+  }
+  .feat-hint {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    margin-top: 0.1rem;
+  }
+
+  /* CTAs */
+  .cta-btn {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 800;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+  .cta-btn:hover:not(:disabled) {
+    background: #e2e8f0;
+  }
+  
+  .pricing-card.is-current .cta-btn {
+    background: #ecfdf5 !important;
+    color: #10b981 !important;
+    cursor: not-allowed;
+    border: 1px solid #a7f3d0;
+  }
+
+  .plan-pro .cta-btn {
+    background: #3b82f6;
+    color: white;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+  }
+  .plan-pro .cta-btn:hover:not(:disabled) {
+    background: #2563eb;
+    transform: translateY(-2px);
+  }
+
+  /* Footer */
+  .pricing-footer {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .pricing-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+    .pricing-card.plan-pro {
+      transform: none;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .pricing-hero-title { font-size: 1.75rem; }
+    .pricing-grid {
+      grid-template-columns: 1fr;
+    }
+    .pricing-card {
+      padding: 1.5rem;
+    }
+    .active-plan-banner {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+  }
+  </style>

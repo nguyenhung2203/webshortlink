@@ -3,22 +3,26 @@ import { onMounted, ref, computed } from 'vue'
 import { AdminService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
 import type { AdminLink } from '@/types/api'
-import WxPageHeader from '@/components/ui/WxPageHeader.vue'
-import { Search, Link2, ChevronRight, Ban, CheckCircle, MousePointerClick } from 'lucide-vue-next'
+import { Search, Link2, ChevronRight, Ban, CheckCircle, MousePointerClick, Activity, AlertCircle, RefreshCw } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 
 const authStore = useAuthStore()
 const data = ref<AdminLink[]>([])
 const error = ref('')
+const loading = ref(true)
 const isActionLoading = ref(false)
 const search = ref('')
 
 async function load() {
+  loading.value = true
+  error.value = ''
   try {
     if (!authStore.accessToken) throw new Error('Chưa xác thực.')
     data.value = await AdminService.getLinks(authStore.accessToken)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải danh sách links.'
+  } finally {
+    loading.value = false
   }
 }
 
@@ -51,124 +55,132 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <WxPageHeader title="Quản lý Links" description="Giám sát và quản lý toàn bộ link của hệ thống." />
-
-    <div v-if="error" class="text-danger bg-danger/10 rounded-xl p-4 text-sm">{{ error }}</div>
-
-    <!-- Search -->
-    <div class="relative">
-      <Search :size="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
-      <input
-        v-model="search"
-        type="text"
-        placeholder="Tìm theo slug, email chủ sở hữu..."
-        class="w-full h-10 pl-9 pr-4 rounded-xl border border-outline bg-surface-container text-sm focus:outline-none focus:border-primary"
-      />
+  <div class="ui-root">
+    
+    <!-- Header -->
+    <div class="ui-header">
+      <div class="ui-header-left">
+        <div class="ui-eyebrow"><Link2 :size="13" /> Hệ thống Links</div>
+        <h1 class="ui-title">Quản lý & Giám sát</h1>
+        <p class="ui-subtitle">Giám sát, quản lý và kiểm soát chất lượng toàn bộ đường dẫn trên nền tảng.</p>
+      </div>
+      <div>
+        <button class="ui-btn ui-btn-outline" @click="load" :disabled="loading">
+          <RefreshCw :size="14" :class="{'animate-spin': loading}" /> Làm mới
+        </button>
+      </div>
     </div>
 
-    <!-- Desktop table -->
-    <div class="hidden md:block bg-surface-container rounded-xl border border-outline overflow-hidden relative">
-      <div v-if="isActionLoading" class="absolute inset-0 bg-surface/50 z-10 flex items-center justify-center">
-        <span class="text-on-surface-variant text-sm font-medium">Đang xử lý...</span>
-      </div>
-      <table class="w-full text-left text-sm">
-        <thead class="bg-surface-container-high text-on-surface-variant border-b border-outline">
-          <tr>
-            <th class="p-4 font-semibold">Slug</th>
-            <th class="p-4 font-semibold">Chủ sở hữu</th>
-            <th class="p-4 font-semibold">Clicks</th>
-            <th class="p-4 font-semibold">Bot</th>
-            <th class="p-4 font-semibold">Risk</th>
-            <th class="p-4 font-semibold">Trạng thái</th>
-            <th class="p-4 font-semibold">Ngày tạo</th>
-            <th class="p-4 font-semibold">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-outline">
-          <tr v-for="link in filtered" :key="link.id" class="hover:bg-surface-container-low">
-            <td class="p-4">
-              <a :href="link.shortUrl" target="_blank" class="text-primary font-mono hover:underline">{{ link.slug }}</a>
-            </td>
-            <td class="p-4 text-on-surface-variant">{{ link.userEmail }}</td>
-            <td class="p-4 text-on-surface">{{ link.totalClicks }}</td>
-            <td class="p-4 text-on-surface-variant">{{ link.botClicks }}</td>
-            <td class="p-4">
-              <span v-if="link.highestRiskScore" :class="link.highestRiskScore > 70 ? 'text-danger' : 'text-warning'" class="font-bold">
-                {{ link.highestRiskScore }}
-              </span>
-              <span v-else class="text-on-surface-variant">—</span>
-            </td>
-            <td class="p-4">
-              <span :class="link.status === 'Active' ? 'text-success bg-success/10' : 'text-on-surface-variant bg-surface-container-high'" class="px-2 py-0.5 rounded-full text-xs font-bold">
-                {{ link.status }}
-              </span>
-            </td>
-            <td class="p-4 text-on-surface-variant">{{ new Date(link.createdAtUtc).toLocaleDateString('vi-VN') }}</td>
-            <td class="p-4">
-              <div class="flex items-center gap-3">
-                <RouterLink :to="{ name: 'admin-link-detail', params: { id: link.id } }" class="text-primary font-semibold text-sm hover:underline">Chi tiết</RouterLink>
-                <button
-                  @click="toggleLinkStatus(link)"
-                  :disabled="isActionLoading"
-                  :class="link.status === 'Active' ? 'text-danger' : 'text-success'"
-                  class="font-semibold text-sm transition-colors"
-                >
-                  {{ link.status === 'Active' ? 'Khóa' : 'Mở' }}
-                </button>
-              </div>
-            </td>
-          </tr>
-          <tr v-if="filtered.length === 0">
-            <td colspan="8" class="p-8 text-center text-on-surface-variant">{{ search ? 'Không tìm thấy kết quả.' : 'Chưa có dữ liệu link.' }}</td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Error state -->
+    <div v-if="error" class="ui-alert ui-alert-error">
+      <AlertCircle :size="16" /> {{ error }}
     </div>
 
-    <!-- Mobile card list -->
-    <div class="flex flex-col gap-3 md:hidden">
-      <div v-if="filtered.length === 0" class="text-center text-on-surface-variant text-sm py-6">
-        {{ search ? 'Không tìm thấy kết quả.' : 'Chưa có dữ liệu link.' }}
+    <!-- Toolbar -->
+    <div class="ui-panel" style="padding: 1rem 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+      <div style="flex: 1; min-width: 250px; position: relative;">
+        <Search :size="16" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8;" />
+        <input
+          v-model="search"
+          type="text"
+          placeholder="Tìm theo slug, email chủ sở hữu..."
+          class="ui-form-input"
+          style="padding-left: 2.5rem; margin: 0; box-shadow: none;"
+        />
       </div>
-      <div v-for="link in filtered" :key="link.id + '-mobile'"
-        class="bg-surface-container rounded-2xl border border-outline p-4 flex flex-col gap-3"
-      >
-        <div class="flex items-start justify-between gap-2">
-          <div class="flex items-center gap-2 min-w-0">
-            <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <Link2 :size="16" class="text-primary" />
-            </div>
-            <div class="min-w-0">
-              <a :href="link.shortUrl" target="_blank" class="font-mono font-bold text-primary text-sm hover:underline">{{ link.slug }}</a>
-              <p class="text-xs text-on-surface-variant truncate">{{ link.userEmail }}</p>
-            </div>
-          </div>
-          <span :class="link.status === 'Active' ? 'text-success bg-success/10' : 'text-on-surface-variant bg-surface-container-high'" class="px-2 py-0.5 rounded-full text-xs font-bold shrink-0">
-            {{ link.status }}
-          </span>
-        </div>
-        <div class="flex items-center gap-4 text-xs text-on-surface-variant">
-          <span class="flex items-center gap-1"><MousePointerClick :size="12" /> {{ link.totalClicks }} clicks</span>
-          <span>Bot: {{ link.botClicks }}</span>
-          <span v-if="link.highestRiskScore" :class="link.highestRiskScore > 70 ? 'text-danger' : 'text-warning'" class="font-bold">Risk: {{ link.highestRiskScore }}</span>
-        </div>
-        <div class="flex items-center gap-2 pt-1 border-t border-outline">
-          <RouterLink :to="{ name: 'admin-link-detail', params: { id: link.id } }" class="flex items-center gap-1 text-primary font-semibold text-sm">
-            Chi tiết <ChevronRight :size="14" />
-          </RouterLink>
-          <button
-            @click="toggleLinkStatus(link)"
-            :disabled="isActionLoading"
-            class="flex items-center gap-1 text-sm font-semibold ml-auto"
-            :class="link.status === 'Active' ? 'text-danger' : 'text-success'"
-          >
-            <Ban v-if="link.status === 'Active'" :size="13" />
-            <CheckCircle v-else :size="13" />
-            {{ link.status === 'Active' ? 'Vô hiệu hóa' : 'Kích hoạt' }}
-          </button>
-        </div>
+    </div>
+
+    <!-- Skeleton Loading -->
+    <div v-if="loading" class="ui-skeleton" style="height: 400px; border-radius: 12px;" />
+
+    <!-- No Data -->
+    <div v-else-if="filtered.length === 0" class="ui-empty" style="background: white;">
+      <div class="ui-empty-icon" style="opacity: 0.5;"><Link2 :size="48" /></div>
+      <h3 class="ui-empty-title">{{ search ? 'Không tìm thấy kết quả' : 'Chưa có dữ liệu link' }}</h3>
+      <p class="ui-empty-desc">{{ search ? 'Thử tìm với từ khóa khác xem sao.' : 'Hệ thống hiện tại chưa có link rút gọn nào.' }}</p>
+    </div>
+
+    <!-- Content Table -->
+    <div v-else class="ui-panel" style="overflow: hidden; padding: 0;">
+      
+      <div v-if="isActionLoading" style="position: absolute; inset: 0; z-index: 10; background: rgba(255,255,255,0.7); backdrop-filter: blur(2px); display: flex; justify-content: center; align-items: center;">
+        <span style="font-weight: 600; font-size: 0.9rem; color: #3b82f6; display: flex; align-items: center; gap: 0.5rem;">
+          <RefreshCw :size="16" class="animate-spin" /> Đang xử lý...
+        </span>
       </div>
+
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; min-width: 800px; text-align: left;">
+          <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+            <tr>
+              <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Shortlink</th>
+              <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Chủ sở hữu</th>
+              <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Lượt Click</th>
+              <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Risk Score</th>
+              <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Trạng thái</th>
+              <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Ngày tạo</th>
+              <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; text-align: right;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="link in filtered" :key="link.id" style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s;" class="hover:bg-slate-50">
+              
+              <td style="padding: 1rem 1.25rem;">
+                <a :href="link.shortUrl" target="_blank" style="font-family: monospace; font-weight: 700; font-size: 0.95rem; color: #3b82f6; text-decoration: none;">
+                  {{ link.slug }}
+                </a>
+              </td>
+              
+              <td style="padding: 1rem 1.25rem;">
+                <p style="margin: 0; font-size: 0.85rem; color: #475569; font-weight: 500;">{{ link.userEmail }}</p>
+              </td>
+              
+              <td style="padding: 1rem 1.25rem;">
+                <div style="display: flex; gap: 1rem; align-items: center; font-size: 0.85rem;">
+                  <span style="font-weight: 600; color: #0f172a;" title="Tổng clicks">{{ link.totalClicks }}</span>
+                  <span style="color: #94a3b8; font-size: 0.75rem;" title="Bot clicks">(Bot: {{ link.botClicks }})</span>
+                </div>
+              </td>
+              
+              <td style="padding: 1rem 1.25rem;">
+                <span v-if="link.highestRiskScore" class="ui-badge" :class="link.highestRiskScore > 70 ? 'ui-badge-error' : 'ui-badge-warning'" style="font-weight: 800;">
+                  {{ link.highestRiskScore }}
+                </span>
+                <span v-else style="color: #cbd5e1; font-weight: 600;">—</span>
+              </td>
+              
+              <td style="padding: 1rem 1.25rem;">
+                <span class="ui-badge" :class="link.status === 'Active' ? 'ui-badge-success' : 'ui-badge-neutral'">
+                  {{ link.status }}
+                </span>
+              </td>
+              
+              <td style="padding: 1rem 1.25rem;">
+                <span style="font-size: 0.85rem; color: #64748b; font-variant-numeric: tabular-nums;">
+                  {{ new Date(link.createdAtUtc).toLocaleDateString('vi-VN') }}
+                </span>
+              </td>
+
+              <td style="padding: 1rem 1.25rem; text-align: right;">
+                <div style="display: flex; items-center; justify-content: flex-end; gap: 0.75rem;">
+                  <RouterLink :to="{ name: 'admin-link-detail', params: { id: link.id } }" style="font-size: 0.85rem; font-weight: 600; color: #3b82f6; text-decoration: none;">
+                    Chi tiết
+                  </RouterLink>
+                  <button
+                    @click="toggleLinkStatus(link)"
+                    :disabled="isActionLoading"
+                    style="background: transparent; border: 0; font-size: 0.85rem; font-weight: 600; cursor: pointer;"
+                    :style="link.status === 'Active' ? 'color: #ef4444;' : 'color: #10b981;'"
+                  >
+                    {{ link.status === 'Active' ? 'Khóa' : 'Mở' }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
     </div>
   </div>
 </template>

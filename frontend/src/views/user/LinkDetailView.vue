@@ -4,12 +4,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { LinkService, UserService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
 import type { LinkDetail } from '@/types/api'
-import WxBadge from '@/components/ui/WxBadge.vue'
-import WxButton from '@/components/ui/WxButton.vue'
-import WxCard from '@/components/ui/WxCard.vue'
-import WxEmptyState from '@/components/ui/WxEmptyState.vue'
-import WxPageHeader from '@/components/ui/WxPageHeader.vue'
 import LinkRulesPanel from '@/components/user/LinkRulesPanel.vue'
+import { 
+  ArrowLeft, FileOutput, MousePointerClick, Users, Tag, Calendar, 
+  Settings, Link as LinkIcon, Info, Pause, Play, Trash2, Activity,
+  Lock, Eye, AlertCircle, Link2
+} from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -62,6 +62,8 @@ async function toggleStatus() {
 
 async function deleteLink() {
   if (!authStore.accessToken || !detail.value) return
+  if (!confirm('Bạn có chắc chắn muốn xóa link này không? (Xóa mềm)')) return
+  
   actionLoading.value = true
   error.value = ''
   message.value = ''
@@ -98,132 +100,187 @@ async function exportCsv() {
   }
 }
 
+function formatDate(ds: string | null) {
+  if(!ds) return '—'
+  return new Date(ds).toLocaleString('vi-VN', { 
+    hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' 
+  })
+}
+
 onMounted(load)
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <WxPageHeader
-      title="Chi tiết Link"
-      description="Xem cấu hình, giới hạn và quyền sử dụng của shortlink."
-    >
-      <template #actions>
-        <WxButton v-if="isPro" variant="secondary" :disabled="exportLoading" @click="exportCsv">
-          {{ exportLoading ? 'Đang xuất...' : 'Export CSV' }}
-        </WxButton>
-        <WxButton variant="secondary" @click="router.push('/app/links')">Quậy lại danh sách</WxButton>
-      </template>
-    </WxPageHeader>
+  <div class="ui-root">
+    
+    <!-- Header -->
+    <div class="ui-header">
+      <div class="ui-header-left">
+        <button 
+          @click="router.push('/app/links')"
+          style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem; font-weight: 600; color: #64748b; background: transparent; border: 0; padding: 0 0 0.5rem 0; cursor: pointer;"
+        >
+          <ArrowLeft :size="14" /> Quay lại danh sách
+        </button>
+        <h1 class="ui-title">Chi tiết Link</h1>
+        <p class="ui-subtitle">Xem cấu hình, thống kê nhanh và quản lý toàn diện link rút gọn.</p>
+      </div>
+      <div>
+        <button v-if="isPro" class="ui-btn ui-btn-outline" style="border-color: #10b981; color: #059669;" :disabled="exportLoading" @click="exportCsv">
+          <FileOutput :size="15" /> {{ exportLoading ? 'Đang xuất...' : 'Xuất báo cáo CSV' }}
+        </button>
+      </div>
+    </div>
 
-    <p v-if="message" class="rounded-lg border border-success/20 bg-success/10 p-3 text-sm font-medium text-success">
-      {{ message }}
-    </p>
-    <p v-if="error && !loading" class="text-sm text-danger">{{ error }}</p>
+    <div v-if="message" class="ui-alert ui-alert-info">
+      <Info :size="16" /> {{ message }}
+    </div>
+    <div v-if="error && !loading" class="ui-alert ui-alert-error">
+      <AlertCircle :size="16" /> {{ error }}
+    </div>
 
-    <div v-if="loading" class="text-sm text-on-surface-variant">Đang tải chi tiết link...</div>
+    <!-- Skeleton -->
+    <div v-if="loading" class="ui-skeleton" style="height: 250px;" />
 
-    <WxEmptyState
-      v-else-if="!detail"
-      title="Không tìm thấy link"
-      description="Link này có thể đã bị xóa hoặc bạn không còn quyền truy cập."
-    >
-      <template #action>
-        <WxButton variant="primary" @click="router.push('/app/links')">Về trang Links</WxButton>
-      </template>
-    </WxEmptyState>
+    <div v-else-if="!detail" class="ui-empty">
+      <div class="ui-empty-icon"><Link2 :size="48"/></div>
+      <h3 class="ui-empty-title">Không tìm thấy link</h3>
+      <p class="ui-empty-desc">Liên kết không tồn tại, đã bị xóa hoặc bạn không có quyền truy cập.</p>
+      <button class="ui-btn ui-btn-primary" style="margin-top: 1.5rem;" @click="router.push('/app/links')">Quay Lại</button>
+    </div>
 
     <template v-else>
-      <WxCard padding="md">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div class="space-y-2">
-            <div class="flex items-center gap-3">
-              <h2 class="text-xl font-bold text-primary">{{ detail.shortUrl }}</h2>
-              <WxBadge :variant="detail.status === 'Active' ? 'success' : 'warning'">
-                {{ detail.status }}
-              </WxBadge>
+      
+      <!-- General Box -->
+      <div class="ui-panel">
+        <div class="ui-panel-body" style="display: flex; flex-wrap: wrap; gap: 2rem; justify-content: space-between;">
+          
+          <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+              <a :href="detail.shortUrl" target="_blank" style="font-size: 1.4rem; font-weight: 800; color: #3b82f6; text-decoration: none;">
+                {{ detail.shortUrl }}
+              </a>
+              <span class="ui-badge" :class="detail.status === 'Active' ? 'ui-badge-success' : 'ui-badge-warning'">
+                {{ detail.status === 'Active' ? 'Hoạt động' : 'Đang tạm dừng' }}
+              </span>
             </div>
-            <p class="break-all text-sm text-on-surface-variant">{{ detail.originalUrl }}</p>
-            <div class="flex flex-wrap gap-4 text-sm text-on-surface-variant">
-              <span>Slug: <strong class="text-on-surface">{{ detail.slug }}</strong></span>
-              <span>Tổng click: <strong class="text-on-surface">{{ detail.totalClicks }}</strong></span>
-              <span>Click duy nhất: <strong class="text-on-surface">{{ detail.uniqueClicks }}</strong></span>
+            
+            <div style="display: flex; gap: 0.5rem; align-items: flex-start; max-width: 600px;">
+              <div style="margin-top: 0.2rem; color: #94a3b8;"><LinkIcon :size="14" /></div>
+              <a :href="detail.originalUrl" target="_blank" style="font-size: 0.9rem; color: #64748b; text-decoration: none; word-break: break-all;">
+                {{ detail.originalUrl }}
+              </a>
+            </div>
+
+            <!-- Stats Mini -->
+            <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem;">
+               <div style="display: flex; align-items: center; gap: 0.4rem; color: #475569; font-size: 0.85rem;">
+                 <MousePointerClick :size="14" />
+                 <span>Traffic: <strong>{{ detail.totalClicks }}</strong></span>
+               </div>
+               <div style="display: flex; align-items: center; gap: 0.4rem; color: #475569; font-size: 0.85rem;">
+                 <Users :size="14" />
+                 <span>Unique: <strong>{{ detail.uniqueClicks }}</strong></span>
+               </div>
+               <div style="display: flex; align-items: center; gap: 0.4rem; color: #475569; font-size: 0.85rem;">
+                 <Tag :size="14" />
+                 <span>Slug: <strong>{{ detail.slug }}</strong></span>
+               </div>
             </div>
           </div>
 
-          <div class="flex flex-wrap gap-3">
-            <WxButton
-              :variant="detail.status === 'Active' ? 'danger' : 'success'"
-              :loading="actionLoading"
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <button 
+              class="ui-btn" 
+              :class="detail.status === 'Active' ? 'ui-btn-outline' : 'ui-btn-primary'"
+              :style="detail.status === 'Active' ? 'color: #d97706; border-color: #fcd34d;' : ''"
+              :disabled="actionLoading"
               @click="toggleStatus"
             >
-              {{ detail.status === 'Active' ? 'Tạm dừng Link' : 'Kích hoạt lại' }}
-            </WxButton>
-            <WxButton variant="ghost" @click="router.push(`/app/analytics?linkId=${detail.id}`)">
-              Xem analytics
-            </WxButton>
-            <WxButton variant="danger" :loading="actionLoading" @click="deleteLink">
-              Xóa mềm
-            </WxButton>
+              <Pause v-if="detail.status === 'Active'" :size="15" />
+              <Play v-else :size="15" />
+              {{ detail.status === 'Active' ? 'Tạm dừng Link' : 'Kích hoạt lại Link' }}
+            </button>
+            <button class="ui-btn ui-btn-outline" style="border-color: #3b82f6; color: #3b82f6;" @click="router.push(`/app/analytics?linkId=${detail.id}`)">
+              <Activity :size="15" /> Xem Phân Tích
+            </button>
+            <button class="ui-btn ui-btn-ghost" style="color: #ef4444;" :disabled="actionLoading" @click="deleteLink">
+              <Trash2 :size="15" /> Xóa Link này
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Config & Meta Grid -->
+      <div class="ui-card-grid ui-card-grid-2">
+        <div class="ui-panel">
+          <div class="ui-panel-header">
+            <h3 class="ui-panel-title" style="display: flex; align-items: center; gap: 0.5rem;">
+              <Settings :size="16" style="color: #64748b;" /> Thiết lập & Cấu hình
+            </h3>
+          </div>
+          <div class="ui-panel-body" style="padding: 0;">
+            <div style="display: flex; flex-direction: column;">
+              <div style="display: flex; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9;">
+                <span style="font-size: 0.85rem; color: #64748b;">Mật khẩu</span>
+                <span style="font-size: 0.85rem; font-weight: 600; color: #0f172a;">
+                  <Lock v-if="detail.hasPassword" :size="12" style="display:inline; margin-right: 0.2rem;"/>
+                  {{ detail.hasPassword ? 'Đã thiết lập' : 'Không (Public)' }}
+                </span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9;">
+                <span style="font-size: 0.85rem; color: #64748b;">Giới hạn Click</span>
+                <span style="font-size: 0.85rem; font-weight: 600; color: #0f172a;">{{ detail.clickLimit ?? 'Không giới hạn' }}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9;">
+                <span style="font-size: 0.85rem; color: #64748b;">Ngày hết hạn</span>
+                <span style="font-size: 0.85rem; font-weight: 600; color: #0f172a;">{{ formatDate(detail.expiresAtUtc) }}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9;">
+                <span style="font-size: 0.85rem; color: #64748b;">Tag</span>
+                <span style="font-size: 0.85rem; font-weight: 600; color: #0f172a;" class="ui-badge ui-badge-neutral">{{ detail.tag || '—' }}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 1rem 1.25rem;">
+                <span style="font-size: 0.85rem; color: #64748b;">Mô tả</span>
+                <span style="font-size: 0.85rem; font-weight: 500; color: #0f172a;">{{ detail.description || '—' }}</span>
+              </div>
+            </div>
           </div>
         </div>
-      </WxCard>
 
-      <div class="grid gap-6 lg:grid-cols-2">
-        <!-- Cấu hình -->
-        <WxCard padding="md">
-          <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-on-surface">Cấu hình Link</h3>
-            <div class="grid gap-3 text-sm">
-              <div class="flex items-center justify-between gap-4">
-                <span class="text-on-surface-variant">Mật khẩu bảo vệ</span>
-                <strong>{{ detail.hasPassword ? 'Đã bật' : 'Không' }}</strong>
+        <div class="ui-panel">
+          <div class="ui-panel-header">
+            <h3 class="ui-panel-title" style="display: flex; align-items: center; gap: 0.5rem;">
+              <Eye :size="16" style="color: #64748b;" /> Siêu dữ liệu (Meta)
+            </h3>
+          </div>
+          <div class="ui-panel-body" style="padding: 0;">
+            <div style="display: flex; flex-direction: column;">
+              <div style="display: flex; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9;">
+                <span style="font-size: 0.85rem; color: #64748b;">Domain / Host</span>
+                <span style="font-size: 0.85rem; font-weight: 600; color: #3b82f6;">{{ linkHost }}</span>
               </div>
-              <div class="flex items-center justify-between gap-4">
-                <span class="text-on-surface-variant">Hết hạn</span>
-                <strong>{{ detail.expiresAtUtc || 'Không giới hạn' }}</strong>
+              <div style="display: flex; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9;">
+                <span style="font-size: 0.85rem; color: #64748b;">Ngày khởi tạo</span>
+                <span style="font-size: 0.85rem; font-weight: 600; color: #0f172a;">{{ formatDate(detail.createdAtUtc) }}</span>
               </div>
-              <div class="flex items-center justify-between gap-4">
-                <span class="text-on-surface-variant">Click limit</span>
-                <strong>{{ detail.clickLimit ?? 'Không giới hạn' }}</strong>
-              </div>
-              <div class="flex items-center justify-between gap-4">
-                <span class="text-on-surface-variant">Tag</span>
-                <strong>{{ detail.tag || '—' }}</strong>
-              </div>
-              <div class="flex items-center justify-between gap-4">
-                <span class="text-on-surface-variant">Mô tả</span>
-                <strong>{{ detail.description || '—' }}</strong>
+              <div style="display: flex; justify-content: space-between; padding: 1rem 1.25rem;">
+                <span style="font-size: 0.85rem; color: #64748b;">Sửa đổi lần cuối</span>
+                <span style="font-size: 0.85rem; font-weight: 600; color: #0f172a;">{{ formatDate(detail.updatedAtUtc) }}</span>
               </div>
             </div>
           </div>
-        </WxCard>
-
-        <!-- Thông tin host -->
-        <WxCard padding="md">
-          <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-on-surface">Thông tin bổ sung</h3>
-            <div class="grid gap-3 text-sm">
-              <div class="flex items-center justify-between gap-4">
-                <span class="text-on-surface-variant">Host chuyển hướng</span>
-                <strong>{{ linkHost }}</strong>
-              </div>
-              <div class="flex items-center justify-between gap-4">
-                <span class="text-on-surface-variant">Ngày tạo</span>
-                <strong>{{ new Date(detail.createdAtUtc).toLocaleDateString('vi-VN') }}</strong>
-              </div>
-              <div v-if="detail.updatedAtUtc" class="flex items-center justify-between gap-4">
-                <span class="text-on-surface-variant">Cập nhật lần cuối</span>
-                <strong>{{ new Date(detail.updatedAtUtc).toLocaleDateString('vi-VN') }}</strong>
-              </div>
-            </div>
-          </div>
-        </WxCard>
+        </div>
       </div>
-        <!-- Link Rules -->
-        <LinkRulesPanel
-          :link-id="detail.id"
-          :is-pro="isPro"
-        />
+
+      <!-- Link Rules Panel: Bypassing internal styles by keeping the component but wrapping it in a layout standard if needed.
+           Actually we just put it here, the component handles itself. We'll leave it as is. -->
+      <LinkRulesPanel
+        :link-id="detail.id"
+        :is-pro="isPro"
+      />
+
     </template>
   </div>
 </template>

@@ -2,90 +2,133 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { LayoutDashboard, Users, Link as LinkIcon, LogOut, ClipboardList, BarChart2, ShieldCheck, CreditCard } from 'lucide-vue-next'
+import { LayoutDashboard, Users, Link as LinkIcon, LogOut, ClipboardList, BarChart2, ShieldCheck, CreditCard, TerminalSquare, Search } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
 const navItems = [
-  { to: '/admin', label: 'Tổng quan', shortLabel: 'Tổng quan', icon: LayoutDashboard },
-  { to: '/admin/users', label: 'Khách hàng', shortLabel: 'Khách hàng', icon: Users },
-  { to: '/admin/links', label: 'Quản lý Link', shortLabel: 'Links', icon: LinkIcon },
-  { to: '/admin/payments', label: 'Nạp tiền / Thanh toán', shortLabel: 'Nạp tiền', icon: CreditCard },
-  { to: '/admin/reports', label: 'Báo cáo', shortLabel: 'Báo cáo', icon: BarChart2 },
-  { to: '/admin/security', label: 'Bảo mật', shortLabel: 'Bảo mật', icon: ShieldCheck },
-  { to: '/admin/audit', label: 'Nhật ký', shortLabel: 'Nhật ký', icon: ClipboardList },
+  { to: '/admin', label: 'Cổng thông tin', shortLabel: 'Overview', icon: LayoutDashboard },
+  { to: '/admin/users', label: 'Khách hàng', shortLabel: 'Users', icon: Users },
+  { to: '/admin/links', label: 'Hệ thống Link', shortLabel: 'Links', icon: LinkIcon },
+  { to: '/admin/payments', label: 'Giao dịch', shortLabel: 'Payments', icon: CreditCard },
+  { to: '/admin/reports', label: 'Báo cáo', shortLabel: 'Reports', icon: BarChart2 },
+  { to: '/admin/security', label: 'Bảo mật', shortLabel: 'Security', icon: ShieldCheck },
+  { to: '/admin/audit', label: 'Nhật ký (Audit)', shortLabel: 'Audit', icon: ClipboardList },
 ]
-
-const title = computed(() => route.name?.toString().replaceAll('-', ' ') ?? 'Admin')
 
 function logout() {
   authStore.logout()
   router.push('/auth/login')
 }
+
+// Lấy thông tin page title từ active route name
+const pageTitle = computed(() => {
+  const map: Record<string, string> = {
+    'admin-dashboard': 'Cổng tổng quan',
+    'admin-users': 'Tài khoản & Khách hàng',
+    'admin-user-detail': 'Chi tiết Khách hàng',
+    'admin-links': 'Quản lý Liên kết',
+    'admin-link-detail': 'Cấu hình Liên kết',
+    'admin-payments': 'Đối soát Giao dịch',
+    'admin-reports': 'Phân tích & Báo cáo',
+    'admin-security': 'Phòng thủ & Bảo mật',
+    'admin-audit': 'Nhật ký hệ thống',
+  }
+  return map[route.name as string] || 'Hệ thống Quản trị'
+})
+
 </script>
 
 <template>
-  <div class="flex h-screen bg-surface-container-high text-on-surface overflow-hidden">
-    <!-- Sidebar / Desktop -->
-    <aside class="hidden md:flex w-64 flex-col bg-surface border-r border-outline-variant transition-all duration-300">
-      <div class="h-14 flex items-center px-6 border-b border-outline-variant bg-slate-800 text-white">
-        <span class="font-bold text-lg tracking-wider">Trang Quản Trị</span>
+  <div class="admin-wrapper" style="display: flex; height: 100vh; background-color: #f1f5f9; overflow: hidden; font-family: 'Inter', sans-serif;">
+    
+    <!-- Sidebar Desktop -->
+    <aside class="admin-sidebar" style="width: 260px; background-color: #0f172a; color: #f8fafc; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 4px 0 24px rgba(0,0,0,0.1); z-index: 20;">
+      <!-- Logo -->
+      <div style="height: 64px; display: flex; items-center; justify-content: flex-start; padding: 0 1.5rem; border-bottom: 1px solid #1e293b; align-items: center; gap: 0.75rem;">
+        <TerminalSquare :size="24" style="color: #38bdf8;" />
+        <span style="font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px; color: #f8fafc;">WS<span style="color: #38bdf8;">/</span>ADMIN</span>
       </div>
-      <nav class="flex-1 overflow-y-auto p-4 flex flex-col gap-1">
+
+      <!-- Navigation -->
+      <div style="flex: 1; overflow-y: auto; padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 0.25rem;">
+        <div style="font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; padding: 0 0.5rem 0.5rem;">Modules</div>
+        
         <RouterLink 
           v-for="item in navItems" 
           :key="item.to" 
           :to="item.to" 
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
-          :class="route.path === item.to || (item.to !== '/admin' && route.path.startsWith(item.to)) || (item.to === '/admin' && route.path === '/admin') ? 'bg-primary/20 text-primary' : 'text-on-surface hover:bg-surface-container-low'"
+          style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500; text-decoration: none; transition: all 0.2s;"
+          :style="route.path === item.to || (item.to !== '/admin' && route.path.startsWith(item.to)) || (item.to === '/admin' && route.path === '/admin') ? 'background-color: #1e293b; border-left: 3px solid #38bdf8; color: #f8fafc;' : 'color: #94a3b8; border-left: 3px solid transparent;'"
         >
-          <component :is="item.icon" :size="20" />
+          <component :is="item.icon" :size="18" :style="route.path === item.to || (item.to !== '/admin' && route.path.startsWith(item.to)) || (item.to === '/admin' && route.path === '/admin') ? 'color: #38bdf8;' : ''" />
           {{ item.label }}
         </RouterLink>
-      </nav>
-      <div class="p-4 border-t border-outline-variant">
+      </div>
+
+      <!-- Footer Info -->
+      <div style="padding: 1.5rem 1rem; border-top: 1px solid #1e293b;">
         <button 
-          class="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-danger hover:bg-danger/10 transition-colors" 
           @click="logout"
+          style="width: 100%; display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500; color: #ef4444; background: transparent; border: 0; cursor: pointer; text-align: left; transition: background 0.2s;"
+          onmouseover="this.style.backgroundColor='#1e293b'"
+          onmouseout="this.style.backgroundColor='transparent'"
         >
-          <LogOut :size="20" />
-          Đăng xuất
+          <LogOut :size="18" /> Ngắt kết nối
         </button>
       </div>
     </aside>
 
-    <!-- Main Content -->
-    <div class="flex-1 flex flex-col min-w-0">
-      <header class="h-14 flex shrink-0 items-center justify-between px-6 bg-surface border-b border-outline-variant shadow-sm z-10">
-        <div>
-          <p class="text-xs text-on-surface-variant hidden md:block">Quản trị Hệ thống</p>
-          <h1 class="text-lg font-bold capitalize">{{ title }}</h1>
+    <!-- Main Workspace -->
+    <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+      
+      <!-- Topbar -->
+      <header style="height: 64px; background: #ffffff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; flex-shrink: 0; z-index: 10;">
+        
+        <!-- Breadcrumb / Title -->
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <h1 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">{{ pageTitle }}</h1>
+          <span style="color: #cbd5e1;">/</span>
+          <span style="font-size: 0.85rem; font-weight: 600; color: #64748b;">Hệ thống lõi</span>
         </div>
-        <div class="flex items-center gap-3">
-          <span class="px-2 py-0.5 rounded bg-slate-800 text-white text-xs font-semibold">{{ authStore.user?.role }}</span>
-          <span class="text-sm font-medium">{{ authStore.user?.email }}</span>
+
+        <!-- System Status & Account -->
+        <div style="display: flex; align-items: center; gap: 1.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 0.35rem 0.75rem; border-radius: 999px;">
+            <div style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; animation: pulse 2s infinite;"></div>
+            <span style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase;">System Ops Nominal</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.75rem; border-left: 1px solid #e2e8f0; padding-left: 1.5rem;">
+            <div style="text-align: right;">
+              <div style="font-size: 0.85rem; font-weight: 700; color: #0f172a;">{{ authStore.user?.role }} Account</div>
+              <div style="font-size: 0.75rem; color: #64748b;">{{ authStore.user?.email }}</div>
+            </div>
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #38bdf8; color: white; display: grid; place-items: center; font-weight: 800; font-size: 1rem;">
+              {{ (authStore.user?.email || 'A').charAt(0).toUpperCase() }}
+            </div>
+          </div>
         </div>
       </header>
 
-      <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-surface-container-low">
-        <RouterView />
+      <!-- Content Area -->
+      <main style="flex: 1; overflow-y: auto; padding: 2rem; position: relative;">
+        <!-- Container for max width scaling -->
+        <div style="max-width: 1400px; margin: 0 auto;">
+          <RouterView />
+        </div>
       </main>
 
-      <!-- Bottom Nav / Mobile -->
-      <nav class="md:hidden flex h-14 shrink-0 bg-surface border-t border-outline-variant shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-10">
-        <RouterLink 
-          v-for="item in navItems" 
-          :key="item.to" 
-          :to="item.to" 
-          class="flex-1 flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors"
-          :class="route.path === item.to || (item.to !== '/admin' && route.path.startsWith(item.to)) || (item.to === '/admin' && route.path === '/admin') ? 'text-primary' : 'text-on-surface hover:text-primary'"
-        >
-          <component :is="item.icon" :size="20" />
-          {{ item.shortLabel }}
-        </RouterLink>
-      </nav>
     </div>
+
+    <style>
+      @media (max-width: 768px) {
+        .admin-sidebar {
+          display: none !important;
+        }
+      }
+    </style>
   </div>
 </template>

@@ -10,10 +10,12 @@ namespace WebShortlink.Backend.Api.Controllers.Public;
 public sealed class RedirectController : ControllerBase
 {
     private readonly RedirectService _redirectService;
+    private readonly Microsoft.Extensions.Options.IOptions<WebShortlink.Backend.Infrastructure.Options.AppOptions> _appOptions;
 
-    public RedirectController(RedirectService redirectService)
+    public RedirectController(RedirectService redirectService, Microsoft.Extensions.Options.IOptions<WebShortlink.Backend.Infrastructure.Options.AppOptions> appOptions)
     {
         _redirectService = redirectService;
+        _appOptions = appOptions;
     }
 
     [HttpGet("/api/public/resolve/{slug}")]
@@ -42,7 +44,7 @@ public sealed class RedirectController : ControllerBase
         }
         catch (AppException ex)
         {
-            var feBaseUrl = "http://localhost:5173";
+            var feBaseUrl = _appOptions.Value.FrontendUrl.TrimEnd('/');
             return ex.ErrorCode switch
             {
                 ErrorCodes.NotFound      => Redirect($"{feBaseUrl}/link-not-found"),

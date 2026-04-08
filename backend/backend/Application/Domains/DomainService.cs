@@ -15,17 +15,20 @@ public sealed class DomainService
     private readonly ICurrentUserService _currentUserService;
     private readonly IPlanCapabilityService _planCapabilityService;
     private readonly IAuditLogService _auditLogService;
+    private readonly IDomainVerificationService _domainVerificationService;
 
     public DomainService(
         ApplicationDbContext dbContext,
         ICurrentUserService currentUserService,
         IPlanCapabilityService planCapabilityService,
-        IAuditLogService auditLogService)
+        IAuditLogService auditLogService,
+        IDomainVerificationService domainVerificationService)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
         _planCapabilityService = planCapabilityService;
         _auditLogService = auditLogService;
+        _domainVerificationService = domainVerificationService;
     }
 
     public async Task<IReadOnlyCollection<DomainListItemDto>> GetMineAsync(CancellationToken cancellationToken)
@@ -82,6 +85,12 @@ public sealed class DomainService
         if (!string.Equals(domain.VerificationToken, request.VerificationToken?.Trim(), StringComparison.OrdinalIgnoreCase))
         {
             throw new AppException(ErrorCodes.ValidationFailed, "Verification token khong hop le.");
+        }
+        
+        var isRealVerified = await _domainVerificationService.VerifyDomainOwnershipAsync(domain.Host, domain.VerificationToken, cancellationToken);
+        if (!isRealVerified)
+        {
+            throw new AppException(ErrorCodes.ValidationFailed, "Xac minh domain that bai. Vui long kiem tra lai DNS TXT hoac file /.well-known/webshortlink-verification.txt");
         }
 
         domain.IsVerified = true;

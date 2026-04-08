@@ -31,6 +31,9 @@ var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 var redisOptions = configuration.GetSection(RedisOptions.SectionName).Get<RedisOptions>() ?? new RedisOptions();
 
+var appOptions = configuration.GetSection(AppOptions.SectionName).Get<AppOptions>() ?? new AppOptions();
+builder.Services.Configure<AppOptions>(configuration.GetSection(AppOptions.SectionName));
+
 builder.Services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<TurnstileOptions>(configuration.GetSection(TurnstileOptions.SectionName));
 builder.Services.Configure<RedisOptions>(configuration.GetSection(RedisOptions.SectionName));
@@ -38,6 +41,10 @@ builder.Services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.Sec
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<ITurnstileService, TurnstileService>();
+builder.Services.AddHttpClient<WebShortlink.Backend.Application.Domains.IDomainVerificationService, WebShortlink.Backend.Application.Domains.HttpDomainVerificationService>(client => 
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(configuration.GetConnectionString("SqlServer")));
@@ -112,9 +119,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("frontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "https://localhost:5173")
+        policy.WithOrigins(appOptions.FrontendUrl)
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .AllowCredentials(); // Allow credentials for secure flows if needed later
     });
 });
 
@@ -263,12 +271,17 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var seeder = scope.ServiceProvider.GetRequiredService<ApplicationRuntimeSeeder>();
-        await seeder.SeedAsync();
+        await seeder.SeedAsync(app.Environment);
         logger.LogInformation("Database seeding completed successfully.");
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "An error occurred while seeding the database. The application will continue, but some data may be missing.");
+        logger.LogError(ex, "Có lỗi xảy ra khi seed/migrate database.");
+        if (!app.Environment.IsDevelopment())
+        {
+            // Fail fast in production to avoid running with invalid schema or config
+            throw;
+        }
     }
 }
 

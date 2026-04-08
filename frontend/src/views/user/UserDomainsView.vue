@@ -2,11 +2,12 @@
 import { onMounted, ref, computed } from 'vue'
 import { DomainService, UserService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
-import { Globe, Plus, CheckCircle, XCircle, Shield, Trash2, RefreshCw, Lock } from 'lucide-vue-next'
-import WxPageHeader from '@/components/ui/WxPageHeader.vue'
-import WxButton from '@/components/ui/WxButton.vue'
+import { Globe, Plus, CheckCircle, Clock, Shield, Trash2, RefreshCw, Lock, AlertCircle } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const authStore = useAuthStore()
+
 const domains = ref<any[]>([])
 const loading = ref(true)
 const error = ref('')
@@ -14,6 +15,7 @@ const showAdd = ref(false)
 const newHost = ref('')
 const addLoading = ref(false)
 const verifyLoadingId = ref<string | null>(null)
+
 const currentPlanId = ref(1)
 const isPro = computed(() => currentPlanId.value >= 2)
 
@@ -63,7 +65,7 @@ async function verifyDomain(domainId: string) {
     if (result?.verified) {
       alert('✅ Domain đã được xác minh thành công!')
     } else {
-      alert('⚠️ Xác minh DNS chưa thành công. Hãy đảm bảo bạn đã thêm TXT record đúng.')
+      alert('⚠️ Xác minh DNS chưa thành công. Hãy đảm bảo bạn đã cấu hình DNS record đúng cấu trúc.')
     }
     await load()
   } catch (err) {
@@ -74,7 +76,7 @@ async function verifyDomain(domainId: string) {
 }
 
 async function deleteDomain(domainId: string, host: string) {
-  if (!authStore.accessToken || !confirm(`Xóa domain ${host}?`)) return
+  if (!authStore.accessToken || !confirm(`Bạn có chắc chắn muốn xóa domain ${host}?`)) return
   try {
     await DomainService.delete(authStore.accessToken, domainId)
     await load()
@@ -87,107 +89,143 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <WxPageHeader
-      title="Tên miền riêng"
-      description="Kết nối tên miền của bạn để tạo link rút gọn thương hiệu."
-    >
-      <template #actions>
-        <WxButton v-if="isPro" variant="primary" @click="showAdd = !showAdd">
-          <Plus :size="16" class="mr-1" /> Thêm Domain
-        </WxButton>
-      </template>
-    </WxPageHeader>
-
-    <!-- Paywall for Free -->
-    <div v-if="!isPro" class="bg-surface-container rounded-2xl border border-outline p-8 text-center">
-      <Lock :size="36" class="text-on-surface-variant mx-auto mb-3 opacity-40" />
-      <h3 class="font-bold text-on-surface mb-2">Tính năng dành cho gói Pro / Plus</h3>
-      <p class="text-sm text-on-surface-variant mb-5">Nâng cấp để sử dụng tên miền riêng trên link rút gọn của bạn.</p>
-      <RouterLink to="/app/billing" class="inline-flex items-center gap-2 bg-primary text-on-primary font-semibold px-5 py-2.5 rounded-xl text-sm hover:brightness-110 transition-all">
-        Xem bảng giá
-      </RouterLink>
+  <div class="ui-root">
+    <!-- Header -->
+    <div class="ui-header">
+      <div class="ui-header-left">
+        <div class="ui-eyebrow"><Globe :size="13" /> Branded Links</div>
+        <h1 class="ui-title">Tên miền tùy chỉnh</h1>
+        <p class="ui-subtitle">Sử dụng tên miền riêng để xây dựng thương hiệu khi chia sẻ link.</p>
+      </div>
+      <div>
+        <button v-if="isPro" class="ui-btn ui-btn-primary" @click="showAdd = !showAdd">
+          <Plus :size="16" /> Thêm Tên Miền
+        </button>
+      </div>
     </div>
 
+    <div v-if="error && !loading" class="ui-alert ui-alert-error">
+      <AlertCircle :size="16"/> {{ error }}
+    </div>
+
+    <!-- Loading -->
+    <div v-if="loading" class="ui-skeleton" style="height: 200px;" />
+
     <template v-else>
-      <!-- DNS Instruction -->
-      <div class="bg-primary/5 border border-primary/20 rounded-2xl p-5">
-        <div class="flex items-start gap-3">
-          <Shield :size="20" class="text-primary shrink-0 mt-0.5" />
-          <div class="text-sm">
-            <p class="font-semibold text-on-surface mb-1">Hướng dẫn xác minh domain</p>
-            <p class="text-on-surface-variant">Trỏ domain của bạn về IP máy chủ bằng record <strong class="font-mono text-on-surface">A 203.0.113.1</strong> hoặc <strong class="font-mono text-on-surface">CNAME sho.rt</strong>, sau đó nhấn <strong>Xác minh</strong>.</p>
-          </div>
-        </div>
+      <!-- Paywall for Free Users -->
+      <div v-if="!isPro" class="ui-empty">
+        <div class="ui-empty-icon" style="color: #64748b; opacity: 0.5;"><Lock :size="50" /></div>
+        <h3 class="ui-empty-title">Tính năng dành cho gói Pro / Plus</h3>
+        <p class="ui-empty-desc">Nâng cấp tài khoản để sử dụng tên miền riêng trên các link rút gọn của bạn.</p>
+        <button class="ui-btn ui-btn-primary" style="margin-top: 1.5rem;" @click="router.push('/app/billing')">
+          Xem bảng giá nâng cấp
+        </button>
       </div>
 
-      <!-- Add Form -->
-      <div v-if="showAdd" class="bg-surface-container rounded-2xl border border-outline p-5">
-        <h3 class="font-semibold text-on-surface mb-3">Thêm domain mới</h3>
-        <div class="flex gap-3">
-          <div class="flex-1">
-            <input
-              v-model="newHost"
-              type="text"
-              placeholder="link.yourbrand.com"
-              class="w-full h-10 rounded-lg border border-outline bg-surface px-3 text-sm focus:outline-none focus:border-primary"
-              @keydown.enter="addDomain"
-            />
-          </div>
-          <WxButton variant="primary" :loading="addLoading" @click="addDomain">Thêm</WxButton>
-          <WxButton variant="ghost" @click="showAdd = false">Hủy</WxButton>
-        </div>
-        <p v-if="error" class="text-danger text-xs mt-2">{{ error }}</p>
-      </div>
-
-      <!-- Domains List -->
-      <div v-if="loading" class="text-center py-10 text-on-surface-variant">Đang tải...</div>
-      <div v-else-if="domains.length === 0" class="bg-surface-container rounded-2xl border border-outline p-8 text-center">
-        <Globe :size="36" class="text-on-surface-variant mx-auto mb-3 opacity-40" />
-        <p class="text-on-surface-variant text-sm">Chưa có domain nào. Thêm domain đầu tiên của bạn!</p>
-      </div>
-      <div v-else class="flex flex-col gap-3">
-        <div
-          v-for="domain in domains"
-          :key="domain.id"
-          class="bg-surface-container rounded-2xl border border-outline p-5 flex flex-col sm:flex-row sm:items-center gap-4"
-        >
-          <div class="flex items-center gap-3 flex-1 min-w-0">
-            <Globe :size="20" class="text-on-surface-variant shrink-0" />
-            <div class="min-w-0">
-              <p class="font-semibold text-on-surface truncate">{{ domain.host }}</p>
-              <div class="flex items-center gap-2 mt-1">
-                <span v-if="domain.isVerified" class="flex items-center gap-1 text-xs text-success font-medium">
-                  <CheckCircle :size="12" /> Đã xác minh
-                </span>
-                <span v-else class="flex items-center gap-1 text-xs text-warning font-medium">
-                  <XCircle :size="12" /> Chờ xác minh
-                </span>
-              </div>
-              <p v-if="!domain.isVerified" class="mt-2 text-xs text-on-surface-variant break-all">
-                TXT token: <strong class="text-on-surface">{{ domain.verificationToken }}</strong>
+      <!-- Feature Content -->
+      <div v-else style="display: flex; flex-direction: column; gap: 1.5rem;">
+        
+        <!-- Instruction Card -->
+        <div class="ui-panel" style="border-left: 4px solid #3b82f6;">
+          <div class="ui-panel-body" style="display: flex; gap: 1rem;">
+            <Shield :size="24" style="color: #3b82f6; flex-shrink: 0;" />
+            <div>
+              <h3 style="margin: 0 0 0.5rem; font-size: 1rem; color: #0f172a; font-weight: 700;">Hướng dẫn cấu hình DNS</h3>
+              <p style="margin: 0; font-size: 0.85rem; color: #475569; line-height: 1.5;">
+                Để kết nối tên miền, hãy truy cập trình quản lý DNS của bạn (như Cloudflare, GoDaddy, v.v.). Thêm một bản ghi <strong style="font-family: monospace; background: #f1f5f9; padding: 0.15rem 0.3rem; border-radius: 4px; color: #0f172a;">CNAME</strong> trỏ tới <strong style="font-family: monospace; background: #f1f5f9; padding: 0.15rem 0.3rem; border-radius: 4px; color: #0f172a;">sho.rt</strong>. <br>
+                Sau đó copy mã TXT xác minh bên dưới và thêm bản ghi <strong style="font-family: monospace; background: #f1f5f9; padding: 0.15rem 0.3rem; border-radius: 4px; color: #0f172a;">TXT</strong> tương ứng với mã đó để chứng minh bạn là chủ sở hữu.
               </p>
             </div>
           </div>
+        </div>
 
-          <div class="flex items-center gap-2 shrink-0">
-            <WxButton
-              v-if="!domain.isVerified"
-              size="sm"
-              variant="secondary"
-              :loading="verifyLoadingId === domain.id"
-              @click="verifyDomain(domain.id)"
-            >
-              <RefreshCw :size="13" class="mr-1" /> Xác minh
-            </WxButton>
-            <button
-              @click="deleteDomain(domain.id, domain.host)"
-              class="text-danger hover:bg-danger/10 rounded-lg p-1.5 transition-colors"
-            >
-              <Trash2 :size="15" />
-            </button>
+        <!-- Add Domain Form Panel -->
+        <div v-if="showAdd" class="ui-panel" style="background: #f8fafc; border: 1px dashed #cbd5e1;">
+          <div class="ui-panel-body">
+            <h3 style="margin: 0 0 1rem; font-size: 1rem; color: #0f172a; font-weight: 700;">Kết nối tên miền mới</h3>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <input
+                v-model="newHost"
+                type="text"
+                class="ui-form-input"
+                placeholder="Ví dụ: go.yourbrand.com"
+                style="flex: 1; min-width: 200px; margin: 0;"
+                @keydown.enter="addDomain"
+              />
+              <button class="ui-btn ui-btn-primary" :disabled="addLoading" @click="addDomain">
+                Khai báo
+              </button>
+              <button class="ui-btn ui-btn-ghost" @click="showAdd = false">Hủy</button>
+            </div>
           </div>
         </div>
+
+        <!-- Domains List -->
+        <div v-if="domains.length === 0 && !showAdd" class="ui-empty" style="padding: 3rem;">
+          <Globe :size="40" class="ui-empty-icon" />
+          <h3 class="ui-empty-title">Chưa có tên miền nào</h3>
+          <p class="ui-empty-desc">Nhấn "Thêm Tên Miền" góc trên để bắt đầu thêm custom domain cho hệ thống rút gọn của bạn.</p>
+        </div>
+
+        <div v-if="domains.length > 0" style="display: flex; flex-direction: column; gap: 1rem;">
+          <div 
+            v-for="domain in domains" 
+            :key="domain.id" 
+            class="ui-panel"
+          >
+            <div class="ui-panel-body" style="display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: space-between; align-items: flex-start;">
+              
+              <!-- Info -->
+              <div style="display: flex; gap: 1rem; flex: 1; min-width: 250px;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: #eff6ff; display: grid; place-items: center; flex-shrink: 0;">
+                  <Globe :size="20" style="color: #3b82f6;" />
+                </div>
+                <div style="min-width: 0;">
+                  <h4 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a;">{{ domain.host }}</h4>
+                  <div style="margin-top: 0.35rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span v-if="domain.isVerified" class="ui-badge ui-badge-success" style="display: inline-flex; align-items: center; gap: 0.2rem;">
+                      <CheckCircle :size="11" /> Đã xác minh
+                    </span>
+                    <span v-else class="ui-badge ui-badge-warning" style="display: inline-flex; align-items: center; gap: 0.2rem;">
+                      <Clock :size="11" /> Đang chờ xác minh
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Required Actions / Token -->
+              <div v-if="!domain.isVerified" style="flex: 1; min-width: 280px; background: #f8fafc; padding: 0.8rem 1rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <p style="margin: 0 0 0.4rem; font-size: 0.75rem; font-weight: 700; color: #475569; text-transform: uppercase;">Mã xác thực TXT</p>
+                <div style="background: #fff; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font-family: monospace; font-size: 0.8rem; color: #0f172a; word-break: break-all;">
+                  {{ domain.verificationToken }}
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div style="display: flex; align-items: center; gap: 0.5rem; padding-top: 0.5rem;">
+                <button 
+                  v-if="!domain.isVerified"
+                  class="ui-btn ui-btn-outline"
+                  style="border-color: #f59e0b; color: #b45309;"
+                  :disabled="verifyLoadingId === domain.id"
+                  @click="verifyDomain(domain.id)"
+                >
+                  <RefreshCw :size="14" :class="{'animate-spin': verifyLoadingId === domain.id}" /> Kiểm tra DNS
+                </button>
+                <button 
+                  class="ui-btn ui-btn-ghost"
+                  style="color: #ef4444; padding: 0.6rem;"
+                  title="Xóa domain"
+                  @click="deleteDomain(domain.id, domain.host)"
+                >
+                  <Trash2 :size="16" />
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
       </div>
     </template>
   </div>

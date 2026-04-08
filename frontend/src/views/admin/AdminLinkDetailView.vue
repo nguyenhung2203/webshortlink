@@ -3,8 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { AdminService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
-import { ArrowLeft, Link2, Ban, CheckCircle, ExternalLink } from 'lucide-vue-next'
-import WxPageHeader from '@/components/ui/WxPageHeader.vue'
+import { ArrowLeft, Link2, Ban, CheckCircle, ExternalLink, ShieldAlert, MousePointerClick, RefreshCw, CalendarDays, Key, Globe } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,11 +17,12 @@ const actionLoading = ref(false)
 
 async function load() {
   loading.value = true
+  error.value = ''
   try {
     if (!authStore.accessToken) throw new Error('Chưa xác thực.')
     link.value = await AdminService.getLinkDetail(authStore.accessToken, linkId)
   } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Không thể tải thông tin link.'
+    error.value = err instanceof Error ? err.message : 'Không thể tải thông tin chi tiết.'
   } finally {
     loading.value = false
   }
@@ -31,13 +31,13 @@ async function load() {
 async function toggleBlock() {
   if (!authStore.accessToken || !link.value) return
   const action: 'block' | 'unblock' = link.value.status === 'DisabledByAdmin' ? 'unblock' : 'block'
-  if (!confirm(`${action === 'block' ? 'Vô hiệu hóa' : 'Kích hoạt lại'} link này?`)) return
+  if (!confirm(`Hệ thống sẽ ${action === 'block' ? 'CHẶN' : 'KHÔI PHỤC'} truy cập vào liên kết này. Đồng ý thực thi?`)) return
   actionLoading.value = true
   try {
     await AdminService.toggleLinkBlock(authStore.accessToken, linkId, action)
     await load()
   } catch (err) {
-    alert(err instanceof Error ? err.message : 'Lỗi khi thao tác.')
+    alert(err instanceof Error ? err.message : 'Thao tác bảo mật thất bại.')
   } finally {
     actionLoading.value = false
   }
@@ -47,86 +47,152 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <div>
-      <button @click="router.back()" class="flex items-center gap-1.5 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
-        <ArrowLeft :size="16" /> Quay lại
+  <div class="ui-root">
+    
+    <div style="margin-bottom: 1rem;">
+      <button @click="router.back()" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; color: #64748b; background: transparent; border: none; cursor: pointer;">
+        <ArrowLeft :size="16" /> Trở về danh sách Liên kết
       </button>
     </div>
 
-    <WxPageHeader title="Chi tiết Link" description="Thông tin chi tiết và quản trị đường dẫn rút gọn." />
+    <div class="ui-header">
+      <div class="ui-header-left">
+        <div class="ui-eyebrow"><Link2 :size="13" /> Phân giải Dữ liệu Liên kết</div>
+        <h1 class="ui-title">Cấu hình & Giám sát</h1>
+        <p class="ui-subtitle">Xem thông tin định tuyến, đánh giá rủi ro và thực thi quản lý tập trung.</p>
+      </div>
+      <div>
+        <button class="ui-btn ui-btn-outline" @click="load" :disabled="loading" style="color: #0f172a;">
+          <RefreshCw :size="14" :class="{'animate-spin': loading}" /> Khôi phục Logs
+        </button>
+      </div>
+    </div>
 
-    <div v-if="loading" class="text-center py-10 text-on-surface-variant">Đang tải...</div>
-    <div v-else-if="error" class="text-danger bg-danger/10 rounded-xl p-4">{{ error }}</div>
+    <div v-if="error" class="ui-alert ui-alert-error" style="background: white;">
+      <ShieldAlert :size="16" /> {{ error }}
+    </div>
+
+    <div v-if="loading" style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <div class="ui-skeleton" style="height: 150px; border-radius: 12px;" />
+      <div class="ui-skeleton" style="height: 250px; border-radius: 12px;" />
+    </div>
 
     <template v-else-if="link">
-      <!-- Link Card -->
-      <div class="bg-surface-container rounded-2xl border border-outline p-6">
-        <div class="flex items-start gap-4">
-          <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-            <Link2 :size="22" class="text-primary" />
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex flex-wrap gap-2 mb-2">
-              <span class="text-xs font-bold px-2.5 py-1 rounded-full" :class="link.status === 'Active' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'">
-                {{ link.status }}
-              </span>
-              <span v-if="link.hasPassword" class="text-xs font-bold px-2.5 py-1 rounded-full bg-warning/10 text-warning">🔒 Có mật khẩu</span>
-              <span v-if="link.expiresAtUtc" class="text-xs font-bold px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant">⏱ Có hạn sử dụng</span>
+      
+      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        
+        <!-- Header Panel -->
+        <div class="ui-panel" style="background: white; border-top: 4px solid #10b981;">
+          <div class="ui-panel-body" style="padding: 2rem; display: flex; flex-direction: column; gap: 2rem;">
+            
+            <div style="display: flex; align-items: flex-start; gap: 1.5rem;">
+              <div style="width: 64px; height: 64px; border-radius: 16px; background: #ecfdf5; border: 1px solid #10b981; display: grid; place-items: center; color: #10b981;">
+                <Link2 :size="32" />
+              </div>
+              <div style="flex: 1; min-width: 0;">
+                <h2 style="margin: 0; font-size: 1.5rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                  {{ link.shortUrl }}
+                  <span class="ui-badge" :class="link.status === 'Active' ? 'ui-badge-success' : 'ui-badge-error'">
+                    {{ link.status === 'Active' ? 'HOẠT ĐỘNG' : 'ĐANG BỊ CHẶN' }}
+                  </span>
+                </h2>
+                
+                <a :href="link.originalUrl" target="_blank" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem; color: #3b82f6; text-decoration: none; margin-top: 0.5rem; margin-bottom: 1rem; word-break: break-all;">
+                  {{ link.originalUrl }} <ExternalLink :size="14" />
+                </a>
+
+                <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                  <span v-if="link.hasPassword" class="ui-badge" style="background: #fffbeb; color: #b45309; border: 1px solid #fde68a;">
+                    <Key :size="12" style="margin-right: 0.25rem;" /> Protect
+                  </span>
+                  <span class="ui-badge" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;">
+                    <Globe :size="12" style="margin-right: 0.25rem;" /> Domain {{ link.domain || 'Nội bộ' }}
+                  </span>
+                  <span v-if="link.expiresAtUtc" class="ui-badge" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;">
+                    <CalendarDays :size="12" style="margin-right: 0.25rem;" /> Exp {{ new Date(link.expiresAtUtc).toLocaleDateString('vi-VN') }}
+                  </span>
+                </div>
+              </div>
             </div>
-            <h2 class="text-base font-bold text-on-surface mb-1">{{ link.shortUrl }}</h2>
-            <a :href="link.originalUrl" target="_blank" class="text-sm text-primary hover:underline flex items-center gap-1 truncate">
-              {{ link.originalUrl }} <ExternalLink :size="12" class="shrink-0" />
-            </a>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; border-top: 1px solid #f1f5f9; padding-top: 2rem;">
+              <div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.3rem;"><MousePointerClick :size="14" /> Clicks Ingest</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: #0f172a;">{{ link.totalClicks ?? 0 }}</div>
+              </div>
+              <div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.3rem;"><MousePointerClick :size="14" /> Unique</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: #0f172a;">{{ link.uniqueClicks ?? 0 }}</div>
+              </div>
+              <div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.3rem;"><ShieldAlert :size="14" /> Bot Request</div>
+                <div style="font-size: 1.5rem; font-weight: 800;" :style="link.botClicks > 0 ? 'color: #ef4444;' : 'color: #0f172a;'">{{ link.botClicks ?? 0 }}</div>
+              </div>
+            </div>
+
           </div>
         </div>
-      </div>
 
-      <!-- Stats -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div class="bg-surface-container rounded-xl border border-outline p-4 text-center">
-          <p class="text-2xl font-extrabold text-on-surface">{{ link.totalClicks ?? 0 }}</p>
-          <p class="text-xs text-on-surface-variant mt-1">Tổng Clicks</p>
-        </div>
-        <div class="bg-surface-container rounded-xl border border-outline p-4 text-center">
-          <p class="text-2xl font-extrabold text-on-surface">{{ link.uniqueClicks ?? 0 }}</p>
-          <p class="text-xs text-on-surface-variant mt-1">Unique Clicks</p>
-        </div>
-        <div class="bg-surface-container rounded-xl border border-outline p-4 text-center">
-          <p class="text-sm font-bold text-on-surface">{{ link.createdAtUtc ? new Date(link.createdAtUtc).toLocaleDateString('vi-VN') : '-' }}</p>
-          <p class="text-xs text-on-surface-variant mt-1">Ngày tạo</p>
-        </div>
-        <div class="bg-surface-container rounded-xl border border-outline p-4 text-center">
-          <p class="text-sm font-bold text-on-surface">{{ link.expiresAtUtc ? new Date(link.expiresAtUtc).toLocaleDateString('vi-VN') : 'Không' }}</p>
-          <p class="text-xs text-on-surface-variant mt-1">Hết hạn</p>
-        </div>
-      </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+          
+          <!-- System Metadata -->
+          <div class="ui-panel" style="background: white;">
+            <div class="ui-panel-header" style="border-bottom: 1px solid #f1f5f9; padding: 1.25rem 1.5rem;">
+              <h3 class="ui-panel-title">Metadata Cấu hình</h3>
+            </div>
+            <div class="ui-panel-body" style="padding: 1.5rem;">
+              <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <tbody>
+                  <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 0.75rem 0; font-size: 0.85rem; color: #64748b; font-weight: 600;">Sở hữu bởi</td>
+                    <td style="padding: 0.75rem 0; font-size: 0.85rem; color: #0f172a; font-weight: 700;">{{ link.userEmail || '-' }}</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 0.75rem 0; font-size: 0.85rem; color: #64748b; font-weight: 600;">Slug định danh</td>
+                    <td style="padding: 0.75rem 0; font-size: 0.85rem; color: #0f172a; font-family: monospace;">{{ link.slug }}</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 0.75rem 0; font-size: 0.85rem; color: #64748b; font-weight: 600;">Giới hạn Click</td>
+                    <td style="padding: 0.75rem 0; font-size: 0.85rem; color: #0f172a; font-weight: 700;">{{ link.clickLimit ?? 'Vô hạn (Không giới hạn)' }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0.75rem 0; font-size: 0.85rem; color: #64748b; font-weight: 600;">Cập nhật lần cuối</td>
+                    <td style="padding: 0.75rem 0; font-size: 0.85rem; color: #0f172a; font-weight: 600;">{{ link.updatedAtUtc ? new Date(link.updatedAtUtc).toLocaleDateString('vi-VN') : '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-      <!-- Detail info -->
-      <div class="bg-surface-container rounded-2xl border border-outline p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-        <div><span class="text-on-surface-variant">Chủ sở hữu:</span> <span class="font-semibold text-on-surface ml-1">{{ link.ownerEmail || '-' }}</span></div>
-        <div><span class="text-on-surface-variant">Slug:</span> <span class="font-mono font-semibold text-on-surface ml-1">{{ link.slug }}</span></div>
-        <div><span class="text-on-surface-variant">Domain:</span> <span class="font-semibold text-on-surface ml-1">{{ link.domain || 'sho.rt' }}</span></div>
-        <div><span class="text-on-surface-variant">Tag:</span> <span class="font-semibold text-on-surface ml-1">{{ link.tag || '-' }}</span></div>
-        <div><span class="text-on-surface-variant">Click limit:</span> <span class="font-semibold text-on-surface ml-1">{{ link.clickLimit ?? 'Không giới hạn' }}</span></div>
-        <div><span class="text-on-surface-variant">Cập nhật:</span> <span class="font-semibold text-on-surface ml-1">{{ link.updatedAtUtc ? new Date(link.updatedAtUtc).toLocaleDateString('vi-VN') : '-' }}</span></div>
-      </div>
+          <!-- Ops Control -->
+          <div class="ui-panel" style="background: white; border-color: #fecdd3;">
+            <div class="ui-panel-header" style="background: #fff1f2; border-bottom: 1px solid #ffe4e6; padding: 1.25rem 1.5rem;">
+              <h3 class="ui-panel-title" style="color: #e11d48; display: flex; align-items: center; gap: 0.5rem;"><ShieldAlert :size="16" /> Trung tâm Cảnh trị</h3>
+            </div>
+            <div class="ui-panel-body" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+              
+              <p style="margin: 0; font-size: 0.85rem; color: #64748b; line-height: 1.5;">Hệ thống phát hiện link này có nguy cơ trỏ đến các nội dung độc hại? Thực thi quyền quản trị tối cao để khóa truy cập công khai vào liên kết này.</p>
+              
+              <div style="margin-top: 1rem;">
+                <button
+                  @click="toggleBlock"
+                  :disabled="actionLoading"
+                  class="ui-btn"
+                  :style="link.status === 'Active'
+                    ? 'background: #e11d48; color: white; border: none; font-weight: 800;'
+                    : 'background: #10b981; color: white; border: none; font-weight: 800;'"
+                >
+                  <Ban v-if="link.status === 'Active'" :size="16" />
+                  <CheckCircle v-else :size="16" />
+                  {{ link.status === 'Active' ? 'VÔ HIỆU HÓA LIÊN KẾT (BLOCK PATH)' : 'KHÔI PHỤC VẬN HÀNH (UNBLOCK)' }}
+                </button>
+              </div>
 
-      <!-- Admin action -->
-      <div class="bg-surface-container rounded-2xl border border-outline p-6">
-        <h3 class="font-semibold text-on-surface mb-4">Thao tác quản trị</h3>
-        <button
-          @click="toggleBlock"
-          :disabled="actionLoading"
-          class="flex items-center gap-2 px-4 py-2 text-sm rounded-lg border font-semibold transition-all"
-          :class="link.status === 'DisabledByAdmin'
-            ? 'border-success/50 text-success hover:bg-success/10'
-            : 'border-danger/50 text-danger hover:bg-danger/10'"
-        >
-          <CheckCircle v-if="link.status === 'DisabledByAdmin'" :size="15" />
-          <Ban v-else :size="15" />
-          {{ link.status === 'DisabledByAdmin' ? 'Kích hoạt lại link' : 'Vô hiệu hóa link' }}
-        </button>
+            </div>
+          </div>
+
+        </div>
+
       </div>
     </template>
   </div>

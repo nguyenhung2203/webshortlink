@@ -12,12 +12,17 @@ export interface ApiRequestOptions {
 
 const STORAGE_KEY = 'webshortlink.auth'
 
+let refreshPromise: Promise<string | null> | null = null;
+
 /** 
  * Try to silently refresh the access token using the stored refresh token.
  * Returns the new access token, or null if refresh failed.
  */
 async function tryRefreshToken(): Promise<string | null> {
-  try {
+  if (refreshPromise) return refreshPromise;
+  
+  refreshPromise = (async () => {
+    try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
 
@@ -50,7 +55,11 @@ async function tryRefreshToken(): Promise<string | null> {
   } catch {
     localStorage.removeItem(STORAGE_KEY)
     return null
+  } finally {
+    refreshPromise = null;
   }
+})();
+return refreshPromise;
 }
 
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {

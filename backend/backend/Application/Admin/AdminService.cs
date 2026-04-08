@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using WebShortlink.Backend.Application.Abstractions;
 using WebShortlink.Backend.Application.Analytics;
 using WebShortlink.Backend.Application.Common;
 using WebShortlink.Backend.Domain.Entities;
 using WebShortlink.Backend.Domain.Enums;
+using WebShortlink.Backend.Infrastructure.Options;
 using WebShortlink.Backend.Infrastructure.Persistence;
 
 namespace WebShortlink.Backend.Application.Admin;
@@ -17,6 +19,7 @@ public sealed class AdminService
     private readonly IAnalyticsQueue _analyticsQueue;
     private readonly ILinkCacheService _linkCacheService;
     private readonly UserManager<AppUser> _userManager;
+    private readonly string _defaultHost;
 
     public AdminService(
         ApplicationDbContext dbContext,
@@ -24,7 +27,8 @@ public sealed class AdminService
         IAuditLogService auditLogService,
         IAnalyticsQueue analyticsQueue,
         ILinkCacheService linkCacheService,
-        UserManager<AppUser> userManager)
+        UserManager<AppUser> userManager,
+        IOptions<AppOptions> appOptions)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
@@ -32,6 +36,7 @@ public sealed class AdminService
         _analyticsQueue = analyticsQueue;
         _linkCacheService = linkCacheService;
         _userManager = userManager;
+        _defaultHost = appOptions.Value.DefaultDomain;
     }
 
     public async Task<CurrentSessionDto> GetAdminSessionAsync(CancellationToken cancellationToken)
@@ -103,7 +108,7 @@ public sealed class AdminService
             planName,
             user.CreatedAtUtc,
             user.LastLoginAtUtc,
-            user.Links.Where(x => !x.IsDeleted).Select(x => new AdminUserLinkDto(x.Id, $"https://sho.rt/{x.Slug}", x.Status.ToString(), x.TotalClicks)).ToList());
+            user.Links.Where(x => !x.IsDeleted).Select(x => new AdminUserLinkDto(x.Id, BuildShortUrl(_defaultHost, x.Slug), x.Status.ToString(), x.TotalClicks)).ToList());
     }
 
     public async Task<MessageResponseDto> ChangeUserStatusAsync(Guid userId, ChangeUserStatusRequestDto request, CancellationToken cancellationToken)
@@ -165,23 +170,36 @@ public sealed class AdminService
 
     public async Task<IReadOnlyCollection<AdminLinkListItemDto>> GetLinksAsync(CancellationToken cancellationToken)
     {
-        return await _dbContext.Links.AsNoTracking()
+        var rawLinks = await _dbContext.Links.AsNoTracking()
             .Include(x => x.User)
             .Include(x => x.Domain)
             .OrderByDescending(x => x.CreatedAtUtc)
             .Where(x => !x.IsDeleted)
-            .Select(x => new AdminLinkListItemDto(
+            .Select(x => new {
                 x.Id,
-                $"https://sho.rt/{x.Slug}",
+                x.Slug,
+                x.OriginalUrl,
+                x.Status,
+                UserEmail = x.User.Email,
+                x.TotalClicks,
+                BotClicks = x.ClickEvents.LongCount(y => y.IsBot),
+                HighestRiskScore = x.AbuseReports.OrderByDescending(y => y.RiskScore).Select(y => (int?)y.RiskScore).FirstOrDefault(),
+                x.CreatedAtUtc,
+                DomainHost = x.Domain != null ? x.Domain.Host : null
+            })
+            .ToListAsync(cancellationToken);
+
+        return rawLinks.Select(x => new AdminLinkListItemDto(
+                x.Id,
+                BuildShortUrl(x.DomainHost ?? _defaultHost, x.Slug),
                 x.Slug,
                 x.OriginalUrl,
                 x.Status.ToString(),
-                x.User.Email!,
+                x.UserEmail!,
                 x.TotalClicks,
-                x.ClickEvents.LongCount(y => y.IsBot),
-                x.AbuseReports.OrderByDescending(y => y.RiskScore).Select(y => (int?)y.RiskScore).FirstOrDefault(),
-                x.CreatedAtUtc))
-            .ToListAsync(cancellationToken);
+                x.BotClicks,
+                x.HighestRiskScore,
+                x.CreatedAtUtc)).ToList();
     }
 
     public async Task<AdminLinkDetailDto> GetLinkDetailAsync(Guid linkId, CancellationToken cancellationToken)
@@ -195,7 +213,7 @@ public sealed class AdminService
 
         return new AdminLinkDetailDto(
             link.Id,
-            $"https://sho.rt/{link.Slug}",
+            BuildShortUrl(_defaultHost, link.Slug),
             link.Slug,
             link.OriginalUrl,
             link.Status.ToString(),
@@ -220,7 +238,7 @@ public sealed class AdminService
         link.UpdatedAtUtc = DateTime.UtcNow;
         link.UpdatedByUserId = current.UserId.ToString();
         await _dbContext.SaveChangesAsync(cancellationToken);
-        await _linkCacheService.RemoveAsync(link.Domain?.Host ?? "sho.rt", link.Slug, cancellationToken);
+        await _linkCacheService.RemoveAsync(link.Domain?.Host ?? _defaultHost, link.Slug, cancellationToken);
 
         await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-009:ToggleLink", "Link", linkId.ToString(), current.UserId, current.IpAddress, new { enable }, cancellationToken);
         return new MessageResponseDto("Cập nhật trạng thái link thành công.");
@@ -391,5 +409,11 @@ public sealed class AdminService
         await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-BILLING-APPROVE", "Payment", payment.Id.ToString(), current.UserId, current.IpAddress, new { paymentId, user.Email, user.CurrentPlanId }, cancellationToken);
 
         return new MessageResponseDto("Đã duyệt thanh toán và kích hoạt gói thành công.");
+    }
+
+    private string BuildShortUrl(string host, string slug)
+    {
+        var scheme = host.StartsWith("localhost") || host.StartsWith("127.0.0.1") ? "http" : "https";
+        return $"{scheme}://{host}/{slug}";
     }
 }

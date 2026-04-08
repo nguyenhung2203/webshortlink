@@ -10,24 +10,37 @@ public sealed class ApplicationRuntimeSeeder
     private readonly ApplicationDbContext _dbContext;
     private readonly RoleManager<IdentityRole<Guid>> _roleManager;
     private readonly UserManager<AppUser> _userManager;
+    private readonly Microsoft.Extensions.Options.IOptions<WebShortlink.Backend.Infrastructure.Options.AppOptions> _appOptions;
 
     public ApplicationRuntimeSeeder(
         ApplicationDbContext dbContext,
         RoleManager<IdentityRole<Guid>> roleManager,
-        UserManager<AppUser> userManager)
+        UserManager<AppUser> userManager,
+        Microsoft.Extensions.Options.IOptions<WebShortlink.Backend.Infrastructure.Options.AppOptions> appOptions)
     {
         _dbContext = dbContext;
         _roleManager = roleManager;
         _userManager = userManager;
+        _appOptions = appOptions;
     }
 
-    public async Task SeedAsync(CancellationToken cancellationToken = default)
+    public async Task SeedAsync(IWebHostEnvironment env, CancellationToken cancellationToken = default)
     {
         await EnsureMigratedSafeAsync(cancellationToken);
         await SeedRolesAsync();
         await SeedPlansAsync(cancellationToken);
         await SeedSettingsAsync(cancellationToken);
-        await SeedDemoUsersAsync(cancellationToken);
+        
+        if (env.IsDevelopment())
+        {
+            await SeedDemoUsersAsync(cancellationToken);
+        }
+        else
+        {
+            // Always ensure at least the base admin exists, or they can't access production. 
+            // In a real app, you would run a bootstrap CLI command.
+            await EnsureAdminExistsAsync(cancellationToken);
+        }
     }
 
     private async Task EnsureMigratedSafeAsync(CancellationToken cancellationToken)
@@ -38,42 +51,9 @@ public sealed class ApplicationRuntimeSeeder
             return;
         }
 
-        var connection = _dbContext.Database.GetDbConnection();
-        await connection.OpenAsync(cancellationToken);
-
-        await using var tableCheckCommand = connection.CreateCommand();
-        tableCheckCommand.CommandText = "SELECT COUNT(1) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'AppUsers'";
-        var appUsersTableExists = (int)(await tableCheckCommand.ExecuteScalarAsync(cancellationToken) ?? 0) > 0;
-
-        if (appUsersTableExists)
-        {
-            await using var historyCommand = connection.CreateCommand();
-            historyCommand.CommandText =
-                """
-                IF OBJECT_ID(N'[__EFMigrationsHistory]', N'U') IS NULL
-                BEGIN
-                    CREATE TABLE [__EFMigrationsHistory] (
-                        [MigrationId] nvarchar(150) NOT NULL,
-                        [ProductVersion] nvarchar(32) NOT NULL,
-                        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
-                    );
-                END
-                """;
-            await historyCommand.ExecuteNonQueryAsync(cancellationToken);
-            await connection.CloseAsync();
-
-            var appliedMigrations = (await _dbContext.Database.GetAppliedMigrationsAsync(cancellationToken)).ToHashSet();
-            foreach (var migration in pending.Where(migration => !appliedMigrations.Contains(migration)))
-            {
-                await _dbContext.Database.ExecuteSqlRawAsync(
-                    "INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ({0}, '8.0.14')",
-                    migration);
-            }
-
-            return;
-        }
-
-        await connection.CloseAsync();
+        // Apply migrations safely. Do not fake migration history.
+        // If there's a schema mismatch (tables exist but no history), this will intentionally throw
+        // requiring developers to resolve it rather than blindly bypassing and risking runtime crashes.
         await _dbContext.Database.MigrateAsync(cancellationToken);
     }
 
@@ -185,6 +165,47 @@ public sealed class ApplicationRuntimeSeeder
             new SystemSetting { Id = Guid.NewGuid(), GroupName = "Limits", SettingKey = "redirect.default_rate_limit_per_minute", SettingValue = "600", CreatedAtUtc = now });
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task EnsureAdminExistsAsync(CancellationToken cancellationToken)
+    {
+        var adminEmail = _appOptions.Value.AdminEmail;
+        var adminPassword = _appOptions.Value.AdminPassword;
+        
+        if (string.IsNullOrWhiteSpace(adminPassword))
+        {
+            // Do not construct a default admin with a hardcoded dictionary generic password.
+            // A missing password simply skips admin bootstrap execution.
+            return;
+        }
+
+        var admin = await _userManager.FindByEmailAsync(adminEmail);
+        if (admin is null)
+        {
+            admin = new AppUser
+            {
+                Id = Guid.NewGuid(),
+                UserName = adminEmail,
+                Email = adminEmail,
+                FullName = "System Admin",
+                EmailConfirmed = true,
+                AccountStatus = UserAccountStatus.Active,
+                CurrentPlanId = 3,
+                CreatedAtUtc = DateTime.UtcNow
+            };
+
+            var result = await _userManager.CreateAsync(admin, adminPassword);
+            if (!result.Succeeded)
+            {
+                // In production it's better to fail fast or log an error than to stay silent
+                throw new InvalidOperationException($"Failed to bootstrap admin: {string.Join(", ", result.Errors.Select(x => x.Description))}");
+            }
+        }
+
+        if (!await _userManager.IsInRoleAsync(admin, AppRoles.Admin))
+        {
+            await _userManager.AddToRoleAsync(admin, AppRoles.Admin);
+        }
     }
 
     private async Task SeedDemoUsersAsync(CancellationToken cancellationToken)

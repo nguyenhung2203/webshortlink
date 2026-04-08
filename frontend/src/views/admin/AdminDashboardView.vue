@@ -3,8 +3,7 @@ import { onMounted, ref } from 'vue'
 import { AdminService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
 import type { AdminDashboardDashboard } from '@/types/api'
-import WxPageHeader from '@/components/ui/WxPageHeader.vue'
-import { Users, Link2, MousePointerClick, TrendingUp, ShieldAlert, Zap } from 'lucide-vue-next'
+import { Users, Link2, MousePointerClick, TrendingUp, ShieldAlert, Zap, ServerCog, Activity, AlertCircle } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 
 const authStore = useAuthStore()
@@ -28,108 +27,180 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <WxPageHeader title="Tổng quan hệ thống" description="Số liệu tổng quan về hoạt động trên hệ thống WeShort." />
+  <div class="ui-root">
+    
+    <div class="ui-header">
+      <div class="ui-header-left">
+        <div class="ui-eyebrow"><Activity :size="13" /> Overview Dashboard</div>
+        <h1 class="ui-title">Cổng tổng quan</h1>
+        <p class="ui-subtitle">Giám sát các chỉ số kinh doanh, sản phẩm và vận hành lõi của hệ thống.</p>
+      </div>
+    </div>
 
-    <div v-if="error" class="text-danger bg-danger/10 rounded-xl p-4 text-sm">{{ error }}</div>
-    <div v-if="loading" class="text-center py-12 text-on-surface-variant">Đang tải...</div>
+    <div v-if="error" class="ui-alert ui-alert-error">
+      <AlertCircle :size="16" /> {{ error }}
+    </div>
+
+    <!-- Loading Skeleton -->
+    <div v-if="loading" style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <div class="ui-card-grid-4">
+        <div class="ui-skeleton" style="height: 120px;" v-for="i in 4" :key="`s1-${i}`" />
+      </div>
+      <div class="ui-card-grid-3">
+        <div class="ui-skeleton" style="height: 250px;" v-for="i in 3" :key="`s2-${i}`" />
+      </div>
+    </div>
 
     <template v-else-if="data">
-      <!-- Top stats row -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-surface-container rounded-2xl border border-outline p-5 flex flex-col gap-2">
-          <Users :size="18" class="text-primary" />
-          <p class="text-2xl font-extrabold text-on-surface">{{ data.business.totalUsers }}</p>
-          <p class="text-xs text-on-surface-variant">Tổng người dùng</p>
-        </div>
-        <div class="bg-surface-container rounded-2xl border border-outline p-5 flex flex-col gap-2">
-          <Zap :size="18" class="text-warning" />
-          <p class="text-2xl font-extrabold text-on-surface">{{ data.business.paidUsers }}</p>
-          <p class="text-xs text-on-surface-variant">User trả phí</p>
-        </div>
-        <div class="bg-surface-container rounded-2xl border border-outline p-5 flex flex-col gap-2">
-          <Link2 :size="18" class="text-primary" />
-          <p class="text-2xl font-extrabold text-on-surface">{{ data.product.totalLinks }}</p>
-          <p class="text-xs text-on-surface-variant">Tổng số link</p>
-        </div>
-        <div class="bg-surface-container rounded-2xl border border-outline p-5 flex flex-col gap-2">
-          <MousePointerClick :size="18" class="text-primary" />
-          <p class="text-2xl font-extrabold text-on-surface">{{ data.product.totalClicks }}</p>
-          <p class="text-xs text-on-surface-variant">Tổng số click</p>
-        </div>
-      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 2rem;">
+        
+        <!-- Primary KPI Cards -->
+        <section>
+          <div style="margin-bottom: 0.75rem; font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Chỉ số Cốt lõi (KPIs)</div>
+          <div class="ui-card-grid ui-card-grid-4">
+            
+            <div class="ui-panel" style="border-top: 4px solid #3b82f6;">
+              <div class="ui-panel-body" style="display: flex; flex-direction: column; justify-content: center; padding: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                  <span style="font-size: 0.85rem; font-weight: 600; color: #64748b; text-transform: uppercase;">Người dùng</span>
+                  <div style="padding: 0.5rem; background: #eff6ff; color: #3b82f6; border-radius: 8px;"><Users :size="18" /></div>
+                </div>
+                <div style="font-size: 2.25rem; font-weight: 800; color: #0f172a; line-height: 1;">{{ data.business.totalUsers.toLocaleString() }}</div>
+                <div style="margin-top: 0.75rem; font-size: 0.8rem; color: #64748b; font-weight: 500;">
+                  <span style="color: #10b981; font-weight: 700;">{{ data.business.paidUsers }}</span> trả phí
+                </div>
+              </div>
+            </div>
 
-      <!-- Detail sections -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- Business -->
-        <div class="bg-surface-container rounded-2xl border border-outline p-5">
-          <div class="flex items-center gap-2 mb-4">
-            <TrendingUp :size="16" class="text-primary" />
-            <h3 class="font-semibold text-on-surface">Doanh thu & Users</h3>
+            <div class="ui-panel" style="border-top: 4px solid #f59e0b;">
+              <div class="ui-panel-body" style="display: flex; flex-direction: column; justify-content: center; padding: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                  <span style="font-size: 0.85rem; font-weight: 600; color: #64748b; text-transform: uppercase;">Doanh thu Hàng tháng</span>
+                  <div style="padding: 0.5rem; background: #fffbeb; color: #f59e0b; border-radius: 8px;"><TrendingUp :size="18" /></div>
+                </div>
+                <div style="font-size: 2.25rem; font-weight: 800; color: #0f172a; line-height: 1;">${{ (data.business.monthlyRevenue ?? 0).toLocaleString() }}</div>
+                <div style="margin-top: 0.75rem; font-size: 0.8rem; color: #64748b; font-weight: 500;">
+                  Tỷ lệ chuyển đổi: <strong style="color: #0f172a;">{{ data.business.conversionRate }}%</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="ui-panel" style="border-top: 4px solid #10b981;">
+              <div class="ui-panel-body" style="display: flex; flex-direction: column; justify-content: center; padding: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                  <span style="font-size: 0.85rem; font-weight: 600; color: #64748b; text-transform: uppercase;">Tổng Links</span>
+                  <div style="padding: 0.5rem; background: #ecfdf5; color: #10b981; border-radius: 8px;"><Link2 :size="18" /></div>
+                </div>
+                <div style="font-size: 2.25rem; font-weight: 800; color: #0f172a; line-height: 1;">{{ data.product.totalLinks.toLocaleString() }}</div>
+                <div style="margin-top: 0.75rem; font-size: 0.8rem; color: #64748b; font-weight: 500;">
+                  Đang hoạt động: <strong style="color: #0f172a;">{{ data.product.activeLinks.toLocaleString() }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="ui-panel" style="border-top: 4px solid #8b5cf6;">
+              <div class="ui-panel-body" style="display: flex; flex-direction: column; justify-content: center; padding: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                  <span style="font-size: 0.85rem; font-weight: 600; color: #64748b; text-transform: uppercase;">Lượt Clicks</span>
+                  <div style="padding: 0.5rem; background: #f5f3ff; color: #8b5cf6; border-radius: 8px;"><MousePointerClick :size="18" /></div>
+                </div>
+                <div style="font-size: 2.25rem; font-weight: 800; color: #0f172a; line-height: 1;">{{ data.product.totalClicks.toLocaleString() }}</div>
+                <div style="margin-top: 0.75rem; font-size: 0.8rem; color: #64748b; font-weight: 500;">
+                  Unique: <strong style="color: #0f172a;">{{ data.product.uniqueClicks.toLocaleString() }}</strong>
+                </div>
+              </div>
+            </div>
+
           </div>
-          <ul class="space-y-2.5 text-sm">
-            <li class="flex justify-between items-center">
-              <span class="text-on-surface-variant">Tỷ lệ chuyển đổi</span>
-              <strong class="text-on-surface">{{ data.business.conversionRate }}%</strong>
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="text-on-surface-variant">MRR tháng này</span>
-              <strong class="text-success">${{ data.business.monthlyRevenue ?? 0 }}</strong>
-            </li>
-          </ul>
-        </div>
+        </section>
 
-        <!-- Product -->
-        <div class="bg-surface-container rounded-2xl border border-outline p-5">
-          <div class="flex items-center gap-2 mb-4">
-            <Link2 :size="16" class="text-primary" />
-            <h3 class="font-semibold text-on-surface">Sản phẩm (Links)</h3>
+        <!-- Secondary Diagnostics -->
+        <section>
+          <div style="margin-bottom: 0.75rem; font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Phân hệ Chi tiết</div>
+          
+          <div class="ui-card-grid ui-card-grid-3">
+            
+            <div class="ui-panel" style="background: white;">
+              <div class="ui-panel-header" style="border-bottom: 1px solid #f1f5f9; padding: 1rem 1.5rem;">
+                <h3 class="ui-panel-title" style="display: flex; align-items: center; gap: 0.5rem;"><Zap :size="16" style="color: #f59e0b;" /> Kinh doanh (Business)</h3>
+              </div>
+              <div class="ui-panel-body" style="padding: 0;">
+                <div style="display: flex; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid #f8fafc;">
+                  <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">Doanh Thu Định Kỳ (MRR)</span>
+                  <span style="font-size: 0.95rem; font-weight: 700; color: #059669;">${{ data.business.monthlyRevenue ?? 0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid #f8fafc;">
+                  <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">Tỉ lệ Chuyển đổi (CR)</span>
+                  <span style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">{{ data.business.conversionRate }}%</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 1rem 1.5rem;">
+                  <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">Users Trả phí</span>
+                  <span style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">{{ data.business.paidUsers }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="ui-panel" style="background: white;">
+              <div class="ui-panel-header" style="border-bottom: 1px solid #f1f5f9; padding: 1rem 1.5rem;">
+                <h3 class="ui-panel-title" style="display: flex; align-items: center; gap: 0.5rem;"><ServerCog :size="16" style="color: #3b82f6;" /> Sản phẩm (Product)</h3>
+              </div>
+              <div class="ui-panel-body" style="padding: 0;">
+                <div style="display: flex; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid #f8fafc;">
+                  <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">Liên kết Đang hoạt động</span>
+                  <span style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">{{ data.product.activeLinks.toLocaleString() }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid #f8fafc;">
+                  <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">Unique Clicks</span>
+                  <span style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">{{ data.product.uniqueClicks.toLocaleString() }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 1rem 1.5rem;">
+                  <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">Tỉ lệ Active Link</span>
+                  <span style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">
+                    {{ data.product.totalLinks > 0 ? ((data.product.activeLinks / data.product.totalLinks) * 100).toFixed(1) : 0 }}%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="ui-panel" style="background: white; border-color: #fecdd3;">
+              <div class="ui-panel-header" style="background: #fff1f2; border-bottom: 1px solid #ffe4e6; padding: 1rem 1.5rem;">
+                <h3 class="ui-panel-title" style="display: flex; align-items: center; gap: 0.5rem; color: #e11d48;"><ShieldAlert :size="16" /> Vận hành & Cảnh báo</h3>
+              </div>
+              <div class="ui-panel-body" style="padding: 0;">
+                <div style="display: flex; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid #f8fafc;">
+                  <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">Bot Clicks</span>
+                  <span style="font-size: 0.95rem; font-weight: 700;" :style="data.operations.botClicks > 0 ? 'color: #e11d48;' : 'color: #0f172a;'">{{ data.operations.botClicks.toLocaleString() }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid #f8fafc;">
+                  <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">Clicks đáng ngờ</span>
+                  <span style="font-size: 0.95rem; font-weight: 700;" :style="data.operations.suspiciousClicks > 0 ? 'color: #f59e0b;' : 'color: #0f172a;'">{{ data.operations.suspiciousClicks.toLocaleString() }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 1rem 1.5rem;">
+                  <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">Tỉ lệ Lỗi / Độ trễ</span>
+                  <span style="font-size: 0.95rem; font-weight: 700;" :class="data.operations.errorRate > 5 ? 'text-danger' : 'text-on-surface'">
+                    {{ data.operations.errorRate }}% <span style="color: #cbd5e1; font-weight: 400;">|</span> {{ data.operations.queueLagSeconds }}s
+                  </span>
+                </div>
+              </div>
+            </div>
+
           </div>
-          <ul class="space-y-2.5 text-sm">
-            <li class="flex justify-between items-center">
-              <span class="text-on-surface-variant">Link đang hoạt động</span>
-              <strong class="text-on-surface">{{ data.product.activeLinks }}</strong>
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="text-on-surface-variant">Unique Clicks</span>
-              <strong class="text-on-surface">{{ data.product.uniqueClicks }}</strong>
-            </li>
-          </ul>
-        </div>
+        </section>
 
-        <!-- Operations -->
-        <div class="bg-surface-container rounded-2xl border border-outline p-5">
-          <div class="flex items-center gap-2 mb-4">
-            <ShieldAlert :size="16" class="text-danger" />
-            <h3 class="font-semibold text-on-surface">Vận hành</h3>
-          </div>
-          <ul class="space-y-2.5 text-sm">
-            <li class="flex justify-between items-center">
-              <span class="text-on-surface-variant">Bot Clicks</span>
-              <strong class="text-danger">{{ data.operations.botClicks }}</strong>
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="text-on-surface-variant">Clicks đáng ngờ</span>
-              <strong class="text-warning">{{ data.operations.suspiciousClicks }}</strong>
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="text-on-surface-variant">Tỉ lệ lỗi</span>
-              <strong :class="data.operations.errorRate > 5 ? 'text-danger' : 'text-on-surface'">{{ data.operations.errorRate }}%</strong>
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="text-on-surface-variant">Queue Lag</span>
-              <strong :class="data.operations.queueLagSeconds > 30 ? 'text-warning' : 'text-on-surface'">{{ data.operations.queueLagSeconds }}s</strong>
-            </li>
-          </ul>
-        </div>
-      </div>
+        <!-- Quick Access Box -->
+        <section>
+           <div class="ui-panel" style="background: transparent; border: 1px dashed #cbd5e1; padding: 1.5rem;">
+              <div style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex-wrap: wrap;">
+                  <span style="font-size: 0.85rem; font-weight: 600; color: #64748b;">Truy cập nhanh:</span>
+                  <RouterLink to="/admin/users" class="ui-btn ui-btn-outline" style="background: white;">Quản lý Cấp phép</RouterLink>
+                  <RouterLink to="/admin/links" class="ui-btn ui-btn-outline" style="background: white;">Giám sát Link</RouterLink>
+                  <RouterLink to="/admin/reports" class="ui-btn ui-btn-outline" style="background: white;">Báo cáo Doanh thu</RouterLink>
+                  <RouterLink to="/admin/security" class="ui-btn ui-btn-outline" style="background: white;">Trạng thái Bảo mật</RouterLink>
+              </div>
+           </div>
+        </section>
 
-      <!-- Quick nav -->
-      <div class="flex flex-wrap gap-3 pt-2">
-        <RouterLink to="/admin/users" class="text-sm font-medium text-primary hover:underline">→ Xem danh sách user</RouterLink>
-        <RouterLink to="/admin/links" class="text-sm font-medium text-primary hover:underline">→ Xem danh sách link</RouterLink>
-        <RouterLink to="/admin/reports" class="text-sm font-medium text-primary hover:underline">→ Báo cáo</RouterLink>
-        <RouterLink to="/admin/security" class="text-sm font-medium text-primary hover:underline">→ Bảo mật</RouterLink>
       </div>
     </template>
   </div>
