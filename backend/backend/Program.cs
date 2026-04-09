@@ -206,7 +206,6 @@ builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<BillingService>();
 builder.Services.AddScoped<DomainService>();
 builder.Services.AddScoped<AdminService>();
-builder.Services.AddScoped<ApplicationDbSeeder>();
 builder.Services.AddScoped<ApplicationRuntimeSeeder>();
 
 builder.Services.AddHostedService<ClickAnalyticsWorker>();
@@ -230,8 +229,6 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 //    app.UseSwagger();
 //    app.UseSwaggerUI();
 //}
-app.UseSwagger();
-app.UseSwaggerUI();
 app.UseCors("frontend");
 app.UseRateLimiter();
 app.UseAuthentication();
@@ -260,7 +257,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var seeder = scope.ServiceProvider.GetRequiredService<ApplicationRuntimeSeeder>();
-        await seeder.SeedAsync(app.Environment);
+        await seeder.SeedAsync();
         logger.LogInformation("Database seeding completed successfully.");
     }
     catch (Exception ex)

@@ -58,10 +58,10 @@ export const AuthService = {
       method: 'POST',
       body: { email, token, newPassword, confirmPassword },
     }),
-  verifyEmail: (userId: string, token: string) =>
+  verifyEmail: (email: string, token: string) =>
     apiRequest<MessageResponseDto>('/api/public/auth/verify-email', {
       method: 'POST',
-      body: { userId, token },
+      body: { email, token },
     }),
 }
 

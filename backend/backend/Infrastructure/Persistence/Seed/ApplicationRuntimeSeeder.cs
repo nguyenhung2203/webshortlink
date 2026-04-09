@@ -24,23 +24,13 @@ public sealed class ApplicationRuntimeSeeder
         _appOptions = appOptions;
     }
 
-    public async Task SeedAsync(IWebHostEnvironment env, CancellationToken cancellationToken = default)
+    public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
         await EnsureMigratedSafeAsync(cancellationToken);
         await SeedRolesAsync();
         await SeedPlansAsync(cancellationToken);
         await SeedSettingsAsync(cancellationToken);
-        
-        if (env.IsDevelopment())
-        {
-            await SeedDemoUsersAsync(cancellationToken);
-        }
-        else
-        {
-            // Always ensure at least the base admin exists, or they can't access production. 
-            // In a real app, you would run a bootstrap CLI command.
-            await EnsureAdminExistsAsync(cancellationToken);
-        }
+        await EnsureAdminExistsAsync(cancellationToken);
     }
 
     private async Task EnsureMigratedSafeAsync(CancellationToken cancellationToken)
@@ -84,7 +74,20 @@ public sealed class ApplicationRuntimeSeeder
             var p = await _dbContext.Plans.FirstOrDefaultAsync(x => x.Id == plan.Id, cancellationToken);
             if (p == null) _dbContext.Plans.Add(plan);
         }
-        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (_dbContext.ChangeTracker.HasChanges())
+        {
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+            try {
+                await _dbContext.Database.ExecuteSqlRawAsync("SET IDENTITY_INSERT Plans ON", cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                await _dbContext.Database.ExecuteSqlRawAsync("SET IDENTITY_INSERT Plans OFF", cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            } catch {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
+        }
 
         var features = new[]
         {
@@ -151,7 +154,19 @@ public sealed class ApplicationRuntimeSeeder
             }
         }
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        if (_dbContext.ChangeTracker.HasChanges())
+        {
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+            try {
+                await _dbContext.Database.ExecuteSqlRawAsync("SET IDENTITY_INSERT PlanFeatures ON", cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                await _dbContext.Database.ExecuteSqlRawAsync("SET IDENTITY_INSERT PlanFeatures OFF", cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            } catch {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
+        }
     }
 
     private async Task SeedSettingsAsync(CancellationToken cancellationToken)
@@ -212,144 +227,4 @@ public sealed class ApplicationRuntimeSeeder
         }
     }
 
-    private async Task SeedDemoUsersAsync(CancellationToken cancellationToken)
-    {
-        var admin = await _userManager.FindByEmailAsync("admin@demo.local");
-        if (admin is null)
-        {
-            admin = new AppUser
-            {
-                Id = Guid.NewGuid(),
-                UserName = "admin@demo.local",
-                Email = "admin@demo.local",
-                FullName = "System Admin",
-                EmailConfirmed = true,
-                AccountStatus = UserAccountStatus.Active,
-                CurrentPlanId = 3,
-                CreatedAtUtc = DateTime.UtcNow
-            };
-
-            await _userManager.CreateAsync(admin, "Admin123!");
-        }
-
-        if (!await _userManager.IsInRoleAsync(admin, AppRoles.Admin))
-        {
-            await _userManager.AddToRoleAsync(admin, AppRoles.Admin);
-        }
-
-        await EnsureSubscriptionAsync(admin, 3, cancellationToken);
-
-        var user = await _userManager.FindByEmailAsync("user@demo.local");
-        if (user is null)
-        {
-            user = new AppUser
-            {
-                Id = Guid.NewGuid(),
-                UserName = "user@demo.local",
-                Email = "user@demo.local",
-                FullName = "Demo User",
-                EmailConfirmed = true,
-                AccountStatus = UserAccountStatus.Active,
-                CurrentPlanId = 2,
-                CreatedAtUtc = DateTime.UtcNow
-            };
-
-            await _userManager.CreateAsync(user, "Demo123!");
-        }
-
-        if (!await _userManager.IsInRoleAsync(user, AppRoles.User))
-        {
-            await _userManager.AddToRoleAsync(user, AppRoles.User);
-        }
-
-        await EnsureSubscriptionAsync(user, 2, cancellationToken);
-        await EnsureDemoPaymentAsync(user, cancellationToken);
-        await EnsureDemoLinkAsync(user, cancellationToken);
-    }
-
-    private async Task EnsureSubscriptionAsync(AppUser user, int planId, CancellationToken cancellationToken)
-    {
-        user.CurrentPlanId = planId;
-        var existingSubscriptions = await _dbContext.Subscriptions
-            .Where(x => x.UserId == user.Id && x.Status == SubscriptionStatus.Active)
-            .ToListAsync(cancellationToken);
-
-        foreach (var existingSubscription in existingSubscriptions.Where(x => x.PlanId != planId))
-        {
-            existingSubscription.Status = SubscriptionStatus.Expired;
-            existingSubscription.EndAtUtc = DateTime.UtcNow;
-            existingSubscription.UpdatedAtUtc = DateTime.UtcNow;
-        }
-
-        var hasActiveSubscription = existingSubscriptions.Any(x => x.PlanId == planId && x.Status == SubscriptionStatus.Active);
-
-        if (!hasActiveSubscription)
-        {
-            _dbContext.Subscriptions.Add(new Subscription
-            {
-                Id = Guid.NewGuid(),
-                UserId = user.Id,
-                PlanId = planId,
-                Status = SubscriptionStatus.Active,
-                StartAtUtc = DateTime.UtcNow.AddDays(-7),
-                EndAtUtc = DateTime.UtcNow.AddMonths(1),
-                CreatedAtUtc = DateTime.UtcNow.AddDays(-7)
-            });
-        }
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-    }
-
-    private async Task EnsureDemoPaymentAsync(AppUser user, CancellationToken cancellationToken)
-    {
-        var subscription = await _dbContext.Subscriptions
-            .OrderByDescending(x => x.StartAtUtc)
-            .FirstAsync(x => x.UserId == user.Id && x.Status == SubscriptionStatus.Active, cancellationToken);
-
-        var hasPayment = await _dbContext.Payments.AnyAsync(x => x.SubscriptionId == subscription.Id, cancellationToken);
-        if (hasPayment)
-        {
-            return;
-        }
-
-        _dbContext.Payments.Add(new Payment
-        {
-            Id = Guid.NewGuid(),
-            SubscriptionId = subscription.Id,
-            Amount = 199000,
-            Currency = "VND",
-            Provider = "demo",
-            ProviderReference = $"demo-{subscription.Id:N}",
-            Status = PaymentStatus.Paid,
-            PaidAtUtc = DateTime.UtcNow.AddDays(-3),
-            CreatedAtUtc = DateTime.UtcNow.AddDays(-3)
-        });
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-    }
-
-    private async Task EnsureDemoLinkAsync(AppUser user, CancellationToken cancellationToken)
-    {
-        var hasLink = await _dbContext.Links.AnyAsync(x => x.UserId == user.Id && !x.IsDeleted, cancellationToken);
-        if (hasLink)
-        {
-            return;
-        }
-
-        _dbContext.Links.Add(new Link
-        {
-            Id = Guid.NewGuid(),
-            UserId = user.Id,
-            Slug = "demo123",
-            OriginalUrl = "https://example.com/welcome",
-            Description = "Demo link",
-            Tag = "seed",
-            Status = LinkStatus.Active,
-            CreatedAtUtc = DateTime.UtcNow.AddDays(-2),
-            TotalClicks = 0,
-            UniqueClicks = 0
-        });
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-    }
 }

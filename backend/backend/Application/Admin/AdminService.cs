@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -128,8 +129,18 @@ public sealed class AdminService
             "active" => UserAccountStatus.Active,
             "locked" => UserAccountStatus.Locked,
             "disabled" => UserAccountStatus.Disabled,
-            _ => throw new AppException(ErrorCodes.ValidationFailed, "Trang thai user khong hop le.")
+            _ => throw new AppException(ErrorCodes.ValidationFailed, "Trạng thái user không hợp lệ.")
         };
+
+        // Prevent locking/disabling ADMIN accounts
+        if (user.AccountStatus != UserAccountStatus.Active)
+        {
+            var isAdmin = await _userManager.IsInRoleAsync(user, AppRoles.Admin);
+            if (isAdmin)
+            {
+                throw new AppException(ErrorCodes.Forbidden, "Không thể khóa hoặc vô hiệu hóa tài khoản Quản trị viên.", StatusCodes.Status403Forbidden);
+            }
+        }
 
         if (user.AccountStatus is UserAccountStatus.Locked or UserAccountStatus.Disabled)
         {

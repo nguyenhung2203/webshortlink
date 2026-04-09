@@ -167,7 +167,10 @@ onMounted(load)
                     {{ user.email.charAt(0).toUpperCase() }}
                   </div>
                   <div style="min-width: 0;">
-                    <p style="margin: 0; font-weight: 700; color: #0f172a; font-size: 0.95rem; line-height: 1.2;">{{ user.email }}</p>
+                    <p style="margin: 0; font-weight: 700; color: #0f172a; font-size: 0.95rem; line-height: 1.2;">
+                      {{ user.email }}
+                      <span v-if="user.role === 'Admin'" style="margin-left: 0.5rem; padding: 0.1rem 0.4rem; background: #fee2e2; color: #991b1b; font-size: 0.6rem; font-weight: 800; border-radius: 4px; border: 1px solid #fecaca; vertical-align: middle;">ADMIN</span>
+                    </p>
                     <p style="margin: 0; font-size: 0.75rem; color: #64748b; margin-top: 0.1rem;">{{ user.fullName || 'Chưa thiết lập tên' }}</p>
                   </div>
                 </div>
@@ -215,6 +218,7 @@ onMounted(load)
                   </RouterLink>
                   <span style="color: #cbd5e1;">|</span>
                   <button
+                    v-if="user.role !== 'Admin'"
                     @click="toggleUserStatus(user)"
                     :disabled="isActionLoading"
                     style="background: transparent; border: 0; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.25rem;"
@@ -224,6 +228,7 @@ onMounted(load)
                     <Unlock v-else :size="14" />
                     {{ user.status === 'Active' ? 'Khóa User' : 'Mở khóa' }}
                   </button>
+                  <span v-else style="font-size: 0.75rem; color: #94a3b8; font-style: italic;">Không thể khóa Admin</span>
                 </div>
               </td>
 

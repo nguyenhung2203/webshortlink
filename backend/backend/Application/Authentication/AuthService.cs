@@ -247,12 +247,12 @@ public sealed class AuthService
 
     public async Task<MessageResponseDto> VerifyEmailAsync(VerifyEmailRequestDto request)
     {
-        if (!Guid.TryParse(request.UserId, out var userId))
+        if (string.IsNullOrWhiteSpace(request.Email))
         {
-            throw new AppException(ErrorCodes.ValidationFailed, "UserId không hợp lệ.");
+            throw new AppException(ErrorCodes.ValidationFailed, "Email không hợp lệ.");
         }
 
-        var user = await _userManager.FindByIdAsync(userId.ToString())
+        var user = await _userManager.FindByEmailAsync(request.Email)
             ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy tài khoản.", StatusCodes.Status404NotFound);
 
         var isValid = await _userManager.VerifyUserTokenAsync(user, TokenOptions.DefaultEmailProvider, "ConfirmEmail", request.Token);

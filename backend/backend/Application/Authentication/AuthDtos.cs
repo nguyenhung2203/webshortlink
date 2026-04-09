@@ -18,7 +18,7 @@ public sealed record ForgotPasswordRequestDto(string Email, string? TurnstileTok
 
 public sealed record ResetPasswordRequestDto(string Email, string Token, string NewPassword, string ConfirmPassword);
 
-public sealed record VerifyEmailRequestDto(string UserId, string Token);
+public sealed record VerifyEmailRequestDto(string Email, string Token);
 
 public sealed record RegisterResponseDto(
     string Message,

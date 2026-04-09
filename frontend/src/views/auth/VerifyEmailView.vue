@@ -24,8 +24,8 @@ async function submit() {
   error.value = ''
   successMessage.value = ''
 
-  if (!userId.value) {
-    error.value = 'Mã tài khoản (UserId) không được để trống.'
+  if (!email.value) {
+    error.value = 'Email không được để trống.'
     return
   }
   if (!token.value) {
@@ -36,7 +36,7 @@ async function submit() {
   loading.value = true
 
   try {
-    const response = await AuthService.verifyEmail(userId.value, token.value)
+    const response = await AuthService.verifyEmail(email.value, token.value)
     successMessage.value = 'Xác thực Email thành công! Kích hoạt tài khoản hoàn tất.'
     setTimeout(() => router.push('/auth/login'), 2500)
   } catch (err) {
@@ -56,7 +56,7 @@ async function submit() {
         <p class="text-sm text-on-surface-variant mt-2">Dán mã OTP gồm các con số bảo mật trong email bạn nhận được.</p>
       </div>
 
-      <WxInput v-model="userId" label="ID Tài khoản (User ID)" type="text" required placeholder="Chuỗi ID hệ thống cấp..." />
+      <WxInput v-model="email" label="Địa chỉ Email" type="email" required placeholder="Nhập địa chỉ email của bạn..." />
       <WxInput v-model="token" label="Mã xác thực từ Email" type="text" required placeholder="Nhập để kích hoạt" />
 
       <p v-if="error" class="text-danger text-sm font-medium">{{ error }}</p>
