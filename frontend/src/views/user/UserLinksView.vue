@@ -20,7 +20,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Tag,
-  FileText
+  FileText,
+  Ban,
+  CheckCircle
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -33,8 +35,6 @@ const error = ref('')
 const filter = ref({
   search: '',
   status: '',
-  tag: '',
-  description: '',
   startDate: '',
   endDate: '',
   sortBy: 'createdAt',
@@ -55,8 +55,6 @@ async function load() {
     const activeFilter: Record<string, any> = { ...filter.value }
     if (!activeFilter.search) delete activeFilter.search
     if (!activeFilter.status) delete activeFilter.status
-    if (!activeFilter.tag) delete activeFilter.tag
-    if (!activeFilter.description) delete activeFilter.description
     if (!activeFilter.startDate) delete activeFilter.startDate
     if (!activeFilter.endDate) delete activeFilter.endDate
 
@@ -86,8 +84,6 @@ function handleSearch() {
 function clearFilters() {
   filter.value.search = ''
   filter.value.status = ''
-  filter.value.tag = ''
-  filter.value.description = ''
   filter.value.startDate = ''
   filter.value.endDate = ''
   filter.value.sortBy = 'createdAt'
@@ -114,6 +110,15 @@ function prevPage() {
     load()
   }
 }
+
+let searchTimeout: any
+watch(() => filter.value.search, () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    filter.value.pageIndex = 1
+    load()
+  }, 450)
+})
 
 watch(() => [filter.value.status, filter.value.startDate, filter.value.endDate], () => {
     filter.value.pageIndex = 1
@@ -169,13 +174,9 @@ onMounted(load)
             type="text"
             placeholder="Tìm kiếm slug, link, mô tả..."
             class="lk-search-input"
-            @keydown.enter="handleSearch"
           />
         </div>
         <button class="lk-btn lk-btn-ghost-sm" @click="clearFilters">Xóa lọc</button>
-        <button class="lk-btn lk-btn-primary" @click="handleSearch">
-          <Search :size="14" /> Tìm
-        </button>
         <div class="lk-toolbar-divider"></div>
         <button class="lk-btn lk-btn-primary" @click="router.push('/app/links/create')">
           <Plus :size="15" /> Tạo Link mới
@@ -191,8 +192,6 @@ onMounted(load)
             <option value="Active">Hoạt động</option>
             <option value="Paused">Tạm dừng</option>
           </select>
-          <input v-model="filter.tag" type="text" placeholder="🏷 Tag..." class="lk-select lk-filter-short" @keydown.enter="handleSearch" />
-          <input v-model="filter.description" type="text" placeholder="📝 Ghi chú..." class="lk-select lk-filter-med" @keydown.enter="handleSearch" />
           <div class="lk-date-group">
             <span class="lk-date-label">Từ</span>
             <input type="date" v-model="filter.startDate" class="lk-date-input" />
@@ -236,77 +235,96 @@ onMounted(load)
     <!-- ── Content ── -->
     <template v-else>
       
-      <!-- Links List -->
-      <div v-if="links.length > 0" class="lk-list">
-        <div v-for="link in links" :key="link.id" class="lk-card">
-          
-          <!-- Status dot -->
-          <div class="lk-dot" :class="link.status === 'Active' ? 'lk-dot-active' : 'lk-dot-paused'"></div>
+      <!-- Links Table -->
+      <div v-if="links.length > 0" class="lk-table-card">
+        <div class="lk-table-wrapper">
+          <table class="lk-table">
+            <thead>
+              <tr>
+                <th class="lk-th lk-th-center" style="width: 40px;">STT</th>
+                <th class="lk-th">Shortlink</th>
+                <th class="lk-th">Tag</th>
+                <th class="lk-th">Ghi chú</th>
+                <th class="lk-th">Lượt Click</th>
+                <th class="lk-th">Hôm nay</th>
+                <th class="lk-th">Trạng thái</th>
+                <th class="lk-th">Ngày tạo</th>
+                <th class="lk-th lk-th-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(link, index) in links" :key="link.id" class="lk-tr">
+                <td class="lk-td lk-td-center lk-td-stt">
+                  {{ (filter.pageIndex - 1) * filter.pageSize + index + 1 }}
+                </td>
+                
+                <td class="lk-td lk-td-main">
+                  <div class="lk-link-col">
+                    <a :href="link.shortUrl" target="_blank" class="lk-shorturl-text">
+                      {{ link.shortUrl.replace(/^https?:\/\//, '') }}
+                    </a>
+                    <a :href="link.originalUrl" target="_blank" class="lk-originalurl-text" :title="link.originalUrl">
+                      <LinkIcon :size="10" class="lk-originalurl-icon" />
+                      <span>{{ link.originalUrl }}</span>
+                    </a>
+                  </div>
+                </td>
+                
+                <td class="lk-td">
+                  <span v-if="link.tag" class="lk-tag-badge">
+                    <Tag :size="10" style="margin-right:2px"/> {{ link.tag }}
+                  </span>
+                  <span v-else class="lk-empty-dash">—</span>
+                </td>
 
-          <!-- Main info: all in one row -->
-          <div class="lk-card-info">
-            <!-- Row 1: short URL + badge + tag + note -->
-            <div class="lk-card-row1">
-              <a :href="link.shortUrl" target="_blank" class="lk-short-url">{{ link.shortUrl }}</a>
-              <span class="lk-badge" :class="link.status === 'Active' ? 'lk-badge-active' : 'lk-badge-paused'">
-                {{ link.status === 'Active' ? 'Hoạt động' : 'Tạm dừng' }}
-              </span>
-              <span v-if="link.tag" class="lk-tag-chip">
-                <Tag :size="9" /> {{ link.tag }}
-              </span>
-              <span v-if="link.description" class="lk-note-chip" :title="link.description">
-                <FileText :size="10" /> {{ link.description }}
-              </span>
-            </div>
-            <!-- Row 2: original URL -->
-            <a :href="link.originalUrl" target="_blank" class="lk-original-url" :title="link.originalUrl">
-              {{ link.originalUrl }}
-            </a>
-          </div>
+                <td class="lk-td">
+                  <div v-if="link.description" class="lk-note-text" :title="link.description">
+                    {{ link.description }}
+                  </div>
+                  <span v-else class="lk-empty-dash">—</span>
+                </td>
 
-          <!-- Stats (compact) -->
-          <div class="lk-card-stats">
-            <div class="lk-stat" title="Tổng số click">
-              <MousePointerClick :size="13" class="lk-stat-icon" />
-              <strong>{{ formatNumber(link.totalClicks ?? 0) }}</strong>
-            </div>
-            <div class="lk-stat" title="Ngày tạo">
-              <Calendar :size="13" class="lk-stat-icon" />
-              <span>{{ formatDate(link.createdAtUtc) }}</span>
-            </div>
-          </div>
+                <td class="lk-td">
+                  <div class="lk-click-col">
+                    <span class="lk-click-total">{{ formatNumber(link.totalClicks ?? 0) }}</span>
+                    <span class="lk-click-bot" :title="'Bot clicks: ' + link.botClicks">(Bot: {{ link.botClicks ?? 0 }})</span>
+                  </div>
+                </td>
 
-          <!-- Actions -->
-          <div class="lk-card-actions">
-            <button 
-              class="lk-action-btn" 
-              :class="{ 'lk-action-copied': copySuccessId === link.id }"
-              title="Sao chép link" 
-              @click="copyUrl(link)"
-            >
-              <Copy :size="14" />
-              <span class="lk-action-text">{{ copySuccessId === link.id ? 'Đã copy' : 'Copy' }}</span>
-            </button>
-            <a :href="link.shortUrl" target="_blank" class="lk-action-btn" title="Mở thử link">
-              <ExternalLink :size="14" />
-              <span class="lk-action-text">Mở</span>
-            </a>
-            <button class="lk-action-btn" title="Xem chi tiết & Thống kê" @click="router.push(`/app/links/${link.id}`)">
-              <Activity :size="14" />
-              <span class="lk-action-text">Chi tiết</span>
-            </button>
-            <button 
-              class="lk-action-btn" 
-              :class="link.status === 'Active' ? 'lk-btn-danger-soft' : 'lk-btn-success-soft'" 
-              @click="toggleStatus(link)"
-              :title="link.status === 'Active' ? 'Tạm dừng link này' : 'Kích hoạt lại'"
-            >
-              <Pause v-if="link.status === 'Active'" :size="14" />
-              <Activity v-else :size="14" />
-              <span class="lk-action-text">{{ link.status === 'Active' ? 'Dừng' : 'Bật' }}</span>
-            </button>
-          </div>
+                <td class="lk-td">
+                  <span class="lk-click-today" v-if="(link.clicksToday ?? 0) > 0">
+                    +{{ formatNumber(link.clicksToday ?? 0) }}
+                  </span>
+                  <span class="lk-empty-dash" v-else>0</span>
+                </td>
+                
+                <td class="lk-td">
+                  <span :class="link.status === 'Active' ? 'lk-status-active' : 'lk-status-paused'">
+                    {{ link.status === 'Active' ? 'ACTIVE' : 'PAUSED' }}
+                  </span>
+                </td>
+                
+                <td class="lk-td lk-date-text">
+                  {{ formatDate(link.createdAtUtc) }}
+                </td>
 
+                <td class="lk-td lk-td-right">
+                  <div class="lk-actions">
+                    <button class="lk-icon-btn" :class="{'lk-copied': copySuccessId === link.id}" @click="copyUrl(link)" title="Sao chép">
+                      <Copy :size="15" />
+                    </button>
+                    <button class="lk-icon-btn lk-detail-btn" @click="router.push(`/app/links/${link.id}`)" title="Xem chi tiết">
+                      <Activity :size="15" />
+                    </button>
+                    <button class="lk-icon-btn" :class="link.status === 'Active' ? 'lk-lock-btn' : 'lk-unlock-btn'" @click="toggleStatus(link)" :title="link.status === 'Active' ? 'Khóa link' : 'Mở khóa link'">
+                      <Ban v-if="link.status === 'Active'" :size="15" />
+                      <CheckCircle v-else :size="15" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -622,186 +640,235 @@ onMounted(load)
 }
 
 
-/* ═══ List & Cards ═══════════════════════════════════════════════════════════ */
-.lk-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  border: 1px solid #e2e8f0;
+/* ═══ Table Styles (SaaS Dashboard) ════════════════════════════════════════ */
+.lk-table-card {
+  margin-top: 1.5rem;
+  background: #ffffff;
   border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
   overflow: hidden;
-  background: #fff;
 }
 
-/* Each card = one horizontal row */
-.lk-card {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  background: #fff;
+.lk-table-wrapper {
+  overflow-x: auto;
+  border-radius: inherit;
+}
+
+.lk-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+/* Header */
+.lk-table thead {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.lk-th {
+  padding: 1rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+}
+
+.lk-th-center { text-align: center; }
+.lk-th-right { text-align: right; }
+
+/* Body & Rows */
+.lk-tr {
+  transition: background-color 0.15s ease-in-out;
   border-bottom: 1px solid #f1f5f9;
-  padding: 0.55rem 1rem;
-  gap: 0.75rem;
-  transition: background 0.15s;
-  min-height: 0;
 }
-.lk-card:last-child { border-bottom: none; }
-.lk-card:hover { background: #fafafa; }
-
-/* Status dot */
-.lk-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
+.lk-tr:last-child {
+  border-bottom: none;
 }
-.lk-dot-active { background: #10b981; }
-.lk-dot-paused { background: #f59e0b; }
+.lk-tr:hover {
+  background-color: #f8fafc;
+}
 
-/* Info block - takes remaining space */
-.lk-card-info {
+.lk-td {
+  padding: 0.85rem 0.5rem;
+  vertical-align: middle;
+}
+.lk-td-center { text-align: center; }
+.lk-td-right { text-align: right; }
+
+/* STT */
+.lk-td-stt {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+/* Shortlink & Original */
+.lk-link-col {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
-  min-width: 0;
-  flex: 1;
+  gap: 0.3rem;
 }
-
-/* Row 1: short URL + badge + tag + note - all inline */
-.lk-card-row1 {
+.lk-shorturl-text {
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #2563eb;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.lk-shorturl-text:hover {
+  text-decoration: underline;
+  color: #1e40af;
+}
+.lk-originalurl-text {
+  font-size: 0.8rem;
+  color: #64748b;
+  text-decoration: none;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  flex-wrap: nowrap;
-  min-width: 0;
+  gap: 0.35rem;
+  max-width: 250px;
 }
-
-.lk-short-url {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: #1d4ed8;
-  text-decoration: none;
+.lk-originalurl-text span {
   white-space: nowrap;
-  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.lk-short-url:hover { text-decoration: underline; }
+.lk-originalurl-icon {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.lk-originalurl-text:hover {
+  color: #0f172a;
+}
 
-.lk-badge {
-  font-size: 0.6rem;
+/* Tags & Notes */
+.lk-tag-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #475569;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.lk-note-text {
+  font-size: 0.8rem;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+.lk-empty-dash {
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+/* Clicks */
+.lk-click-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.lk-click-total {
   font-weight: 700;
-  padding: 0.1rem 0.4rem;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+.lk-click-bot {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+.lk-click-today {
+  display: inline-block;
+  font-weight: 700;
+  color: #059669;
+  background: #d1fae5;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+/* Status Badge */
+.lk-status-active, .lk-status-paused {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
   border-radius: 999px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  flex-shrink: 0;
-  white-space: nowrap;
+  letter-spacing: 0.05em;
 }
-.lk-badge-active { background: #dcfce7; color: #166534; }
-.lk-badge-paused { background: #fef3c7; color: #92400e; }
-
-.lk-tag-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.15rem;
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: #3b82f6;
-  background: #eff6ff;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
-  white-space: nowrap;
-  flex-shrink: 0;
+.lk-status-active {
+  background: #dcfce7;
+  color: #166534;
+}
+.lk-status-paused {
+  background: #fef3c7;
+  color: #92400e;
 }
 
-.lk-note-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.15rem;
-  font-size: 0.68rem;
-  color: #94a3b8;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 160px;
-  flex-shrink: 1;
+/* Date */
+.lk-date-text {
+  font-size: 0.85rem;
+  color: #475569;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
 }
 
-.lk-original-url {
-  font-size: 0.72rem;
-  color: #94a3b8;
-  text-decoration: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-  display: block;
-}
-.lk-original-url:hover { color: #3b82f6; }
-
-/* Stats section - compact */
-.lk-card-stats {
+/* Actions */
+.lk-actions {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  flex-shrink: 0;
+  justify-content: flex-end;
+  gap: 0.4rem;
 }
-
-.lk-stat {
+.lk-icon-btn {
   display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.75rem;
-  color: #64748b;
-  white-space: nowrap;
-}
-.lk-stat-icon { color: #94a3b8; flex-shrink: 0; }
-.lk-stat strong { color: #0f172a; font-size: 0.78rem; }
-
-/* Actions section */
-.lk-card-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  flex-shrink: 0;
-}
-
-.lk-action-btn {
-  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
-  height: 28px;
-  padding: 0 0.5rem;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  border: none;
   background: transparent;
+  border-radius: 8px;
   color: #64748b;
-  border: 1px solid transparent;
-  font-size: 0.72rem;
-  font-weight: 600;
   cursor: pointer;
-  text-decoration: none;
-  transition: all 0.15s;
-  white-space: nowrap;
+  transition: all 0.2s ease;
 }
-.lk-action-btn:hover {
+.lk-icon-btn:hover {
   background: #f1f5f9;
   color: #0f172a;
-  border-color: #cbd5e1;
 }
-.lk-action-copied {
+.lk-copied {
   color: #10b981;
   background: #ecfdf5;
-  border-color: #a7f3d0;
 }
-.lk-btn-danger-soft { color: #ef4444; }
-.lk-btn-danger-soft:hover { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
-.lk-btn-success-soft { color: #10b981; }
-.lk-btn-success-soft:hover { background: #ecfdf5; color: #059669; border-color: #a7f3d0; }
-
-@media (max-width: 640px) {
-  .lk-action-text { display: none; }
-  .lk-action-btn { width: 28px; padding: 0; }
-  .lk-card-stats { display: none; }
+.lk-copied:hover {
+  background: #d1fae5;
+  color: #059669;
+}
+.lk-detail-btn:hover {
+  background: #eff6ff;
+  color: #2563eb;
+}
+.lk-lock-btn:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+.lk-unlock-btn:hover {
+  background: #ecfdf5;
+  color: #059669;
 }
 
 /* ═══ Empty / Loading ════════════════════════════════════════════════════════ */

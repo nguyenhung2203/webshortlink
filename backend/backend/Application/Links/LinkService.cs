@@ -169,6 +169,7 @@ public sealed class LinkService
             query = query.OrderByDescending(x => x.CreatedAtUtc);
         }
 
+        var today = DateTime.UtcNow.Date;
         var items = await query
             .Skip((filter.PageIndex - 1) * filter.PageSize)
             .Take(filter.PageSize)
@@ -184,6 +185,7 @@ public sealed class LinkService
                 x.TotalClicks,
                 x.UniqueClicks,
                 x.ClickEvents.LongCount(y => y.IsBot),
+                x.ClickEvents.LongCount(y => y.TimestampUtc >= today),
                 x.CreatedAtUtc,
                 x.UpdatedAtUtc))
             .ToListAsync(cancellationToken);

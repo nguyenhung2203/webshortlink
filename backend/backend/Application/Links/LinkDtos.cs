@@ -33,6 +33,7 @@ public sealed record LinkListItemDto(
     long TotalClicks,
     long UniqueClicks,
     long BotClicks,
+    long ClicksToday,
     DateTime CreatedAtUtc,
     DateTime? UpdatedAtUtc);
 

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { AdminService } from '@/api/services'
-import { CreditCard, CheckCircle, RefreshCw, AlertCircle, Search, Clock } from 'lucide-vue-next'
+import { CreditCard, CheckCircle, RefreshCw, AlertCircle, Search, Clock, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 
@@ -11,6 +11,31 @@ const loading = ref(true)
 const error = ref('')
 const actionLoading = ref<Record<string, boolean>>({})
 const search = ref('')
+
+const filter = ref({
+  pageIndex: 1,
+  pageSize: 10
+})
+
+const filteredPayments = computed(() => {
+  if (!search.value.trim()) return payments.value
+  const q = search.value.trim().toLowerCase()
+  return payments.value.filter(p =>
+    (p.userEmail || '').toLowerCase().includes(q) ||
+    (p.id || '').toLowerCase().includes(q) ||
+    (p.planName || '').toLowerCase().includes(q)
+  )
+})
+
+const totalCount = computed(() => filteredPayments.value.length)
+const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / filter.value.pageSize)))
+
+const paginated = computed(() => {
+  const start = (filter.value.pageIndex - 1) * filter.value.pageSize
+  return filteredPayments.value.slice(start, start + filter.value.pageSize)
+})
+
+watch(search, () => { filter.value.pageIndex = 1 })
 
 const loadPayments = async () => {
   loading.value = true
@@ -84,6 +109,7 @@ const formatDate = (dateValue: string | null) => {
         <table style="width: 100%; border-collapse: collapse; min-width: 900px; text-align: left;">
           <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
             <tr>
+              <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; width: 60px;">STT</th>
               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Mã Giao dịch & Khách hàng</th>
               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Nội dung Nâng cấp</th>
               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; text-align: right;">Số tiền</th>
@@ -93,8 +119,10 @@ const formatDate = (dateValue: string | null) => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="payment in payments" :key="payment.id" style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s;" class="hover:bg-slate-50">
-              
+            <tr v-for="(payment, index) in paginated" :key="payment.id" style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s;" class="hover:bg-slate-50">
+              <td style="padding: 1rem 1.5rem; font-weight: 600; color: #94a3b8;">
+                {{ (filter.pageIndex - 1) * filter.pageSize + index + 1 }}
+              </td>
               <td style="padding: 1rem 1.5rem;">
                 <div style="display: flex; flex-direction: column; gap: 0.1rem;">
                   <span style="font-family: monospace; font-weight: 700; font-size: 0.9rem; color: #0f172a;">WEBSHORT {{ payment.id.substring(0,8).toUpperCase() }}</span>
@@ -151,6 +179,22 @@ const formatDate = (dateValue: string | null) => {
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination Controls -->
+      <div v-if="totalPages > 1" style="padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #e2e8f0; background: #fff;">
+        <span style="font-size: 0.85rem; color: #64748b;">
+          Trang <strong>{{ filter.pageIndex }}</strong> / {{ totalPages }} (Tổng {{ totalCount }} mục)
+        </span>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="ui-btn ui-btn-outline" style="padding: 0.25rem 0.5rem; height: 32px; font-size: 0.8rem; background: white;" :disabled="filter.pageIndex === 1" @click="filter.pageIndex--">
+            <ChevronLeft :size="14" /> Trước
+          </button>
+          <button class="ui-btn ui-btn-outline" style="padding: 0.25rem 0.5rem; height: 32px; font-size: 0.8rem; background: white;" :disabled="filter.pageIndex >= totalPages" @click="filter.pageIndex++">
+            Sau <ChevronRight :size="14" />
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>

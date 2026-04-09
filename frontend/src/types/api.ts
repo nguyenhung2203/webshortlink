@@ -106,6 +106,7 @@ export interface ShortLink {
   totalClicks: number
   uniqueClicks: number
   botClicks: number
+  clicksToday: number
   createdAtUtc: string
   updatedAtUtc: string | null
 }
