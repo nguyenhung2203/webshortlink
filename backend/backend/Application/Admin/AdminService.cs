@@ -524,21 +524,13 @@ public sealed class AdminService
             .AnyAsync(x => x.SettingKey == "DefaultDomain" && x.SettingValue == domain.Host, cancellationToken);
         if (isDefaultDomain)
         {
-            throw new AppException(ErrorCodes.Conflict, "Khong the xoa domain dang duoc dat lam mac dinh he thong.", StatusCodes.Status409Conflict);
-        }
-        if (isDefaultDomain)
-        {
-            throw new AppException(ErrorCodes.Conflict, "KhÃ´ng thá»ƒ xÃ³a domain Ä‘ang Ä‘Æ°á»£c Ä‘áº·t lÃ m máº·c Ä‘á»‹nh há»‡ thá»‘ng.", StatusCodes.Status409Conflict);
+            throw new AppException(ErrorCodes.Conflict, "Không thể xóa domain đang được đặt làm mặc định hệ thống.", StatusCodes.Status409Conflict);
         }
 
         var linkedLinks = await _dbContext.Links.AnyAsync(x => x.DomainId == domainId && !x.IsDeleted, cancellationToken);
         if (linkedLinks)
         {
-            throw new AppException(ErrorCodes.Conflict, "Domain dang duoc su dung boi shortlink.", StatusCodes.Status409Conflict);
-        }
-        if (linkedLinks)
-        {
-            throw new AppException(ErrorCodes.Conflict, "Domain Ä‘ang Ä‘Æ°á»£c sá»­ dá»¥ng bá»Ÿi shortlink.", StatusCodes.Status409Conflict);
+            throw new AppException(ErrorCodes.Conflict, "Domain đang được sử dụng bởi shortlink.", StatusCodes.Status409Conflict);
         }
 
         domain.IsDeleted = true;

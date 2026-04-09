@@ -121,18 +121,12 @@ public sealed class AuthService
         if (user is null)
         {
             await WriteLoginFailedAuditAsync(normalizedEmail, null, "UserNotFound", cancellationToken);
-        }
-        if (user is null)
-        {
             throw new AppException(ErrorCodes.Unauthorized, "Sai email hoặc mật khẩu.", StatusCodes.Status401Unauthorized);
         }
 
         if (user.AccountStatus == UserAccountStatus.Locked || user.AccountStatus == UserAccountStatus.Disabled)
         {
             await WriteLoginFailedAuditAsync(normalizedEmail, user, "AccountInactive", cancellationToken);
-        }
-        if (user.AccountStatus == UserAccountStatus.Locked || user.AccountStatus == UserAccountStatus.Disabled)
-        {
             throw new AppException(ErrorCodes.Forbidden, "Tài khoản đã bị khóa.", StatusCodes.Status403Forbidden);
         }
 
@@ -145,9 +139,6 @@ public sealed class AuthService
         if (!signInResult.Succeeded)
         {
             await WriteLoginFailedAuditAsync(normalizedEmail, user, "InvalidPassword", cancellationToken);
-        }
-        if (!signInResult.Succeeded)
-        {
             throw new AppException(ErrorCodes.Unauthorized, "Sai email hoặc mật khẩu.", StatusCodes.Status401Unauthorized);
         }
 
@@ -166,11 +157,6 @@ public sealed class AuthService
 
         if (session is null || session.ExpiresAtUtc <= DateTime.UtcNow)
         {
-            throw new AppException(ErrorCodes.Unauthorized, "Refresh token khong hop le.", StatusCodes.Status401Unauthorized);
-        }
-
-        if (session is null || session.ExpiresAtUtc <= DateTime.UtcNow)
-        {
             throw new AppException(ErrorCodes.Unauthorized, "Refresh token không hợp lệ.", StatusCodes.Status401Unauthorized);
         }
 
@@ -181,23 +167,12 @@ public sealed class AuthService
             session.UpdatedAtUtc = DateTime.UtcNow;
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            throw new AppException(ErrorCodes.Forbidden, "Tai khoan da bi khoa.", StatusCodes.Status403Forbidden);
-        }
-
-        if (session.User.AccountStatus is UserAccountStatus.Locked or UserAccountStatus.Disabled)
-        {
-            session.RevokedAtUtc = DateTime.UtcNow;
-            session.RevokedReason = "User account is no longer active";
-            session.UpdatedAtUtc = DateTime.UtcNow;
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            throw new AppException(ErrorCodes.Forbidden, "TÃ i khoáº£n Ä‘Ã£ bá»‹ khÃ³a.", StatusCodes.Status403Forbidden);
+            throw new AppException(ErrorCodes.Forbidden, "Tài khoản đã bị khóa.", StatusCodes.Status403Forbidden);
         }
 
         session.RevokedAtUtc = DateTime.UtcNow;
         session.RevokedReason = "Rotated";
         session.UpdatedAtUtc = DateTime.UtcNow;
-
         return await CreateAuthResponseAsync(session.User, cancellationToken);
     }
 
