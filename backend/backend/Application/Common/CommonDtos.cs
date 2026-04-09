@@ -1,6 +1,8 @@
 namespace WebShortlink.Backend.Application.Common;
 
-public sealed record PlanDto(int Id, string Code, string Name, decimal MonthlyPrice, bool IsActive);
+public sealed record PlanFeatureInfo(string Title, string? Hint, bool IsEnabled);
+
+public sealed record PlanDto(int Id, string Code, string Name, decimal MonthlyPrice, bool IsActive, IReadOnlyCollection<PlanFeatureInfo> Features);
 
 public sealed record SubscriptionDto(Guid Id, int PlanId, string PlanName, string Status, DateTime StartAtUtc, DateTime EndAtUtc);
 

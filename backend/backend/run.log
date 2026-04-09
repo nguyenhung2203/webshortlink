@@ -3,7 +3,7 @@ Building...
 info: Microsoft.EntityFrameworkCore.Database.Command[20101]
       Executed DbCommand (35ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
       SELECT 1
-info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+info: Microsoft.EntityFradbrunn.logtắt ătăfemeworkCore.Database.Command[20101]
       Executed DbCommand (37ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
       SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
 info: Microsoft.EntityFrameworkCore.Database.Command[20101]

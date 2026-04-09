@@ -50,12 +50,19 @@ export interface UserProfileProfile {
 }
 
 // ─── Plans & Billing ──────────────────────────────────────────────────────────
+export interface PlanFeature {
+  title: string
+  hint?: string
+  isEnabled: boolean
+}
+
 export interface Plan {
   id: number
   code: string
   name: string
   monthlyPrice: number
   isActive: boolean
+  features: PlanFeature[]
 }
 
 export interface Subscription {

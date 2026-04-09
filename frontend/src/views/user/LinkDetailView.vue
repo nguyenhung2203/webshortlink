@@ -5,8 +5,8 @@ import { LinkService, UserService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
 import type { LinkDetail } from '@/types/api'
 import LinkRulesPanel from '@/components/user/LinkRulesPanel.vue'
-import { 
-  ArrowLeft, FileOutput, MousePointerClick, Users, Tag, Calendar, 
+import {
+  ArrowLeft, FileOutput, MousePointerClick, Users, Tag, Calendar,
   Settings, Link as LinkIcon, Info, Pause, Play, Trash2, Activity,
   Lock, Eye, AlertCircle, Link2
 } from 'lucide-vue-next'
@@ -21,6 +21,7 @@ const error = ref('')
 const message = ref('')
 const detail = ref<LinkDetail | null>(null)
 const currentPlanId = ref(1)
+const confirmDelete = ref(false)
 
 const linkId = computed(() => String(route.params.id ?? ''))
 const isPro = computed(() => currentPlanId.value >= 2)
@@ -62,8 +63,7 @@ async function toggleStatus() {
 
 async function deleteLink() {
   if (!authStore.accessToken || !detail.value) return
-  if (!confirm('Bạn có chắc chắn muốn xóa link này không? (Xóa mềm)')) return
-  
+
   actionLoading.value = true
   error.value = ''
   message.value = ''
@@ -75,6 +75,7 @@ async function deleteLink() {
     error.value = err instanceof Error ? err.message : 'Không thể xóa link.'
   } finally {
     actionLoading.value = false
+    confirmDelete.value = false
   }
 }
 
@@ -101,9 +102,9 @@ async function exportCsv() {
 }
 
 function formatDate(ds: string | null) {
-  if(!ds) return '—'
-  return new Date(ds).toLocaleString('vi-VN', { 
-    hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' 
+  if (!ds) return '—'
+  return new Date(ds).toLocaleString('vi-VN', {
+    hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric'
   })
 }
 
@@ -112,13 +113,11 @@ onMounted(load)
 
 <template>
   <div class="ui-root">
-    
-    <!-- Header -->
     <div class="ui-header">
       <div class="ui-header-left">
-        <button 
-          @click="router.push('/app/links')"
+        <button
           style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem; font-weight: 600; color: #64748b; background: transparent; border: 0; padding: 0 0 0.5rem 0; cursor: pointer;"
+          @click="router.push('/app/links')"
         >
           <ArrowLeft :size="14" /> Quay lại danh sách
         </button>
@@ -132,155 +131,99 @@ onMounted(load)
       </div>
     </div>
 
-    <div v-if="message" class="ui-alert ui-alert-info">
+    <div v-if="message" class="ui-alert ui-alert-success">
       <Info :size="16" /> {{ message }}
     </div>
-    <div v-if="error && !loading" class="ui-alert ui-alert-error">
+    <div v-if="error" class="ui-alert ui-alert-error">
       <AlertCircle :size="16" /> {{ error }}
     </div>
 
-    <!-- Skeleton -->
-    <div v-if="loading" class="ui-skeleton" style="height: 250px;" />
+    <div v-if="loading" class="ui-skeleton" style="height: 320px;" />
 
-    <div v-else-if="!detail" class="ui-empty">
-      <div class="ui-empty-icon"><Link2 :size="48"/></div>
-      <h3 class="ui-empty-title">Không tìm thấy link</h3>
-      <p class="ui-empty-desc">Liên kết không tồn tại, đã bị xóa hoặc bạn không có quyền truy cập.</p>
-      <button class="ui-btn ui-btn-primary" style="margin-top: 1.5rem;" @click="router.push('/app/links')">Quay Lại</button>
-    </div>
-
-    <template v-else>
-      
-      <!-- General Box -->
-      <div class="ui-panel">
-        <div class="ui-panel-body" style="display: flex; flex-wrap: wrap; gap: 2rem; justify-content: space-between;">
-          
-          <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 1rem;">
-            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-              <a :href="detail.shortUrl" target="_blank" style="font-size: 1.4rem; font-weight: 800; color: #3b82f6; text-decoration: none;">
-                {{ detail.shortUrl }}
-              </a>
+    <template v-else-if="detail">
+      <div class="ui-grid-2col" style="align-items: start;">
+        <div class="ui-panel">
+          <div class="ui-panel-body">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;">
+              <div style="min-width: 0;">
+                <p class="ui-panel-eyebrow">Thông tin link</p>
+                <h2 class="ui-panel-title" style="word-break: break-all;">{{ detail.shortUrl }}</h2>
+                <p class="ui-panel-subtitle" style="word-break: break-all;">{{ detail.originalUrl }}</p>
+              </div>
               <span class="ui-badge" :class="detail.status === 'Active' ? 'ui-badge-success' : 'ui-badge-warning'">
-                {{ detail.status === 'Active' ? 'Hoạt động' : 'Đang tạm dừng' }}
+                {{ detail.status }}
               </span>
             </div>
-            
-            <div style="display: flex; gap: 0.5rem; align-items: flex-start; max-width: 600px;">
-              <div style="margin-top: 0.2rem; color: #94a3b8;"><LinkIcon :size="14" /></div>
-              <a :href="detail.originalUrl" target="_blank" style="font-size: 0.9rem; color: #64748b; text-decoration: none; word-break: break-all;">
-                {{ detail.originalUrl }}
-              </a>
+
+            <div class="ui-stat-grid" style="margin-top: 1.25rem;">
+              <div class="ui-stat-card">
+                <MousePointerClick :size="18" />
+                <div>
+                  <div class="ui-stat-label">Tổng click</div>
+                  <div class="ui-stat-value">{{ detail.totalClicks }}</div>
+                </div>
+              </div>
+              <div class="ui-stat-card">
+                <Users :size="18" />
+                <div>
+                  <div class="ui-stat-label">Click duy nhất</div>
+                  <div class="ui-stat-value">{{ detail.uniqueClicks }}</div>
+                </div>
+              </div>
+              <div class="ui-stat-card">
+                <Link2 :size="18" />
+                <div>
+                  <div class="ui-stat-label">Host</div>
+                  <div class="ui-stat-value">{{ linkHost }}</div>
+                </div>
+              </div>
+              <div class="ui-stat-card">
+                <Tag :size="18" />
+                <div>
+                  <div class="ui-stat-label">Tag</div>
+                  <div class="ui-stat-value">{{ detail.tag || '—' }}</div>
+                </div>
+              </div>
             </div>
 
-            <!-- Stats Mini -->
-            <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem;">
-               <div style="display: flex; align-items: center; gap: 0.4rem; color: #475569; font-size: 0.85rem;">
-                 <MousePointerClick :size="14" />
-                 <span>Traffic: <strong>{{ detail.totalClicks }}</strong></span>
-               </div>
-               <div style="display: flex; align-items: center; gap: 0.4rem; color: #475569; font-size: 0.85rem;">
-                 <Users :size="14" />
-                 <span>Unique: <strong>{{ detail.uniqueClicks }}</strong></span>
-               </div>
-               <div style="display: flex; align-items: center; gap: 0.4rem; color: #475569; font-size: 0.85rem;">
-                 <Tag :size="14" />
-                 <span>Slug: <strong>{{ detail.slug }}</strong></span>
-               </div>
+            <div style="margin-top: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+              <div class="ui-inline-item"><Calendar :size="15" /> Tạo lúc: {{ formatDate(detail.createdAtUtc) }}</div>
+              <div class="ui-inline-item"><Eye :size="15" /> Mô tả: {{ detail.description || 'Chưa có mô tả' }}</div>
+              <div class="ui-inline-item"><Lock :size="15" /> Mật khẩu: {{ detail.hasPassword ? 'Có bảo vệ' : 'Không' }}</div>
             </div>
-          </div>
 
-          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-            <button 
-              class="ui-btn" 
-              :class="detail.status === 'Active' ? 'ui-btn-outline' : 'ui-btn-primary'"
-              :style="detail.status === 'Active' ? 'color: #d97706; border-color: #fcd34d;' : ''"
-              :disabled="actionLoading"
-              @click="toggleStatus"
-            >
-              <Pause v-if="detail.status === 'Active'" :size="15" />
-              <Play v-else :size="15" />
-              {{ detail.status === 'Active' ? 'Tạm dừng Link' : 'Kích hoạt lại Link' }}
-            </button>
-            <button class="ui-btn ui-btn-outline" style="border-color: #3b82f6; color: #3b82f6;" @click="router.push(`/app/analytics?linkId=${detail.id}`)">
-              <Activity :size="15" /> Xem Phân Tích
-            </button>
-            <button class="ui-btn ui-btn-ghost" style="color: #ef4444;" :disabled="actionLoading" @click="deleteLink">
-              <Trash2 :size="15" /> Xóa Link này
-            </button>
-          </div>
+            <div style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem;">
+              <button class="ui-btn ui-btn-outline" :disabled="actionLoading" @click="toggleStatus">
+                <Pause v-if="detail.status === 'Active'" :size="15" />
+                <Play v-else :size="15" />
+                {{ detail.status === 'Active' ? 'Tạm dừng' : 'Kích hoạt' }}
+              </button>
 
-        </div>
-      </div>
-
-      <!-- Config & Meta Grid -->
-      <div class="ui-card-grid ui-card-grid-2">
-        <div class="ui-panel">
-          <div class="ui-panel-header">
-            <h3 class="ui-panel-title" style="display: flex; align-items: center; gap: 0.5rem;">
-              <Settings :size="16" style="color: #64748b;" /> Thiết lập & Cấu hình
-            </h3>
-          </div>
-          <div class="ui-panel-body" style="padding: 0;">
-            <div style="display: flex; flex-direction: column;">
-              <div style="display: flex; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9;">
-                <span style="font-size: 0.85rem; color: #64748b;">Mật khẩu</span>
-                <span style="font-size: 0.85rem; font-weight: 600; color: #0f172a;">
-                  <Lock v-if="detail.hasPassword" :size="12" style="display:inline; margin-right: 0.2rem;"/>
-                  {{ detail.hasPassword ? 'Đã thiết lập' : 'Không (Public)' }}
-                </span>
-              </div>
-              <div style="display: flex; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9;">
-                <span style="font-size: 0.85rem; color: #64748b;">Giới hạn Click</span>
-                <span style="font-size: 0.85rem; font-weight: 600; color: #0f172a;">{{ detail.clickLimit ?? 'Không giới hạn' }}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9;">
-                <span style="font-size: 0.85rem; color: #64748b;">Ngày hết hạn</span>
-                <span style="font-size: 0.85rem; font-weight: 600; color: #0f172a;">{{ formatDate(detail.expiresAtUtc) }}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9;">
-                <span style="font-size: 0.85rem; color: #64748b;">Tag</span>
-                <span style="font-size: 0.85rem; font-weight: 600; color: #0f172a;" class="ui-badge ui-badge-neutral">{{ detail.tag || '—' }}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; padding: 1rem 1.25rem;">
-                <span style="font-size: 0.85rem; color: #64748b;">Mô tả</span>
-                <span style="font-size: 0.85rem; font-weight: 500; color: #0f172a;">{{ detail.description || '—' }}</span>
-              </div>
+              <template v-if="confirmDelete">
+                <span class="ui-inline-item">Xóa link này?</span>
+                <button class="ui-btn ui-btn-danger" :disabled="actionLoading" @click="deleteLink">
+                  <Trash2 :size="15" /> Xóa
+                </button>
+                <button class="ui-btn ui-btn-ghost" @click="confirmDelete = false">Hủy</button>
+              </template>
+              <button v-else class="ui-btn ui-btn-ghost" style="color: #dc2626;" @click="confirmDelete = true">
+                <Trash2 :size="15" /> Xóa mềm
+              </button>
             </div>
           </div>
         </div>
 
         <div class="ui-panel">
-          <div class="ui-panel-header">
-            <h3 class="ui-panel-title" style="display: flex; align-items: center; gap: 0.5rem;">
-              <Eye :size="16" style="color: #64748b;" /> Siêu dữ liệu (Meta)
-            </h3>
-          </div>
-          <div class="ui-panel-body" style="padding: 0;">
-            <div style="display: flex; flex-direction: column;">
-              <div style="display: flex; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9;">
-                <span style="font-size: 0.85rem; color: #64748b;">Domain / Host</span>
-                <span style="font-size: 0.85rem; font-weight: 600; color: #3b82f6;">{{ linkHost }}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9;">
-                <span style="font-size: 0.85rem; color: #64748b;">Ngày khởi tạo</span>
-                <span style="font-size: 0.85rem; font-weight: 600; color: #0f172a;">{{ formatDate(detail.createdAtUtc) }}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; padding: 1rem 1.25rem;">
-                <span style="font-size: 0.85rem; color: #64748b;">Sửa đổi lần cuối</span>
-                <span style="font-size: 0.85rem; font-weight: 600; color: #0f172a;">{{ formatDate(detail.updatedAtUtc) }}</span>
-              </div>
+          <div class="ui-panel-body">
+            <div class="ui-panel-title-row">
+              <Settings :size="16" />
+              <h3 class="ui-panel-title">Điều hướng thông minh</h3>
             </div>
+            <p class="ui-panel-subtitle">Quản lý rule theo thiết bị, quốc gia hoặc phân bổ theo trọng số.</p>
+            <LinkRulesPanel :link-id="detail.id" :is-pro="isPro" />
           </div>
         </div>
       </div>
-
-      <!-- Link Rules Panel: Bypassing internal styles by keeping the component but wrapping it in a layout standard if needed.
-           Actually we just put it here, the component handles itself. We'll leave it as is. -->
-      <LinkRulesPanel
-        :link-id="detail.id"
-        :is-pro="isPro"
-      />
-
     </template>
   </div>
 </template>
