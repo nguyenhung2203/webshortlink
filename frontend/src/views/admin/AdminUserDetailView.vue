@@ -50,7 +50,7 @@ async function changePlan(planId: number) {
 
 async function toggleLock() {
   if (!authStore.accessToken || !user.value) return
-  const action = user.value.status === 'Active' ? 'lock' : 'unlock'
+  const action = user.value.accountStatus === 'Active' ? 'lock' : 'unlock'
   if (!confirm(`Xác nhận ${action === 'lock' ? 'VÔ HIỆU HÓA' : 'MỞ KHÓA'} tài khoản này? Quyền truy cập sẽ bị ảnh hưởng ngay lập tức.`)) return
   lockLoading.value = true
   try {
@@ -113,11 +113,11 @@ onMounted(load)
                  <h2 style="margin: 0; font-size: 1.5rem; font-weight: 800; color: #0f172a;">{{ user.fullName || 'Chưa định danh tên' }}</h2>
                  <p style="margin: 0.25rem 0 0.75rem; font-size: 0.95rem; font-weight: 500; color: #64748b; font-family: monospace;">{{ user.email }}</p>
                  <div style="display: flex; gap: 0.75rem; align-items: center;">
-                   <span class="ui-badge" :class="user.status === 'Active' ? 'ui-badge-success' : 'ui-badge-error'">
-                     <Shield :size="12" style="margin-right: 0.25rem;" /> {{ user.status === 'Active' ? 'HOẠT ĐỘNG' : 'ĐANG BỊ KHÓA' }}
+                   <span class="ui-badge" :class="user.accountStatus === 'Active' ? 'ui-badge-success' : 'ui-badge-error'">
+                     <Shield :size="12" style="margin-right: 0.25rem;" /> {{ user.accountStatus === 'Active' ? 'HOẠT ĐỘNG' : 'ĐANG BỊ KHÓA' }}
                    </span>
                    <span class="ui-badge" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">
-                     GÓI {{ user.planName ? user.planName.toUpperCase() : 'THƯỜNG' }}
+                     GÓI {{ user.currentPlanName ? user.currentPlanName.toUpperCase() : 'THƯỜNG' }}
                    </span>
                    <span v-if="user.emailConfirmed" class="ui-badge" style="background: #f8fafc; color: #475569; border: 1px solid #e2e8f0;">
                      <BadgeCheck :size="12" style="margin-right: 0.25rem; color: #10b981;" /> Đã Verify Email
@@ -180,13 +180,13 @@ onMounted(load)
                   @click="toggleLock"
                   :disabled="lockLoading"
                   class="ui-btn"
-                  :style="user.status === 'Active'
+                  :style="user.accountStatus === 'Active'
                     ? 'background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3;'
                     : 'background: #ecfdf5; color: #10b981; border: 1px solid #a7f3d0;'"
                 >
-                  <Lock v-if="user.status === 'Active'" :size="16" />
+                  <Lock v-if="user.accountStatus === 'Active'" :size="16" />
                   <Unlock v-else :size="16" />
-                  {{ user.status === 'Active' ? 'Đình chỉ Dịch vụ (Lock Account)' : 'Dỡ bỏ Đình chỉ (Unlock Account)' }}
+                  {{ user.accountStatus === 'Active' ? 'Đình chỉ Dịch vụ (Lock Account)' : 'Dỡ bỏ Đình chỉ (Unlock Account)' }}
                 </button>
                 <p style="margin: 0.75rem 0 0; font-size: 0.75rem; color: #94a3b8;">Hành động khóa sẽ ngay lập tức ngắt toàn bộ quyền truy cập và traffic của khách hàng trên tất cả Link.</p>
               </div>
