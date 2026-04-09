@@ -110,7 +110,7 @@ public sealed class LinkService
         var current = _currentUserService.GetRequired();
         var defaultHost = await GetSystemDefaultHostAsync(cancellationToken);
         
-        var items = await _dbContext.Links
+        var query = _dbContext.Links
             .AsNoTracking()
             .Include(x => x.Domain)
             .Where(x => x.UserId == current.UserId && !x.IsDeleted);
