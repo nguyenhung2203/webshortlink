@@ -177,19 +177,9 @@ onMounted(load)
               </td>
               
               <td style="padding: 1rem 1.5rem;">
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                  <span style="padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;" :style="planBadgeClass(user.planName)">
-                    {{ user.planName }}
-                  </span>
-                  <select
-                    v-model.number="(user as any).__newPlanId"
-                    @change="changePlan(user.id, (user as any).__newPlanId)"
-                    style="height: 24px; font-size: 0.7rem; border-radius: 4px; border: 1px solid #cbd5e1; background: transparent; cursor: pointer; color: #475569;"
-                  >
-                    <option value="" disabled selected>Đổi gói ▼</option>
-                    <option v-for="p in plans" :key="p.id" :value="p.id">{{ p.name }}</option>
-                  </select>
-                </div>
+                <span style="padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;" :style="planBadgeClass(user.planName)">
+                  {{ user.planName }}
+                </span>
               </td>
               
               <td style="padding: 1rem 1.5rem;">
