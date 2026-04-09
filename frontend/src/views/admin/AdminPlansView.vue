@@ -4,7 +4,8 @@ import { useAuthStore } from '@/stores/auth'
 import { AdminService } from '@/api/services'
 import {
   Package, CheckCircle, XCircle, RefreshCw, AlertCircle,
-  Edit2, ToggleLeft, ToggleRight, Plus, Trash2, X, Info, Hash
+  Edit2, ToggleLeft, ToggleRight, Plus, Trash2, X, Info, Hash,
+  Zap, Crown, Check
 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
@@ -29,6 +30,7 @@ const builtInFeatures: Record<string, FeatureLabel> = {
   'analytics.retention_days':  { featureKey: 'analytics.retention_days',  label: 'Lưu analytics (ngày)', description: 'Thời gian lưu dữ liệu click',               featureType: 'number' },
   'analytics.export_csv':      { featureKey: 'analytics.export_csv',      label: 'Xuất CSV',             description: 'Xuất dữ liệu phân tích sang CSV',           featureType: 'toggle' },
   'api.access':                { featureKey: 'api.access',                label: 'Truy cập API',          description: 'Tích hợp REST API trực tiếp',               featureType: 'toggle' },
+  'links.social_preview':      { featureKey: 'links.social_preview',      label: 'Xem trước MXH',         description: 'Cho phép tùy chỉnh thẻ xem trước OpenGraph', featureType: 'toggle' },
 }
 
 const allFeatures = computed<FeatureLabel[]>(() => {
@@ -153,82 +155,86 @@ const ps = (idx: number) => planStyle[idx] ?? planStyle[2]
     </div>
 
     <!-- 3-column plan cards -->
-    <div v-else style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;align-items:start;">
+    <div v-else class="pricing-grid">
       <div
         v-for="(plan, idx) in plans" :key="plan.id"
-        style="border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);"
+        :class="['pricing-card', `plan-${plan.code.toLowerCase()}`]"
       >
-        <!-- Plan header -->
-        <div :style="{ background: ps(idx).gradient }" style="padding:1.5rem 1.25rem;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
-            <span style="font-size:1.5rem;">{{ ps(idx).icon }}</span>
-            <span
-              class="ui-badge"
-              :style="{ background: ps(idx).badgeBg, color: ps(idx).badge, border: `1px solid ${ps(idx).accent}40`, fontWeight:700, fontSize:'0.65rem' }"
-            >{{ plan.code.toUpperCase() }}</span>
+        <!-- Highlight labels -->
+        <div v-if="plan.code === 'pro'" class="popular-label">
+          <Zap :size="14" fill="currentColor" /> ĐƯỢC ƯA CHUỘNG NHẤT
+        </div>
+        <div v-if="plan.code === 'plus'" class="enterprise-label">
+          <Crown :size="14" /> DÀNH CHO DOANH NGHIỆP
+        </div>
+
+        <!-- Header -->
+        <div class="card-header">
+          <h3 class="plan-name">{{ plan.name }}</h3>
+          <p class="plan-desc">Cấu hình tính năng gói {{ plan.name }}</p>
+          
+          <div class="plan-price-box">
+            <span class="price-val">{{ plan.monthlyPrice === 0 ? 'Miễn phí' : (plan.monthlyPrice / 1000).toLocaleString() + 'k' }}</span>
+            <span v-if="plan.monthlyPrice > 0" class="price-cycle">/tháng</span>
+            <span v-if="plan.monthlyPrice > 0" class="price-currency">VND</span>
           </div>
-          <h2 style="color:white;font-size:1.25rem;font-weight:800;margin:0 0 0.25rem;">{{ plan.name }}</h2>
-          <p style="color:rgba(255,255,255,0.7);font-size:0.85rem;margin:0;">
-            {{ plan.monthlyPrice === 0 ? 'Miễn phí mãi mãi' : plan.monthlyPrice.toLocaleString('vi-VN') + '₫ / tháng' }}
-          </p>
         </div>
 
         <!-- Feature list -->
-        <div style="background:white;">
-          <div
-            v-for="fl in allFeatures"
-            :key="fl.featureKey"
-            style="display:flex;align-items:center;justify-content:space-between;padding:0.8rem 1.25rem;border-bottom:1px solid #f1f5f9;gap:0.5rem;"
-          >
-            <!-- Feature info -->
-            <div style="flex:1;min-width:0;">
-              <div style="display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">
-                <span style="font-size:0.87rem;font-weight:600;color:#1e293b;">{{ fl.label }}</span>
-                <span v-if="!builtInFeatures[fl.featureKey]" class="ui-badge" style="background:#fce7f3;color:#be185d;font-size:0.6rem;padding:0.05rem 0.3rem;">CUSTOM</span>
+        <div class="card-features">
+          <div class="feature-title">Quyền lợi thiết lập:</div>
+          <div style="display:flex; flex-direction:column; gap: 0;">
+            <div
+              v-for="fl in allFeatures"
+              :key="fl.featureKey"
+              class="admin-feature-row"
+            >
+              <!-- Feature info -->
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">
+                  <span class="feat-main">{{ fl.label }}</span>
+                  <span v-if="!builtInFeatures[fl.featureKey]" class="ui-badge custom-badge">CUSTOM</span>
+                </div>
+                <!-- Value display -->
+                <div style="margin-top:0.25rem;">
+                  <template v-if="fl.featureType === 'toggle'">
+                    <span v-if="getFeature(plan, fl.featureKey).isEnabled" class="feat-status feat-enabled">
+                      <Check :size="12" stroke-width="3" /> Bật
+                    </span>
+                    <span v-else class="feat-status feat-disabled">
+                      <XCircle :size="12" /> Tắt
+                    </span>
+                  </template>
+                  <template v-else>
+                    <span v-if="getFeature(plan, fl.featureKey).limitValue != null" class="feat-status feat-limit">
+                      {{ getFeature(plan, fl.featureKey).limitValue }}
+                    </span>
+                    <span v-else class="feat-status feat-disabled">Không giới hạn</span>
+                  </template>
+                </div>
               </div>
-              <!-- Value display -->
-              <div style="margin-top:0.2rem;">
-                <template v-if="fl.featureType === 'toggle'">
-                  <span v-if="getFeature(plan, fl.featureKey).isEnabled" style="font-size:0.75rem;color:#10b981;font-weight:600;display:flex;align-items:center;gap:0.25rem;">
-                    <CheckCircle :size="12" /> Bật
-                  </span>
-                  <span v-else style="font-size:0.75rem;color:#cbd5e1;display:flex;align-items:center;gap:0.25rem;">
-                    <XCircle :size="12" /> Tắt
-                  </span>
-                </template>
-                <template v-else>
-                  <span v-if="getFeature(plan, fl.featureKey).limitValue != null" style="font-size:0.8rem;color:#3b82f6;font-weight:700;">
-                    {{ getFeature(plan, fl.featureKey).limitValue }}
-                  </span>
-                  <span v-else style="font-size:0.75rem;color:#cbd5e1;">Không giới hạn</span>
-                </template>
+
+              <!-- Actions -->
+              <div class="admin-feat-actions">
+                <button @click="openEdit(plan, fl)" class="admin-edit-btn">
+                  <Edit2 :size="11" /> Sửa
+                </button>
+                <!-- Delete only on first plan card to avoid 3x delete buttons -->
+                <button
+                  v-if="idx === 0 && !builtInFeatures[fl.featureKey]"
+                  @click="deleteFeature(fl)"
+                  class="admin-delete-btn"
+                  title="Xóa tính năng khỏi hệ thống"
+                >
+                  <Trash2 :size="11" />
+                </button>
               </div>
             </div>
 
-            <!-- Actions -->
-            <div style="display:flex;align-items:center;gap:0.3rem;flex-shrink:0;">
-              <button
-                @click="openEdit(plan, fl)"
-                style="background:#f1f5f9;border:none;border-radius:6px;padding:0.3rem 0.5rem;cursor:pointer;color:#64748b;font-size:0.72rem;display:flex;align-items:center;gap:0.2rem;transition:background 0.15s;"
-                onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'"
-              >
-                <Edit2 :size="11" /> Sửa
-              </button>
-              <!-- Delete only on first plan card to avoid 3x delete buttons -->
-              <button
-                v-if="idx === 0 && !builtInFeatures[fl.featureKey]"
-                @click="deleteFeature(fl)"
-                style="background:#fef2f2;border:none;border-radius:6px;padding:0.3rem 0.4rem;cursor:pointer;color:#ef4444;"
-                title="Xóa tính năng khỏi hệ thống"
-              >
-                <Trash2 :size="11" />
-              </button>
+            <!-- Empty state -->
+            <div v-if="allFeatures.length === 0" style="padding:2rem;text-align:center;color:#94a3b8;font-size:0.85rem;">
+              Chưa có tính năng nào
             </div>
-          </div>
-
-          <!-- Empty state -->
-          <div v-if="allFeatures.length === 0" style="padding:2rem;text-align:center;color:#94a3b8;font-size:0.85rem;">
-            Chưa có tính năng nào
           </div>
         </div>
       </div>
@@ -352,3 +358,218 @@ const ps = (idx: number) => planStyle[idx] ?? planStyle[2]
     </div>
   </div>
 </template>
+
+<style scoped>
+  /* Base Grid */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    align-items: stretch;
+  }
+
+  /* Card Base */
+  .pricing-card {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Cards Styles */
+  .pricing-card.plan-pro {
+    background: #0f172a;
+    border: none;
+    color: white;
+    transform: scale(1.03);
+    box-shadow: 0 15px 30px -10px rgba(15,23,42,0.5);
+    z-index: 10;
+  }
+  .pricing-card.plan-plus {
+    border: 2px solid #10b981;
+    box-shadow: 0 10px 25px -5px rgba(16,185,129,0.15);
+  }
+
+  /* Pro specific overrides */
+  .plan-pro .plan-name { color: white; }
+  .plan-pro .plan-desc { color: #94a3b8; border-color: #1e293b; }
+  .plan-pro .price-val { color: white; }
+  .plan-pro .price-cycle, .plan-pro .price-currency { color: #94a3b8; }
+  .plan-pro .feature-title { color: #f8fafc; }
+  .plan-pro .feat-main { color: #f1f5f9; }
+  .plan-pro .admin-feature-row { border-bottom-color: #1e293b; }
+  .plan-pro .feat-disabled { color: #475569; }
+  .plan-pro .feat-enabled { color: #38bdf8; }
+  .plan-pro .admin-edit-btn { background: #1e293b; color: #94a3b8; }
+  .plan-pro .admin-edit-btn:hover { background: #334155; color: #f8fafc; }
+
+  /* Badges */
+  .popular-label {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    padding: 0.25rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(37,99,235,0.4);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    white-space: nowrap;
+  }
+  .enterprise-label {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: #fffbeb;
+    color: #b45309;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    border: 1px solid #fde68a;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .custom-badge {
+    background: #fce7f3;
+    color: #be185d;
+    font-size: 0.6rem;
+    padding: 0.05rem 0.3rem;
+  }
+  .plan-pro .custom-badge { background: #4c1d95; color: #ddd6fe; }
+
+  /* Card Header */
+  .card-header {
+    margin-bottom: 1.25rem;
+  }
+  .plan-name {
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: #0f172a;
+    margin: 0 0 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .plan-desc {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.4;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .plan-price-box {
+    margin-top: 1rem;
+    display: flex;
+    align-items: flex-end;
+    gap: 0.2rem;
+  }
+  .price-val {
+    font-size: 2.25rem;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .price-cycle {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+  }
+  .price-currency {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-bottom: 0.45rem;
+    font-weight: 700;
+    margin-left: 0.2rem;
+  }
+
+  /* Admin Features */
+  .card-features {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background: transparent;
+  }
+  .feature-title {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+  }
+  .admin-feature-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid #f1f5f9;
+    gap: 0.5rem;
+  }
+  .admin-feature-row:last-child {
+    border-bottom: none;
+  }
+  .feat-main {
+    font-size: 0.87rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  .feat-status {
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .feat-enabled { color: #10b981; font-weight: 600; }
+  .feat-disabled { color: #cbd5e1; }
+  .feat-limit { font-size: 0.8rem; color: #3b82f6; font-weight: 700; }
+  .plan-pro .feat-limit { color: #60a5fa; }
+
+  /* Admin Actions */
+  .admin-feat-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-shrink: 0;
+  }
+  .admin-edit-btn {
+    background: #f1f5f9;
+    border: none;
+    border-radius: 6px;
+    padding: 0.3rem 0.5rem;
+    cursor: pointer;
+    color: #64748b;
+    font-size: 0.72rem;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    transition: background 0.15s;
+  }
+  .admin-edit-btn:hover { background: #e2e8f0; color: #0f172a; }
+  
+  .admin-delete-btn {
+    background: #fef2f2;
+    border: none;
+    border-radius: 6px;
+    padding: 0.3rem 0.4rem;
+    cursor: pointer;
+    color: #ef4444;
+  }
+  .admin-delete-btn:hover { background: #fecaca; }
+  .plan-pro .admin-delete-btn { background: #450a0a; color: #f87171; }
+</style>

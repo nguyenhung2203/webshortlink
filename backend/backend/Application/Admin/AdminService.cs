@@ -60,7 +60,9 @@ public sealed class AdminService
         var uniqueClicks = await _dbContext.LinkDailyStats.SumAsync(x => (long?)x.UniqueClicks, cancellationToken) ?? 0L;
         var botClicks = await _dbContext.ClickEvents.LongCountAsync(x => x.IsBot, cancellationToken);
         var suspiciousClicks = await _dbContext.ClickEvents.LongCountAsync(x => x.IsSuspicious, cancellationToken);
-        var monthlyRevenue = await _dbContext.Payments.Where(x => x.Status == PaymentStatus.Paid).SumAsync(x => (decimal?)x.Amount, cancellationToken) ?? 0m;
+        var monthlyRevenue = await _dbContext.Subscriptions
+            .Where(x => x.Status == SubscriptionStatus.Active)
+            .SumAsync(x => (decimal?)x.Plan.MonthlyPrice, cancellationToken) ?? 0m;
         var queueLag = await _analyticsQueue.GetPendingCountAsync(cancellationToken);
         var errorRate = await CalculateRedirectErrorRateAsync(cancellationToken);
         var redirectLatencyP95 = await CalculateRedirectLatencyP95Async(cancellationToken);
@@ -128,6 +130,20 @@ public sealed class AdminService
             "disabled" => UserAccountStatus.Disabled,
             _ => throw new AppException(ErrorCodes.ValidationFailed, "Trang thai user khong hop le.")
         };
+
+        if (user.AccountStatus is UserAccountStatus.Locked or UserAccountStatus.Disabled)
+        {
+            var openSessions = await _dbContext.RefreshSessions
+                .Where(x => x.UserId == user.Id && x.RevokedAtUtc == null)
+                .ToListAsync(cancellationToken);
+
+            foreach (var session in openSessions)
+            {
+                session.RevokedAtUtc = DateTime.UtcNow;
+                session.RevokedReason = $"Admin changed account status to {user.AccountStatus}";
+                session.UpdatedAtUtc = DateTime.UtcNow;
+            }
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-005:ChangeUserStatus", "AppUser", user.Id.ToString(), current.UserId, current.IpAddress, request, cancellationToken);
@@ -502,6 +518,20 @@ public sealed class AdminService
         var current = _currentUserService.GetRequired();
         var domain = await _dbContext.Domains.FirstOrDefaultAsync(x => x.Id == domainId && !x.IsDeleted, cancellationToken)
             ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy domain", StatusCodes.Status404NotFound);
+
+        var isDefaultDomain = await _dbContext.SystemSettings
+            .AsNoTracking()
+            .AnyAsync(x => x.SettingKey == "DefaultDomain" && x.SettingValue == domain.Host, cancellationToken);
+        if (isDefaultDomain)
+        {
+            throw new AppException(ErrorCodes.Conflict, "Không thể xóa domain đang được đặt làm mặc định hệ thống.", StatusCodes.Status409Conflict);
+        }
+
+        var linkedLinks = await _dbContext.Links.AnyAsync(x => x.DomainId == domainId && !x.IsDeleted, cancellationToken);
+        if (linkedLinks)
+        {
+            throw new AppException(ErrorCodes.Conflict, "Domain đang được sử dụng bởi shortlink.", StatusCodes.Status409Conflict);
+        }
 
         domain.IsDeleted = true;
         domain.DeletedAtUtc = DateTime.UtcNow;

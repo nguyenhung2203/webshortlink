@@ -15,6 +15,9 @@ public sealed class LinkConfiguration : IEntityTypeConfiguration<Link>
         builder.Property(x => x.Description).HasMaxLength(500);
         builder.Property(x => x.Tag).HasMaxLength(100);
         builder.Property(x => x.PasswordHash).HasMaxLength(500);
+        builder.Property(x => x.OgTitle).HasMaxLength(200);
+        builder.Property(x => x.OgDescription).HasMaxLength(500);
+        builder.Property(x => x.OgImageUrl).HasMaxLength(2048);
         builder.Property(x => x.RowVersion).IsRowVersion();
         builder.HasIndex(x => new { x.DomainId, x.Slug }).IsUnique();
         builder.HasIndex(x => new { x.UserId, x.CreatedAtUtc });

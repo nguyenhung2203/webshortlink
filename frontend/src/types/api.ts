@@ -11,6 +11,13 @@ export interface MessageResponseDto {
   message: string
 }
 
+export interface RegisterResponseDto {
+  message: string
+  code?: string | null
+  userId: string
+  email: string
+}
+
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 export interface AuthResponseDto {
   accessToken: string
@@ -50,12 +57,19 @@ export interface UserProfileProfile {
 }
 
 // ─── Plans & Billing ──────────────────────────────────────────────────────────
+export interface PlanFeature {
+  title: string
+  hint?: string
+  isEnabled: boolean
+}
+
 export interface Plan {
   id: number
   code: string
   name: string
   monthlyPrice: number
   isActive: boolean
+  features: PlanFeature[]
 }
 
 export interface Subscription {
@@ -92,6 +106,7 @@ export interface ShortLink {
   totalClicks: number
   uniqueClicks: number
   botClicks: number
+  clicksToday: number
   createdAtUtc: string
   updatedAtUtc: string | null
 }
@@ -112,6 +127,9 @@ export interface LinkDetail {
   uniqueClicks: number
   createdAtUtc: string
   updatedAtUtc: string | null
+  ogTitle?: string | null
+  ogDescription?: string | null
+  ogImageUrl?: string | null
 }
 
 export interface CreateLinkRequest {
@@ -123,6 +141,9 @@ export interface CreateLinkRequest {
   expiresAtUtc?: string | null
   clickLimit?: number | null
   password?: string | null
+  ogTitle?: string | null
+  ogDescription?: string | null
+  ogImageUrl?: string | null
 }
 
 // ─── Analytics ────────────────────────────────────────────────────────────────

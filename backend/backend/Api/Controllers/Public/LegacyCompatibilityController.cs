@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using WebShortlink.Backend.Application.Admin;
 using WebShortlink.Backend.Application.Analytics;
@@ -7,8 +6,6 @@ using WebShortlink.Backend.Application.Authentication;
 using WebShortlink.Backend.Application.Billing;
 using WebShortlink.Backend.Application.Common;
 using WebShortlink.Backend.Application.Links;
-using WebShortlink.Backend.Domain.Entities;
-using WebShortlink.Backend.Domain.Enums;
 
 namespace WebShortlink.Backend.Api.Controllers.Public;
 
@@ -20,39 +17,18 @@ public sealed class LegacyCompatibilityController : ControllerBase
     public async Task<IActionResult> LegacyRegister(
         [FromBody] LegacyRegisterRequest request,
         [FromServices] AuthService authService,
-        [FromServices] UserManager<AppUser> userManager,
         CancellationToken cancellationToken)
     {
-        await authService.RegisterAsync(
+        var response = await authService.RegisterAsync(
             new RegisterRequestDto(request.FullName, request.Email, request.Password, request.Password, null),
-            cancellationToken);
-
-        var user = await userManager.FindByEmailAsync(request.Email.Trim().ToLowerInvariant());
-        if (user is not null && !user.EmailConfirmed)
-        {
-            user.EmailConfirmed = true;
-            user.AccountStatus = UserAccountStatus.Active;
-            await userManager.UpdateAsync(user);
-        }
-
-        var loginResponse = await authService.LoginAsync(
-            new LoginRequestDto(request.Email, request.Password, null),
             cancellationToken);
 
         return Ok(new
         {
-            token = loginResponse.AccessToken,
-            refreshToken = loginResponse.RefreshToken,
-            expiresAtUtc = loginResponse.ExpiresAtUtc,
-            user = new
-            {
-                id = loginResponse.User.Id,
-                fullName = loginResponse.User.FullName,
-                email = loginResponse.User.Email,
-                role = loginResponse.User.Role,
-                status = loginResponse.User.AccountStatus,
-                currentPlanId = loginResponse.User.CurrentPlanId
-            }
+            message = response.Message,
+            code = response.Code,
+            userId = response.UserId,
+            email = response.Email
         });
     }
 

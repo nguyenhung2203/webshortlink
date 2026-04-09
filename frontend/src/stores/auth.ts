@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { AuthService } from '@/api/services'
-import type { AuthResponseDto } from '@/types/api'
+import type { AuthResponseDto, RegisterResponseDto } from '@/types/api'
 
 const STORAGE_KEY = 'webshortlink.auth'
 
@@ -69,8 +69,8 @@ export const useAuthStore = defineStore('auth', () => {
   window.addEventListener('auth:token-refreshed', _onTokenRefreshed)
   window.addEventListener('auth:session-expired', _onSessionExpired)
 
-  async function login(email: string, password: string) {
-    const payload = await AuthService.login(email, password)
+  async function login(email: string, password: string, turnstileToken?: string | null) {
+    const payload = await AuthService.login(email, password, turnstileToken)
     accessToken.value = payload.accessToken
     refreshToken.value = payload.refreshToken
     expiresAtUtc.value = payload.expiresAtUtc
@@ -78,8 +78,8 @@ export const useAuthStore = defineStore('auth', () => {
     persist()
   }
 
-  async function register(fullName: string, email: string, password: string, confirmPassword: string) {
-    return AuthService.register(fullName, email, password, confirmPassword)
+  async function register(fullName: string, email: string, password: string, confirmPassword: string, turnstileToken?: string | null): Promise<RegisterResponseDto> {
+    return AuthService.register(fullName, email, password, confirmPassword, turnstileToken)
   }
 
   async function refreshSession() {

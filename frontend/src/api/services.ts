@@ -6,6 +6,7 @@ import type {
   ApiMessageResponse,
   AuthResponseDto,
   MessageResponseDto,
+  RegisterResponseDto,
   CurrentSessionDto,
   CreateLinkRequest,
   DashboardMetrics,
@@ -21,15 +22,15 @@ import type {
 
 // ─── Auth ──────────────────────────────────────────────────────────────────────
 export const AuthService = {
-  login: (email: string, password: string) =>
+  login: (email: string, password: string, turnstileToken?: string | null) =>
     apiRequest<AuthResponseDto>('/api/public/auth/login', {
       method: 'POST',
-      body: { email, password },
+      body: { email, password, turnstileToken: turnstileToken ?? undefined },
     }),
-  register: (fullName: string, email: string, password: string, confirmPassword: string) =>
-    apiRequest<MessageResponseDto>('/api/public/auth/register', {
+  register: (fullName: string, email: string, password: string, confirmPassword: string, turnstileToken?: string | null) =>
+    apiRequest<RegisterResponseDto>('/api/public/auth/register', {
       method: 'POST',
-      body: { fullName, email, password, confirmPassword, turnstileToken: null },
+      body: { fullName, email, password, confirmPassword, turnstileToken: turnstileToken ?? undefined },
     }),
   refreshToken: (refreshToken: string) =>
     apiRequest<AuthResponseDto>('/api/public/auth/refresh-token', {
@@ -47,10 +48,10 @@ export const AuthService = {
       method: 'GET',
       token,
     }),
-  forgotPassword: (email: string) =>
+  forgotPassword: (email: string, turnstileToken?: string | null) =>
     apiRequest<MessageResponseDto>('/api/public/auth/forgot-password', {
       method: 'POST',
-      body: { email, turnstileToken: null },
+      body: { email, turnstileToken: turnstileToken ?? undefined },
     }),
   resetPassword: (email: string, token: string, newPassword: string, confirmPassword: string) =>
     apiRequest<MessageResponseDto>('/api/public/auth/reset-password', {

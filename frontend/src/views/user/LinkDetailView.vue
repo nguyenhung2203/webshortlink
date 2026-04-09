@@ -8,7 +8,7 @@ import LinkRulesPanel from '@/components/user/LinkRulesPanel.vue'
 import { 
   ArrowLeft, FileOutput, MousePointerClick, Users, Tag, Calendar, 
   Settings, Link as LinkIcon, Info, Pause, Play, Trash2, Activity,
-  Lock, Eye, AlertCircle, Link2
+  Lock, Eye, AlertCircle, Link2, Image
 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -269,6 +269,39 @@ onMounted(load)
                 <span style="font-size: 0.85rem; color: #64748b;">Sửa đổi lần cuối</span>
                 <span style="font-size: 0.85rem; font-weight: 600; color: #0f172a;">{{ formatDate(detail.updatedAtUtc) }}</span>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Social Preview Meta Grid -->
+      <div class="ui-panel" style="margin-top: 1.5rem;">
+        <div class="ui-panel-header">
+          <h3 class="ui-panel-title" style="display: flex; align-items: center; gap: 0.5rem;">
+            <Image :size="16" style="color: #64748b;" /> Xem trước Mạng xã hội (OpenGraph)
+          </h3>
+        </div>
+        <div class="ui-panel-body" style="background: #f8fafc; padding: 1.5rem; display: flex; justify-content: center;">
+          <div style="background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; overflow: hidden; max-width: 500px; width: 100%;">
+            <!-- Cover image -->
+            <div style="width: 100%; height: 200px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden; border-bottom: 1px solid #f1f5f9;">
+              <img v-if="detail.ogImageUrl" :src="detail.ogImageUrl" style="width: 100%; height: 100%; object-fit: cover;" />
+              <div v-else style="display: flex; flex-direction: column; align-items: center; color: #94a3b8;">
+                <Image :size="32" style="opacity: 0.5; margin-bottom: 8px;" />
+                <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.1em;">KHÔNG CÓ ẢNH</span>
+              </div>
+            </div>
+            <!-- Content -->
+            <div style="padding: 1rem; background: #f8fafc;">
+              <p style="font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">
+                {{ linkHost.toUpperCase() }}/{{ detail.slug.toUpperCase() }}
+              </p>
+              <h4 style="font-size: 16px; font-weight: 700; color: #0f172a; line-height: 1.35; margin: 0 0 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word;">
+                {{ detail.ogTitle || detail.originalUrl || 'WeShort - Hệ thống chuyển hướng' }}
+              </h4>
+              <p style="font-size: 14px; color: #64748b; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word;">
+                {{ detail.ogDescription || 'Không có mô tả mạng xã hội nào được cung cấp.' }}
+              </p>
             </div>
           </div>
         </div>

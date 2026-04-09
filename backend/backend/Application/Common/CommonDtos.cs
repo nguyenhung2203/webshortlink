@@ -1,6 +1,8 @@
 namespace WebShortlink.Backend.Application.Common;
 
-public sealed record PlanDto(int Id, string Code, string Name, decimal MonthlyPrice, bool IsActive);
+public sealed record PlanFeatureInfo(string Title, string? Hint, bool IsEnabled);
+
+public sealed record PlanDto(int Id, string Code, string Name, decimal MonthlyPrice, bool IsActive, IReadOnlyCollection<PlanFeatureInfo> Features);
 
 public sealed record SubscriptionDto(Guid Id, int PlanId, string PlanName, string Status, DateTime StartAtUtc, DateTime EndAtUtc);
 
@@ -15,6 +17,14 @@ public sealed record CurrentSessionDto(Guid UserId, string Email, string FullNam
 public sealed record PublicRedirectAccessRequestDto(string Password);
 
 public sealed record PublicRedirectAccessResponseDto(string RedirectUrl);
+
+public sealed record OgLinkDataDto(
+    string OriginalUrl,
+    string? OgTitle,
+    string? OgDescription,
+    string? OgImageUrl,
+    string Host,
+    string Slug);
 
 public sealed record MessageResponseDto(string Message, string? Code = null);
 

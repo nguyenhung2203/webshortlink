@@ -53,8 +53,8 @@ public sealed class ClickAnalyticsWorker : BackgroundService
                     ClickedAtUtc = message.ClickedAtUtc,
                     IpAddress = message.IpAddress,
                     MaskedIp = maskedIp,
-                    CountryCode = "VN",
-                    City = "Ho Chi Minh City",
+                    CountryCode = message.CountryCode,
+                    City = message.City,
                     DeviceType = deviceType,
                     Browser = browser,
                     OperatingSystem = os,
@@ -82,7 +82,6 @@ public sealed class ClickAnalyticsWorker : BackgroundService
                     continue;
                 }
 
-                link.TotalClicks += 1;
                 if (isUnique)
                 {
                     link.UniqueClicks += 1;

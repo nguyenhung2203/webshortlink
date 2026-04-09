@@ -77,7 +77,10 @@ public sealed class LinkService
             ClickLimit = request.ClickLimit,
             Status = LinkStatus.Active,
             CreatedAtUtc = DateTime.UtcNow,
-            CreatedByUserId = current.UserId.ToString()
+            CreatedByUserId = current.UserId.ToString(),
+            OgTitle = request.OgTitle?.Trim(),
+            OgDescription = request.OgDescription?.Trim(),
+            OgImageUrl = request.OgImageUrl?.Trim(),
         };
 
         if (!string.IsNullOrWhiteSpace(request.Password))
@@ -94,6 +97,11 @@ public sealed class LinkService
         if (request.ClickLimit.HasValue)
         {
             await _planCapabilityService.EnsureFeatureEnabledAsync(current.UserId, "links.click_limit", cancellationToken);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.OgTitle) || !string.IsNullOrWhiteSpace(request.OgDescription) || !string.IsNullOrWhiteSpace(request.OgImageUrl))
+        {
+            await _planCapabilityService.EnsureFeatureEnabledAsync(current.UserId, "links.social_preview", cancellationToken);
         }
 
         _dbContext.Links.Add(link);
@@ -169,6 +177,7 @@ public sealed class LinkService
             query = query.OrderByDescending(x => x.CreatedAtUtc);
         }
 
+        var today = DateTime.UtcNow.Date;
         var items = await query
             .Skip((filter.PageIndex - 1) * filter.PageSize)
             .Take(filter.PageSize)
@@ -184,6 +193,7 @@ public sealed class LinkService
                 x.TotalClicks,
                 x.UniqueClicks,
                 x.ClickEvents.LongCount(y => y.IsBot),
+                x.ClickEvents.LongCount(y => y.ClickedAtUtc >= today),
                 x.CreatedAtUtc,
                 x.UpdatedAtUtc))
             .ToListAsync(cancellationToken);
@@ -244,6 +254,17 @@ public sealed class LinkService
 
         link.UpdatedAtUtc = DateTime.UtcNow;
         link.UpdatedByUserId = current.UserId.ToString();
+
+        if (request.OgTitle != link.OgTitle || request.OgDescription != link.OgDescription || request.OgImageUrl != link.OgImageUrl)
+        {
+            if (!string.IsNullOrWhiteSpace(request.OgTitle) || !string.IsNullOrWhiteSpace(request.OgDescription) || !string.IsNullOrWhiteSpace(request.OgImageUrl))
+            {
+                await _planCapabilityService.EnsureFeatureEnabledAsync(current.UserId, "links.social_preview", cancellationToken);
+            }
+            link.OgTitle = request.OgTitle?.Trim();
+            link.OgDescription = request.OgDescription?.Trim();
+            link.OgImageUrl = request.OgImageUrl?.Trim();
+        }
 
         if (!string.IsNullOrWhiteSpace(request.Password))
         {
@@ -353,7 +374,10 @@ public sealed class LinkService
             link.ExpiresAtUtc,
             link.ClickLimit,
             link.PasswordHash,
-            link.TotalClicks), cancellationToken);
+            link.TotalClicks,
+            link.OgTitle,
+            link.OgDescription,
+            link.OgImageUrl), cancellationToken);
     }
 
     private static void ValidateLinkInput(string originalUrl, int? clickLimit)
@@ -399,6 +423,9 @@ public sealed class LinkService
             link.TotalClicks,
             link.UniqueClicks,
             link.CreatedAtUtc,
-            link.UpdatedAtUtc);
+            link.UpdatedAtUtc,
+            link.OgTitle,
+            link.OgDescription,
+            link.OgImageUrl);
     }
 }

@@ -44,7 +44,7 @@ public sealed class AuthService
         _jwtOptions = jwtOptions.Value;
     }
 
-    public async Task<MessageResponseDto> RegisterAsync(RegisterRequestDto request, CancellationToken cancellationToken)
+    public async Task<RegisterResponseDto> RegisterAsync(RegisterRequestDto request, CancellationToken cancellationToken)
     {
         ValidateRegister(request);
         await _turnstileService.VerifyAsync(request.TurnstileToken, _currentUserService.GetCurrentOrNull()?.IpAddress, cancellationToken);
@@ -105,21 +105,28 @@ public sealed class AuthService
             new { verificationToken = "***HIDE***", request.Email },
             cancellationToken);
 
-        return new MessageResponseDto("Đăng ký thành công. Vui lòng xác thực email trước khi đăng nhập.", "EMAIL_VERIFICATION_REQUIRED");
+        return new RegisterResponseDto(
+            "Đăng ký thành công. Vui lòng xác thực email trước khi đăng nhập.",
+            "EMAIL_VERIFICATION_REQUIRED",
+            user.Id,
+            user.Email ?? request.Email.Trim().ToLowerInvariant());
     }
 
     public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request, CancellationToken cancellationToken)
     {
         await _turnstileService.VerifyAsync(request.TurnstileToken, _currentUserService.GetCurrentOrNull()?.IpAddress, cancellationToken);
 
-        var user = await _userManager.FindByEmailAsync(request.Email.Trim().ToLowerInvariant());
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var user = await _userManager.FindByEmailAsync(normalizedEmail);
         if (user is null)
         {
+            await WriteLoginFailedAuditAsync(normalizedEmail, null, "UserNotFound", cancellationToken);
             throw new AppException(ErrorCodes.Unauthorized, "Sai email hoặc mật khẩu.", StatusCodes.Status401Unauthorized);
         }
 
         if (user.AccountStatus == UserAccountStatus.Locked || user.AccountStatus == UserAccountStatus.Disabled)
         {
+            await WriteLoginFailedAuditAsync(normalizedEmail, user, "AccountInactive", cancellationToken);
             throw new AppException(ErrorCodes.Forbidden, "Tài khoản đã bị khóa.", StatusCodes.Status403Forbidden);
         }
 
@@ -131,6 +138,7 @@ public sealed class AuthService
         var signInResult = await _signInManager.CheckPasswordSignInAsync(user, request.Password, true);
         if (!signInResult.Succeeded)
         {
+            await WriteLoginFailedAuditAsync(normalizedEmail, user, "InvalidPassword", cancellationToken);
             throw new AppException(ErrorCodes.Unauthorized, "Sai email hoặc mật khẩu.", StatusCodes.Status401Unauthorized);
         }
 
@@ -152,10 +160,19 @@ public sealed class AuthService
             throw new AppException(ErrorCodes.Unauthorized, "Refresh token không hợp lệ.", StatusCodes.Status401Unauthorized);
         }
 
+        if (session.User.AccountStatus is UserAccountStatus.Locked or UserAccountStatus.Disabled)
+        {
+            session.RevokedAtUtc = DateTime.UtcNow;
+            session.RevokedReason = "User account is no longer active";
+            session.UpdatedAtUtc = DateTime.UtcNow;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            throw new AppException(ErrorCodes.Forbidden, "Tài khoản đã bị khóa.", StatusCodes.Status403Forbidden);
+        }
+
         session.RevokedAtUtc = DateTime.UtcNow;
         session.RevokedReason = "Rotated";
         session.UpdatedAtUtc = DateTime.UtcNow;
-
         return await CreateAuthResponseAsync(session.User, cancellationToken);
     }
 
@@ -261,6 +278,25 @@ public sealed class AuthService
         var current = _currentUserService.GetRequired();
         var user = await _dbContext.Users.AsNoTracking().FirstAsync(x => x.Id == current.UserId, cancellationToken);
         return new CurrentSessionDto(user.Id, user.Email!, user.FullName, current.IsAdmin ? AppRoles.Admin : AppRoles.User, user.CurrentPlanId, user.AccountStatus.ToString());
+    }
+
+    private async Task WriteLoginFailedAuditAsync(string email, AppUser? user, string reason, CancellationToken cancellationToken)
+    {
+        var current = _currentUserService.GetCurrentOrNull();
+
+        await _auditLogService.WriteAsync(
+            AuditActorType.Public,
+            "PUB-API-002:LoginFailed",
+            "AppUser",
+            user?.Id.ToString(),
+            user?.Id,
+            current?.IpAddress,
+            new
+            {
+                email,
+                reason
+            },
+            cancellationToken);
     }
 
     private async Task<AuthResponseDto> CreateAuthResponseAsync(AppUser user, CancellationToken cancellationToken)

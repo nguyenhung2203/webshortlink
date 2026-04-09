@@ -9,3 +9,7 @@ backend/backend/obj/
 .vs/
 *.user
 *.suo
+
+# Local .NET telemetry/cache paths
+.dotnet/
+.dotnet-home/

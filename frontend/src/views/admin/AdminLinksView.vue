@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import { AdminService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
 import type { AdminLink } from '@/types/api'
-import { Search, Link2, ChevronRight, Ban, CheckCircle, MousePointerClick, Activity, AlertCircle, RefreshCw } from 'lucide-vue-next'
+import { Search, Link2, ChevronRight, ChevronLeft, Ban, CheckCircle, MousePointerClick, Activity, AlertCircle, RefreshCw } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 
 const authStore = useAuthStore()
@@ -12,6 +12,11 @@ const error = ref('')
 const loading = ref(true)
 const isActionLoading = ref(false)
 const search = ref('')
+
+const filter = ref({
+  pageIndex: 1,
+  pageSize: 10
+})
 
 async function load() {
   loading.value = true
@@ -45,11 +50,21 @@ const filtered = computed(() => {
   if (!search.value.trim()) return data.value
   const q = search.value.trim().toLowerCase()
   return data.value.filter(l =>
-    (l.slug || '').toLowerCase().includes(q) ||
     (l.userEmail || '').toLowerCase().includes(q) ||
+    (l.slug || '').toLowerCase().includes(q) ||
     (l.shortUrl || '').toLowerCase().includes(q)
   )
 })
+
+const totalCount = computed(() => filtered.value.length)
+const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / filter.value.pageSize)))
+
+const paginated = computed(() => {
+  const start = (filter.value.pageIndex - 1) * filter.value.pageSize
+  return filtered.value.slice(start, start + filter.value.pageSize)
+})
+
+watch(search, () => { filter.value.pageIndex = 1 })
 
 onMounted(load)
 </script>
@@ -113,6 +128,7 @@ onMounted(load)
         <table style="width: 100%; border-collapse: collapse; min-width: 800px; text-align: left;">
           <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
             <tr>
+              <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; width: 60px;">STT</th>
               <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Shortlink</th>
               <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Chủ sở hữu</th>
               <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Lượt Click</th>
@@ -123,8 +139,10 @@ onMounted(load)
             </tr>
           </thead>
           <tbody>
-            <tr v-for="link in filtered" :key="link.id" style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s;" class="hover:bg-slate-50">
-              
+            <tr v-for="(link, index) in paginated" :key="link.id" style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s;" class="hover:bg-slate-50">
+              <td style="padding: 1rem 1.25rem; font-weight: 600; color: #94a3b8;">
+                {{ (filter.pageIndex - 1) * filter.pageSize + index + 1 }}
+              </td>
               <td style="padding: 1rem 1.25rem;">
                 <a :href="link.shortUrl" target="_blank" style="font-family: monospace; font-weight: 700; font-size: 0.95rem; color: #3b82f6; text-decoration: none;">
                   {{ link.slug }}
@@ -179,6 +197,21 @@ onMounted(load)
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div v-if="totalPages > 1" style="padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #e2e8f0; background: #fff;">
+        <span style="font-size: 0.85rem; color: #64748b;">
+          Trang <strong>{{ filter.pageIndex }}</strong> / {{ totalPages }} (Tổng {{ totalCount }} mục)
+        </span>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="ui-btn ui-btn-outline" style="padding: 0.25rem 0.5rem; height: 32px; font-size: 0.8rem; background: white;" :disabled="filter.pageIndex === 1" @click="filter.pageIndex--">
+            <ChevronLeft :size="14" /> Trước
+          </button>
+          <button class="ui-btn ui-btn-outline" style="padding: 0.25rem 0.5rem; height: 32px; font-size: 0.8rem; background: white;" :disabled="filter.pageIndex >= totalPages" @click="filter.pageIndex++">
+            Sau <ChevronRight :size="14" />
+          </button>
+        </div>
       </div>
 
     </div>

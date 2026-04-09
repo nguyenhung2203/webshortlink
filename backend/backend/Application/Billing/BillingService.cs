@@ -29,11 +29,11 @@ public sealed class BillingService
         var user = await _dbContext.Users.FirstAsync(x => x.Id == current.UserId, cancellationToken);
         var targetPlan = await _dbContext.Plans.AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == request.PlanId && x.IsActive, cancellationToken)
-            ?? throw new AppException(ErrorCodes.NotFound, "Khong tim thay goi dich vu.", StatusCodes.Status404NotFound);
+            ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy gói dịch vụ.", StatusCodes.Status404NotFound);
 
         if (user.CurrentPlanId == targetPlan.Id)
         {
-            throw new AppException(ErrorCodes.Conflict, "Tai khoan dang o goi nay.", StatusCodes.Status409Conflict);
+            throw new AppException(ErrorCodes.Conflict, "Tài khoản đang ở gói này.", StatusCodes.Status409Conflict);
         }
 
         var isPaidPlan = targetPlan.MonthlyPrice > 0;
@@ -41,15 +41,16 @@ public sealed class BillingService
         if (isPaidPlan)
         {
             var validExistingSub = await _dbContext.Subscriptions
-                .FirstOrDefaultAsync(x => x.UserId == current.UserId 
-                                       && x.PlanId == targetPlan.Id 
-                                       && x.Status == SubscriptionStatus.Active 
-                                       && x.EndAtUtc > DateTime.UtcNow, cancellationToken);
+                .FirstOrDefaultAsync(x => x.UserId == current.UserId
+                    && x.PlanId == targetPlan.Id
+                    && x.Status == SubscriptionStatus.Active
+                    && x.EndAtUtc > DateTime.UtcNow, cancellationToken);
+
             if (validExistingSub != null)
             {
                 user.CurrentPlanId = targetPlan.Id;
                 await _dbContext.SaveChangesAsync(cancellationToken);
-                
+
                 await _auditLogService.WriteAsync(
                     AuditActorType.User,
                     "USR-API-BILLING-RESTORE",
@@ -129,7 +130,7 @@ public sealed class BillingService
             cancellationToken);
 
         return new UpgradeSubscriptionResponseDto(
-            payment?.Id ?? subscription.Id, // Returns PaymentId if paid, else SubscriptionId
+            payment?.Id ?? subscription.Id,
             targetPlan.Id,
             targetPlan.Code,
             targetPlan.Name,
@@ -137,7 +138,9 @@ public sealed class BillingService
             "VND",
             subscription.StartAtUtc,
             subscription.EndAtUtc,
-            isPaidPlan ? "Đã tạo yêu cầu thanh toán. Đang chờ xác nhận." : "Chuyển đổi gói cước thành công.");
+            isPaidPlan
+                ? "Đã tạo yêu cầu thanh toán. Đang chờ xác nhận."
+                : "Chuyển đổi gói cước thành công.");
     }
 
     public async Task<PaymentHistoryDto> GetPaymentDetailAsync(Guid paymentId, CancellationToken cancellationToken)

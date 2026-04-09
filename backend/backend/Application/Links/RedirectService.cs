@@ -31,7 +31,7 @@ public sealed class RedirectService
         _defaultHost = appOptions.Value.DefaultDomain;
     }
 
-    public async Task<PublicRedirectAccessResponseDto> ResolveAsync(string host, string slug, string? password, HttpContext httpContext, CancellationToken cancellationToken)
+    public async Task<object> ResolveAsync(string host, string slug, string? password, HttpContext httpContext, CancellationToken cancellationToken)
     {
         var startedAt = Environment.TickCount64;
         var normalizedHost = NormalizeHost(host);
@@ -39,14 +39,33 @@ public sealed class RedirectService
         var link = cached ?? await ResolveFromDatabaseAsync(normalizedHost, slug, cancellationToken);
         if (link is null)
         {
+            throw new AppException(ErrorCodes.NotFound, "Shortlink khong ton tai.", StatusCodes.Status404NotFound);
+        }
+        if (link is null)
+        {
             throw new AppException(ErrorCodes.NotFound, "Shortlink không tồn tại.", StatusCodes.Status404NotFound);
         }
 
-        ValidateLinkAvailability(link);
+        ValidateRedirectPreconditions(link);
+
+        if (IsSocialScraper(httpContext.Request.Headers.UserAgent.ToString()))
+        {
+            return new OgLinkDataDto(
+                link.OriginalUrl,
+                link.OgTitle,
+                link.OgDescription,
+                link.OgImageUrl,
+                normalizedHost,
+                slug);
+        }
 
         if (!string.IsNullOrWhiteSpace(link.PasswordHash))
         {
             var placeholder = new Link { PasswordHash = link.PasswordHash };
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                throw new AppException(ErrorCodes.PasswordRequired, "Link yeu cau mat khau.", StatusCodes.Status400BadRequest);
+            }
             if (string.IsNullOrWhiteSpace(password))
             {
                 throw new AppException(ErrorCodes.PasswordRequired, "Link yêu cầu mật khẩu.", StatusCodes.Status400BadRequest);
@@ -55,12 +74,17 @@ public sealed class RedirectService
             var verification = _passwordHasher.VerifyHashedPassword(placeholder, link.PasswordHash, password);
             if (verification == PasswordVerificationResult.Failed)
             {
+                throw new AppException(ErrorCodes.InvalidPassword, "Mat khau khong dung.");
+            }
+            if (verification == PasswordVerificationResult.Failed)
+            {
                 throw new AppException(ErrorCodes.InvalidPassword, "Mật khẩu không đúng.");
             }
         }
 
+        var reservedTotalClicks = await ReserveClickAsync(link, cancellationToken);
         var responseTimeMs = (int)(Environment.TickCount64 - startedAt);
-        var targetUrl = await ResolveTargetUrlAsync(link, httpContext, cancellationToken);
+        var targetUrl = await ResolveTargetUrlAsync(link, reservedTotalClicks, httpContext, cancellationToken);
         
         WebShortlink.Backend.Application.Analytics.AnalyticsSourceHelper.ParseAnalyticsFromRequest(
             httpContext.Request, 
@@ -81,6 +105,8 @@ public sealed class RedirectService
             UserAgent = httpContext.Request.Headers.UserAgent.ToString(),
             ResponseTimeMs = responseTimeMs,
             EventStatus = ClickEventStatus.Redirected.ToString(),
+            CountryCode = DetectCountry(httpContext),
+            City = DetectCity(httpContext),
             NormalizedSource = normalizedSource,
             UtmSource = utmSource,
             UtmMedium = utmMedium,
@@ -113,6 +139,7 @@ public sealed class RedirectService
         return dto;
     }
 
+    [Obsolete("Use ValidateRedirectPreconditions instead.")]
     private static void ValidateLinkAvailability(CachedLinkDto link)
     {
         if (!Enum.TryParse<LinkStatus>(link.Status, out var status))
@@ -135,7 +162,86 @@ public sealed class RedirectService
             throw new AppException(ErrorCodes.ClickLimitReached, "Link đã vượt giới hạn click.", StatusCodes.Status400BadRequest);
         }
     }
-    private async Task<string> ResolveTargetUrlAsync(CachedLinkDto link, HttpContext httpContext, CancellationToken cancellationToken)
+    private static void ValidateRedirectPreconditions(CachedLinkDto link)
+    {
+        if (!Enum.TryParse<LinkStatus>(link.Status, out var status))
+        {
+            throw new AppException(ErrorCodes.NotFound, "Shortlink khong ton tai.", StatusCodes.Status404NotFound);
+        }
+
+        if (status is LinkStatus.Paused or LinkStatus.DisabledByAdmin)
+        {
+            throw new AppException(ErrorCodes.LinkDisabled, "Link hien khong kha dung.", StatusCodes.Status400BadRequest);
+        }
+
+        if (link.ExpiresAtUtc.HasValue && link.ExpiresAtUtc.Value <= DateTime.UtcNow)
+        {
+            throw new AppException(ErrorCodes.LinkExpired, "Link da het han.", StatusCodes.Status400BadRequest);
+        }
+    }
+
+    private async Task<long> ReserveClickAsync(CachedLinkDto link, CancellationToken cancellationToken)
+    {
+        const int maxRetries = 3;
+
+        for (var attempt = 0; attempt < maxRetries; attempt++)
+        {
+            var trackedLink = await _dbContext.Links
+                .Include(x => x.Domain)
+                .FirstOrDefaultAsync(x => x.Id == link.Id && !x.IsDeleted, cancellationToken);
+
+            if (trackedLink is null)
+            {
+                throw new AppException(ErrorCodes.NotFound, "Shortlink khong ton tai.", StatusCodes.Status404NotFound);
+            }
+
+            if (trackedLink.Status is LinkStatus.Paused or LinkStatus.DisabledByAdmin)
+            {
+                throw new AppException(ErrorCodes.LinkDisabled, "Link hien khong kha dung.", StatusCodes.Status400BadRequest);
+            }
+
+            if (trackedLink.ExpiresAtUtc.HasValue && trackedLink.ExpiresAtUtc.Value <= DateTime.UtcNow)
+            {
+                throw new AppException(ErrorCodes.LinkExpired, "Link da het han.", StatusCodes.Status400BadRequest);
+            }
+
+            if (trackedLink.ClickLimit.HasValue && trackedLink.TotalClicks >= trackedLink.ClickLimit.Value)
+            {
+                throw new AppException(ErrorCodes.ClickLimitReached, "Link da vuot gioi han click.", StatusCodes.Status400BadRequest);
+            }
+
+            trackedLink.TotalClicks += 1;
+
+            try
+            {
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                await _linkCacheService.SetAsync(
+                    new CachedLinkDto(
+                        trackedLink.Id,
+                        trackedLink.UserId,
+                        trackedLink.Domain?.Host ?? _defaultHost,
+                        trackedLink.Slug,
+                        trackedLink.OriginalUrl,
+                        trackedLink.Status.ToString(),
+                        trackedLink.ExpiresAtUtc,
+                        trackedLink.ClickLimit,
+                        trackedLink.PasswordHash,
+                        trackedLink.TotalClicks),
+                    cancellationToken);
+
+                return trackedLink.TotalClicks;
+            }
+            catch (DbUpdateConcurrencyException) when (attempt < maxRetries - 1)
+            {
+                _dbContext.ChangeTracker.Clear();
+            }
+        }
+
+        throw new AppException(ErrorCodes.Conflict, "Khong the ghi nhan click luc nay. Vui long thu lai.", StatusCodes.Status409Conflict);
+    }
+
+    private async Task<string> ResolveTargetUrlAsync(CachedLinkDto link, long reservedTotalClicks, HttpContext httpContext, CancellationToken cancellationToken)
     {
         var rules = await _dbContext.LinkRules
             .AsNoTracking()
@@ -188,7 +294,7 @@ public sealed class RedirectService
         var rotationRules = rules.Where(x => x.RuleType == LinkRuleType.Rotation).ToList();
         if (rotationRules.Count > 0)
         {
-            var index = (int)(link.TotalClicks % rotationRules.Count);
+            var index = (int)((reservedTotalClicks - 1) % rotationRules.Count);
             return rotationRules[index].TargetUrl;
         }
 
@@ -234,7 +340,7 @@ public sealed class RedirectService
         };
     }
 
-    private static string DetectCountry(HttpContext httpContext)
+    private static string? DetectCountry(HttpContext httpContext)
     {
         var cfCountry = httpContext.Request.Headers["CF-IPCountry"].ToString();
         if (!string.IsNullOrWhiteSpace(cfCountry))
@@ -248,7 +354,24 @@ public sealed class RedirectService
             return testCountry.ToUpperInvariant();
         }
 
-        return "VN";
+        return null;
+    }
+
+    private static string? DetectCity(HttpContext httpContext)
+    {
+        var cfCity = httpContext.Request.Headers["CF-IPCity"].ToString();
+        if (!string.IsNullOrWhiteSpace(cfCity))
+        {
+            return cfCity.Trim();
+        }
+
+        var testCity = httpContext.Request.Headers["X-Test-City"].ToString();
+        if (!string.IsNullOrWhiteSpace(testCity))
+        {
+            return testCity.Trim();
+        }
+
+        return null;
     }
 
     private static string DetectDevice(string userAgent)
@@ -262,6 +385,8 @@ public sealed class RedirectService
     {
         if (userAgent.Contains("edg", StringComparison.OrdinalIgnoreCase)) return "Edge";
         if (userAgent.Contains("chrome", StringComparison.OrdinalIgnoreCase)) return "Chrome";
+
+
         if (userAgent.Contains("safari", StringComparison.OrdinalIgnoreCase)) return "Safari";
         if (userAgent.Contains("firefox", StringComparison.OrdinalIgnoreCase)) return "Firefox";
         return "Other";
@@ -274,5 +399,21 @@ public sealed class RedirectService
         if (userAgent.Contains("iphone", StringComparison.OrdinalIgnoreCase)) return "iOS";
         if (userAgent.Contains("mac", StringComparison.OrdinalIgnoreCase)) return "MacOS";
         return "Other";
+    }
+
+    private static bool IsSocialScraper(string userAgent)
+    {
+        if (string.IsNullOrWhiteSpace(userAgent))
+            return false;
+
+        var ua = userAgent.ToLowerInvariant();
+        return ua.Contains("facebookexternalhit") || 
+               ua.Contains("metaexternalhit") ||
+               ua.Contains("twitterbot") || 
+               ua.Contains("telegrambot") || 
+               ua.Contains("linkedinbot") || 
+               ua.Contains("viber") || 
+               ua.Contains("skypeuripreview") ||
+               ua.Contains("zalo");
     }
 }

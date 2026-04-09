@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { DomainService, UserService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
@@ -108,18 +108,11 @@ onMounted(load)
 
 <template>
   <div class="ui-root">
-    <!-- Header -->
-    <div class="ui-header">
-      <div class="ui-header-left">
-        <div class="ui-eyebrow"><Globe :size="13" /> Branded Links</div>
-        <h1 class="ui-title">Tên miền tùy chỉnh</h1>
-        <p class="ui-subtitle">Sử dụng tên miền riêng để xây dựng thương hiệu khi chia sẻ link.</p>
-      </div>
-      <div>
-        <button v-if="isPro" class="ui-btn ui-btn-primary" @click="showAdd = !showAdd">
-          <Plus :size="16" /> Thêm Tên Miền
-        </button>
-      </div>
+    <!-- Action Bar -->
+    <div class="ui-action-bar">
+      <button v-if="isPro" class="ui-btn ui-btn-primary" @click="showAdd = !showAdd">
+        <Plus :size="16" /> Thêm Tên Miền
+      </button>
     </div>
 
     <!-- Notifications -->

@@ -16,6 +16,9 @@ public class Link : SoftDeleteEntity
     public DateTime? ExpiresAtUtc { get; set; }
     public int? ClickLimit { get; set; }
     public string? PasswordHash { get; set; }
+    public string? OgTitle { get; set; }
+    public string? OgDescription { get; set; }
+    public string? OgImageUrl { get; set; }
     public long TotalClicks { get; set; }
     public long UniqueClicks { get; set; }
     public byte[] RowVersion { get; set; } = Array.Empty<byte>();
