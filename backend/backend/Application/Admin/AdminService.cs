@@ -60,7 +60,9 @@ public sealed class AdminService
         var uniqueClicks = await _dbContext.LinkDailyStats.SumAsync(x => (long?)x.UniqueClicks, cancellationToken) ?? 0L;
         var botClicks = await _dbContext.ClickEvents.LongCountAsync(x => x.IsBot, cancellationToken);
         var suspiciousClicks = await _dbContext.ClickEvents.LongCountAsync(x => x.IsSuspicious, cancellationToken);
-        var monthlyRevenue = await _dbContext.Payments.Where(x => x.Status == PaymentStatus.Paid).SumAsync(x => (decimal?)x.Amount, cancellationToken) ?? 0m;
+        var monthlyRevenue = await _dbContext.Subscriptions
+            .Where(x => x.Status == SubscriptionStatus.Active)
+            .SumAsync(x => (decimal?)x.Plan.MonthlyPrice, cancellationToken) ?? 0m;
         var queueLag = await _analyticsQueue.GetPendingCountAsync(cancellationToken);
         var errorRate = await CalculateRedirectErrorRateAsync(cancellationToken);
         var redirectLatencyP95 = await CalculateRedirectLatencyP95Async(cancellationToken);

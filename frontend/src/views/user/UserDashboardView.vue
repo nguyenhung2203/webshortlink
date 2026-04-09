@@ -100,7 +100,7 @@ const chartOptions = {
         boxHeight: 12,
         borderRadius: 6,
         useBorderRadius: true,
-        font: { size: 12, weight: '500' as const },
+        font: { size: 12, weight: 500 },
         color: '#64748b',
         padding: 16,
       },
@@ -158,16 +158,8 @@ onMounted(load)
 <template>
   <div class="db-root">
 
-    <!-- ── Header ── -->
-    <div class="db-header">
-      <div class="db-header-left">
-        <div class="db-eyebrow">
-          <BarChart3 :size="13" />
-          Analytics Overview
-        </div>
-        <h1 class="db-title">Tổng quan</h1>
-        <p class="db-subtitle">Theo dõi hiệu suất và xu hướng toàn bộ shortlink của bạn.</p>
-      </div>
+    <!-- ── Action Bar ── -->
+    <div class="db-action-bar">
       <button class="db-refresh-btn" @click="load" :disabled="loading" title="Làm mới dữ liệu">
         <RefreshCw :size="15" :class="{ 'spin': loading }" />
         <span>Làm mới</span>
@@ -344,39 +336,13 @@ onMounted(load)
   gap: 1.5rem;
 }
 
-/* ═══ Header ═════════════════════════════════════════════════════════════════ */
-.db-header {
+/* ═══ Action Bar ═══════════════════════════════════════════════════════════ */
+.db-action-bar {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.db-eyebrow {
-  display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #3b82f6;
-  margin-bottom: 0.35rem;
-}
-
-.db-title {
-  font-size: 1.65rem;
-  font-weight: 800;
-  color: #0f172a;
-  line-height: 1.1;
-  margin: 0;
-}
-
-.db-subtitle {
-  margin: 0.3rem 0 0;
-  font-size: 0.875rem;
-  color: #64748b;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  min-height: 36px;
 }
 
 .db-refresh-btn {

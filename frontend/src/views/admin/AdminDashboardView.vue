@@ -79,7 +79,10 @@ onMounted(load)
                   <span style="font-size: 0.85rem; font-weight: 600; color: #64748b; text-transform: uppercase;">Doanh thu Hàng tháng</span>
                   <div style="padding: 0.5rem; background: #fffbeb; color: #f59e0b; border-radius: 8px;"><TrendingUp :size="18" /></div>
                 </div>
-                <div style="font-size: 2.25rem; font-weight: 800; color: #0f172a; line-height: 1;">${{ (data.business.monthlyRevenue ?? 0).toLocaleString() }}</div>
+                <div style="font-size: 2.25rem; font-weight: 800; color: #0f172a; line-height: 1;">
+                  {{ (data.business.monthlyRevenue ?? 0) === 0 ? '0' : ((data.business.monthlyRevenue ?? 0) / 1000).toLocaleString() + 'k' }}
+                  <span style="font-size: 1.1rem; color: #94a3b8; font-weight: 700; margin-left: 2px;">VND</span>
+                </div>
                 <div style="margin-top: 0.75rem; font-size: 0.8rem; color: #64748b; font-weight: 500;">
                   Tỷ lệ chuyển đổi: <strong style="color: #0f172a;">{{ data.business.conversionRate }}%</strong>
                 </div>
@@ -128,7 +131,9 @@ onMounted(load)
               <div class="ui-panel-body" style="padding: 0;">
                 <div style="display: flex; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid #f8fafc;">
                   <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">Doanh Thu Định Kỳ (MRR)</span>
-                  <span style="font-size: 0.95rem; font-weight: 700; color: #059669;">${{ data.business.monthlyRevenue ?? 0 }}</span>
+                  <span style="font-size: 0.95rem; font-weight: 700; color: #059669;">
+                    {{ (data.business.monthlyRevenue ?? 0) === 0 ? '0' : ((data.business.monthlyRevenue ?? 0) / 1000).toLocaleString() + 'k' }} VND
+                  </span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid #f8fafc;">
                   <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">Tỉ lệ Chuyển đổi (CR)</span>

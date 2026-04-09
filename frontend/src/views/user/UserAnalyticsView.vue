@@ -84,7 +84,7 @@ const timeseriesChartOptions = {
       align: 'end' as const,
       labels: {
         boxWidth: 12, boxHeight: 12, borderRadius: 6, useBorderRadius: true,
-        font: { size: 12, weight: '500' as const }, color: '#64748b', padding: 16,
+        font: { size: 12, weight: 500 }, color: '#64748b', padding: 16,
       }
     },
     tooltip: {
@@ -175,22 +175,30 @@ onMounted(bootstrap)
 
 <template>
   <div class="ui-root">
-    <!-- Header -->
-    <div class="ui-header">
-      <div class="ui-header-left">
-        <div class="ui-eyebrow"><Activity :size="13" /> Hiệu suất Link</div>
-        <h1 class="ui-title">Phân tích</h1>
-        <p class="ui-subtitle">Xem chi tiết click, nguồn truy cập, thiết bị và quốc gia cho từng link.</p>
-      </div>
-      <div>
-        <button 
-          v-if="selectedLinkId"
-          class="ui-btn ui-btn-outline" 
-          @click="router.push(`/app/links/${selectedLinkId}`)"
+    <!-- Action Bar / Selector -->
+    <div class="ui-action-bar" style="justify-content: space-between; background: #fff; padding: 0.6rem 1rem; border: 1px solid #e2e8f0; border-radius: 10px;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <span style="font-size: 0.9rem; font-weight: 600; color: #475569; white-space: nowrap;">
+          <Filter :size="15" style="display:inline; vertical-align:text-bottom; margin-right: 2px" />
+          Phân tích:
+        </span>
+        <select 
+          class="ui-form-select" 
+          style="min-width: 250px; padding: 0.4rem 0.8rem; height: auto;"
+          :value="selectedLinkId"
+          @change="handleLinkChange"
         >
-          <Activity :size="15" /> Mở chi tiết
-        </button>
+          <option v-for="l in links" :key="l.id" :value="l.id">{{ l.shortUrl }}</option>
+        </select>
       </div>
+      <button 
+        v-if="selectedLinkId"
+        class="ui-btn ui-btn-outline" 
+        style="padding: 0.4rem 0.8rem; background: #f8fafc;"
+        @click="router.push(`/app/links/${selectedLinkId}`)"
+      >
+        <Activity :size="14" /> Xem chi tiết
+      </button>
     </div>
 
     <!-- Error state -->
@@ -212,23 +220,7 @@ onMounted(bootstrap)
     </div>
 
     <template v-else>
-      <!-- Filter Selector -->
-      <div class="ui-panel">
-        <div class="ui-panel-body" style="display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: center; justify-content: space-between;">
-          <div>
-            <h3 class="ui-panel-title">Chọn shortlink cần xem</h3>
-            <p style="font-size: 0.8rem; color: #64748b; margin: 0.25rem 0 0;">Lựa chọn một link trong kho của bạn để trích xuất báo cáo phân tích chi tiết.</p>
-          </div>
-          <select 
-            class="ui-form-select" 
-            style="max-width: 400px; margin: 0;"
-            :value="selectedLinkId"
-            @change="handleLinkChange"
-          >
-            <option v-for="l in links" :key="l.id" :value="l.id">{{ l.shortUrl }}</option>
-          </select>
-        </div>
-      </div>
+      <!-- Filter Selector removed (moved to action bar) -->
 
       <!-- Advanced Feature Lock Notice -->
       <div v-if="!isAdvancedAnalyticsEnabled" class="ui-panel" style="border-color: #bfdbfe; background: #eff6ff;">
@@ -254,76 +246,103 @@ onMounted(bootstrap)
       <!-- Fully Loaded Analytics -->
       <template v-else-if="analytics">
         
-        <!-- KPIs -->
-        <div class="ui-card-grid ui-card-grid-3">
-          <div class="ui-panel">
-            <div class="ui-panel-body" style="display: flex; gap: 1rem; align-items: center;">
-              <div style="width: 42px; height: 42px; background: #eff6ff; color: #3b82f6; border-radius: 12px; display: grid; place-items: center;">
-                <MousePointerClick :size="20"/>
+        <!-- Compact KPIs Panel -->
+        <div class="ui-panel">
+          <div class="ui-panel-body" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; padding: 1.25rem 0;">
+            
+            <!-- KPI 1 -->
+            <div style="display: flex; align-items: center; justify-content: center; gap: 1.25rem; border-right: 1px solid #e2e8f0;">
+              <div style="width: 48px; height: 48px; background: #eff6ff; color: #3b82f6; border-radius: 14px; display: grid; place-items: center; flex-shrink: 0;">
+                <MousePointerClick :size="22"/>
               </div>
-              <div>
-                <p style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin: 0;">Tổng Click</p>
-                <p style="font-size: 1.6rem; font-weight: 800; color: #0f172a; margin: 0; line-height: 1.1;">{{ analytics.totalClicks }}</p>
-              </div>
-            </div>
-          </div>
-          <div class="ui-panel">
-            <div class="ui-panel-body" style="display: flex; gap: 1rem; align-items: center;">
-              <div style="width: 42px; height: 42px; background: #ecfdf5; color: #10b981; border-radius: 12px; display: grid; place-items: center;">
-                <Users :size="20"/>
-              </div>
-              <div>
-                <p style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin: 0;">Click Duy Nhất</p>
-                <p style="font-size: 1.6rem; font-weight: 800; color: #0f172a; margin: 0; line-height: 1.1;">{{ analytics.uniqueClicks }}</p>
+              <div style="text-align: left;">
+                <p style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.15rem;">Tổng Click</p>
+                <p style="font-size: 1.7rem; font-weight: 800; color: #0f172a; margin: 0; line-height: 1;">{{ analytics.totalClicks }}</p>
               </div>
             </div>
-          </div>
-          <div class="ui-panel">
-            <div class="ui-panel-body" style="display: flex; gap: 1rem; align-items: center;">
-              <div style="width: 42px; height: 42px; background: #fffbeb; color: #f59e0b; border-radius: 12px; display: grid; place-items: center;">
-                <Bot :size="20"/>
+
+            <!-- KPI 2 -->
+            <div style="display: flex; align-items: center; justify-content: center; gap: 1.25rem; border-right: 1px solid #e2e8f0;">
+              <div style="width: 48px; height: 48px; background: #ecfdf5; color: #10b981; border-radius: 14px; display: grid; place-items: center; flex-shrink: 0;">
+                <Users :size="22"/>
               </div>
-              <div>
-                <p style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin: 0;">Click Từ Bot</p>
-                <p style="font-size: 1.6rem; font-weight: 800; color: #0f172a; margin: 0; line-height: 1.1;">{{ analytics.botClicks }}</p>
+              <div style="text-align: left;">
+                <p style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.15rem;">Click Duy Nhất</p>
+                <p style="font-size: 1.7rem; font-weight: 800; color: #0f172a; margin: 0; line-height: 1;">{{ analytics.uniqueClicks }}</p>
               </div>
             </div>
+
+            <!-- KPI 3 -->
+            <div style="display: flex; align-items: center; justify-content: center; gap: 1.25rem;">
+              <div style="width: 48px; height: 48px; background: #fffbeb; color: #f59e0b; border-radius: 14px; display: grid; place-items: center; flex-shrink: 0;">
+                <Bot :size="22"/>
+              </div>
+              <div style="text-align: left;">
+                <p style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.15rem;">Click Từ Bot</p>
+                <p style="font-size: 1.7rem; font-weight: 800; color: #0f172a; margin: 0; line-height: 1;">{{ analytics.botClicks }}</p>
+              </div>
+            </div>
+
           </div>
         </div>
 
-        <!-- Chart and Metadata -->
-        <div class="ui-card-grid" style="grid-template-columns: 2fr 1fr;">
+        <!-- 2-Column Grid: Chart (Left) + Breakdown (Right) -->
+        <div class="ui-card-grid" style="grid-template-columns: 2fr 1fr; align-items: start;">
+          
           <!-- Chart -->
-          <div class="ui-panel" style="grid-column: 1 / -1;">
+          <div class="ui-panel">
             <div class="ui-panel-header">
               <h3 class="ui-panel-title">Xu hướng click theo ngày</h3>
             </div>
-            <div class="ui-panel-body" style="height: 320px;">
-              <div v-if="analytics.trends.length === 0" class="ui-empty" style="height: 100%; padding: 0;">
+            <div class="ui-panel-body" style="height: 320px; padding: 1rem;">
+              <div v-if="analytics.trends.length === 0" class="ui-empty" style="height: 100%; padding: 0; border: none;">
                 <p class="ui-empty-title">Chưa có dữ liệu time-series</p>
               </div>
               <Bar v-else :data="timeseriesChartData" :options="timeseriesChartOptions" />
             </div>
           </div>
-        </div>
 
-        <!-- Breakdown Block 2x2 Grid -->
-        <div class="ui-card-grid" style="grid-template-columns: 1fr 1fr;">
-          
+          <!-- Nguồn truy cập (Moved UP next to chart) -->
           <div class="ui-panel">
             <div class="ui-panel-header">
               <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <Share2 :size="16" style="color: #64748b;"/>
-                <h3 class="ui-panel-title">Nguồn truy cập (Nền tảng / UTM)</h3>
+                <Share2 :size="15" style="color: #64748b;"/>
+                <h3 class="ui-panel-title" style="font-size: 0.9rem;">Nguồn truy cập</h3>
+              </div>
+            </div>
+            <div class="ui-panel-body" style="padding: 0; height: 320px; overflow-y: auto;">
+              <div v-if="analytics.topReferrers.length === 0" style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.8rem;">Chưa có dữ liệu nguồn.</div>
+              <div v-else>
+                <div v-for="(item, idx) in analytics.topReferrers" :key="item.label" style="display: flex; justify-content: space-between; padding: 0.75rem 1.25rem; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem;">
+                  <div style="display: flex; gap: 0.5rem; color: #475569;">
+                    <span style="font-weight: 700; color: #cbd5e1; width: 14px;">{{idx + 1}}</span>
+                    <span style="overflow: hidden; text-overflow: ellipsis; max-width: 20ch; white-space: nowrap;" :title="item.label">{{ item.label || 'Direct' }}</span>
+                  </div>
+                  <strong style="color: #0f172a;">{{ item.value }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div> <!-- End of First Grid (Chart + Nguồn truy cập) -->
+
+        <!-- Breakdown Block 3-Column Grid for the rest -->
+        <div class="ui-card-grid ui-card-grid-3">
+
+          <div class="ui-panel">
+            <div class="ui-panel-header">
+              <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <Share2 :size="15" style="color: #64748b;"/>
+                <h3 class="ui-panel-title" style="font-size: 0.9rem;">Chiến dịch (UTM)</h3>
               </div>
             </div>
             <div class="ui-panel-body" style="padding: 0; max-height: 250px; overflow-y: auto;">
-              <div v-if="analytics.topReferrers.length === 0" style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.85rem;">Chưa biên dịch đủ dữ liệu.</div>
+              <div v-if="!analytics.topCampaigns || analytics.topCampaigns.length === 0" style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.8rem;">Không có dữ liệu UTM.</div>
               <div v-else>
-                <div v-for="(item, idx) in analytics.topReferrers" :key="item.label" style="display: flex; justify-content: space-between; padding: 0.75rem 1.25rem; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;">
+                <div v-for="(item, idx) in analytics.topCampaigns" :key="item.label" style="display: flex; justify-content: space-between; padding: 0.75rem 1.25rem; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem;">
                   <div style="display: flex; gap: 0.5rem; color: #475569;">
                     <span style="font-weight: 700; color: #cbd5e1; width: 14px;">{{idx + 1}}</span>
-                    <span style="overflow: hidden; text-overflow: ellipsis; max-width: 25ch; white-space: nowrap;">{{ item.label || 'Direct' }}</span>
+                    <span style="overflow: hidden; text-overflow: ellipsis; max-width: 20ch; white-space: nowrap;">{{ item.label }}</span>
                   </div>
                   <strong style="color: #0f172a;">{{ item.value }}</strong>
                 </div>
@@ -334,17 +353,17 @@ onMounted(bootstrap)
           <div class="ui-panel">
             <div class="ui-panel-header">
               <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <Share2 :size="16" style="color: #64748b;"/>
-                <h3 class="ui-panel-title">Chiến dịch (UTM Campaign)</h3>
+                <MonitorSmartphone :size="15" style="color: #64748b;"/>
+                <h3 class="ui-panel-title" style="font-size: 0.9rem;">Thiết bị & Nền tảng</h3>
               </div>
             </div>
             <div class="ui-panel-body" style="padding: 0; max-height: 250px; overflow-y: auto;">
-              <div v-if="!analytics.topCampaigns || analytics.topCampaigns.length === 0" style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.85rem;">Không có dữ liệu UTM Campaign.</div>
+              <div v-if="analytics.topDevices.length === 0" style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.8rem;">Chưa có dữ liệu nền tảng.</div>
               <div v-else>
-                <div v-for="(item, idx) in analytics.topCampaigns" :key="item.label" style="display: flex; justify-content: space-between; padding: 0.75rem 1.25rem; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;">
+                <div v-for="(item, idx) in analytics.topDevices" :key="item.label" style="display: flex; justify-content: space-between; padding: 0.75rem 1.25rem; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem;">
                   <div style="display: flex; gap: 0.5rem; color: #475569;">
                     <span style="font-weight: 700; color: #cbd5e1; width: 14px;">{{idx + 1}}</span>
-                    <span style="overflow: hidden; text-overflow: ellipsis; max-width: 25ch; white-space: nowrap;">{{ item.label }}</span>
+                    <span style="overflow: hidden; text-overflow: ellipsis; max-width: 15ch; white-space: nowrap;">{{ item.label || 'Unknown' }}</span>
                   </div>
                   <strong style="color: #0f172a;">{{ item.value }}</strong>
                 </div>
@@ -355,17 +374,17 @@ onMounted(bootstrap)
           <div class="ui-panel">
             <div class="ui-panel-header">
               <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <MonitorSmartphone :size="16" style="color: #64748b;"/>
-                <h3 class="ui-panel-title">Thiết bị (Device)</h3>
+                <MapPin :size="15" style="color: #64748b;"/>
+                <h3 class="ui-panel-title" style="font-size: 0.9rem;">Quốc gia / Khu vực</h3>
               </div>
             </div>
             <div class="ui-panel-body" style="padding: 0; max-height: 250px; overflow-y: auto;">
-              <div v-if="analytics.topDevices.length === 0" style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.85rem;">Chưa biên dịch đủ dữ liệu.</div>
+              <div v-if="analytics.topCountries.length === 0" style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.8rem;">Chưa có dữ liệu vị trí.</div>
               <div v-else>
-                <div v-for="(item, idx) in analytics.topDevices" :key="item.label" style="display: flex; justify-content: space-between; padding: 0.75rem 1.25rem; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;">
+                <div v-for="(item, idx) in analytics.topCountries" :key="item.label" style="display: flex; justify-content: space-between; padding: 0.75rem 1.25rem; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem;">
                   <div style="display: flex; gap: 0.5rem; color: #475569;">
                     <span style="font-weight: 700; color: #cbd5e1; width: 14px;">{{idx + 1}}</span>
-                    <span>{{ item.label }}</span>
+                    <span style="overflow: hidden; text-overflow: ellipsis; max-width: 15ch; white-space: nowrap;">{{ item.label || 'Unknown' }}</span>
                   </div>
                   <strong style="color: #0f172a;">{{ item.value }}</strong>
                 </div>
@@ -373,29 +392,7 @@ onMounted(bootstrap)
             </div>
           </div>
 
-          <div class="ui-panel">
-            <div class="ui-panel-header">
-              <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <Globe :size="16" style="color: #64748b;"/>
-                <h3 class="ui-panel-title">Quốc gia (Country)</h3>
-              </div>
-            </div>
-            <div class="ui-panel-body" style="padding: 0; max-height: 250px; overflow-y: auto;">
-              <div v-if="analytics.topCountries.length === 0" style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.85rem;">Chưa biên dịch đủ dữ liệu.</div>
-              <div v-else>
-                <div v-for="(item, idx) in analytics.topCountries" :key="item.label" style="display: flex; justify-content: space-between; padding: 0.75rem 1.25rem; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;">
-                  <div style="display: flex; gap: 0.5rem; color: #475569;">
-                    <span style="font-weight: 700; color: #cbd5e1; width: 14px;">{{idx + 1}}</span>
-                    <span>{{ item.label }}</span>
-                  </div>
-                  <strong style="color: #0f172a;">{{ item.value }}</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
+        </div> <!-- End of Analytics Grid -->
       </template>
     </template>
   </div>

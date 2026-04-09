@@ -109,7 +109,7 @@ const formatDate = (dateValue: string | null) => {
               </td>
 
               <td style="padding: 1rem 1.5rem; text-align: right;">
-                <span style="font-size: 1.05rem; font-weight: 800; color: #0f172a;">{{ payment.amount.toLocaleString() }}</span>
+                <span style="font-size: 1.05rem; font-weight: 800; color: #0f172a;">{{ payment.amount === 0 ? '0' : (payment.amount / 1000).toLocaleString() + 'k' }}</span>
                 <span style="font-size: 0.75rem; font-weight: 700; color: #64748b; margin-left: 0.2rem;">VND</span>
               </td>
               

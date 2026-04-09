@@ -92,14 +92,6 @@ onMounted(load)
 <template>
   <div class="ui-root">
     
-    <!-- Header -->
-    <div class="ui-header">
-      <div class="ui-header-left">
-        <div class="ui-eyebrow"><User :size="13" /> Tài khoản</div>
-        <h1 class="ui-title">Hồ sơ cá nhân</h1>
-        <p class="ui-subtitle">Quản lý thông tin định danh và bảo mật tài khoản của bạn.</p>
-      </div>
-    </div>
 
     <!-- Alert Messages -->
     <div v-if="error && !loading" class="ui-alert ui-alert-error">

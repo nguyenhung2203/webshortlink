@@ -364,7 +364,8 @@ const ps = (idx: number) => planStyle[idx] ?? planStyle[2]
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
-    max-width: 1000px;
+    max-width: 1100px;
+    margin: 0 auto;
     align-items: stretch;
   }
 

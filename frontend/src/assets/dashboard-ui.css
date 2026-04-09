@@ -7,10 +7,38 @@
 .ui-root {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
-/* ═══ Header ════════════════════════════════════════════════════════════ */
+/* ═══ Action Bar (replaces per-page headers) ════════════════════════════ */
+.ui-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  min-height: 36px;
+}
+.ui-action-bar:empty {
+  display: none;
+}
+
+/* Back button */
+.ui-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.ui-back-btn:hover { color: #0f172a; }
+
+/* ═══ Header (kept for potential reuse but unused in main pages) ════════ */
 .ui-header {
   display: flex;
   align-items: flex-start;

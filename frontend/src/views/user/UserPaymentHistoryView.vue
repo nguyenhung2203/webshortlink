@@ -54,18 +54,14 @@ onMounted(load)
 <template>
   <div class="ui-root" style="max-width: 900px; margin: 0 auto;">
     
-    <!-- Header -->
-    <div class="ui-header">
-      <div class="ui-header-left">
-        <button 
-          @click="router.push('/app/billing')"
-          style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem; font-weight: 600; color: #64748b; background: transparent; border: 0; padding: 0 0 0.5rem 0; cursor: pointer;"
-        >
-          <ArrowLeft :size="14" /> Quay lại Gói cước
-        </button>
-        <h1 class="ui-title">Lịch sử thanh toán</h1>
-        <p class="ui-subtitle">Tra cứu chi tiết các giao dịch gia hạn và hóa đơn của bạn.</p>
-      </div>
+    <!-- Back nav -->
+    <div class="ui-action-bar">
+      <button 
+        @click="router.push('/app/billing')"
+        class="ui-back-btn"
+      >
+        <ArrowLeft :size="14" /> Quay lại Gói cước
+      </button>
     </div>
 
     <div v-if="error && !loading" class="ui-alert ui-alert-error">{{ error }}</div>
