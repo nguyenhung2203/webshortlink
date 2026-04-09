@@ -4,8 +4,10 @@ import { RouterLink } from 'vue-router'
 import { AuthService } from '@/api/services'
 import WxButton from '@/components/ui/WxButton.vue'
 import WxInput from '@/components/ui/WxInput.vue'
+import WxTurnstile from '@/components/ui/WxTurnstile.vue'
 
 const email = ref('')
+const turnstileToken = ref<string | null>(null)
 const error = ref('')
 const successMessage = ref('')
 const loading = ref(false)
@@ -15,17 +17,23 @@ async function submit() {
   successMessage.value = ''
 
   if (!email.value || !email.value.includes('@')) {
-    error.value = 'Vui lòng nhập định dạng email hợp lệ.'
+    error.value = 'Vui lòng nhập địa chỉ email hợp lệ.'
+    return
+  }
+
+  if (import.meta.env.VITE_TURNSTILE_SITE_KEY && !turnstileToken.value) {
+    error.value = 'Vui lòng hoàn tất xác minh bảo mật.'
     return
   }
 
   loading.value = true
 
   try {
-    const response = await AuthService.forgotPassword(email.value)
+    const response = await AuthService.forgotPassword(email.value, turnstileToken.value)
     successMessage.value = response.message || 'Mã OTP đã được gửi đến email của bạn.'
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không gửi được yêu cầu.'
+    turnstileToken.value = null
   } finally {
     loading.value = false
   }
@@ -41,12 +49,14 @@ async function submit() {
         <p class="text-sm text-on-surface-variant mt-2">Nhập email đăng ký của bạn để hệ thống cấp lại quyền truy cập.</p>
       </div>
 
-      <WxInput 
-        v-model="email" 
-        label="Địa chỉ Email của bạn" 
-        type="email" 
-        required 
+      <WxInput
+        v-model="email"
+        label="Địa chỉ Email của bạn"
+        type="email"
+        required
       />
+
+      <WxTurnstile v-model="turnstileToken" />
 
       <p v-if="error" class="text-danger text-sm font-medium">{{ error }}</p>
       <div v-if="successMessage" class="bg-success/10 border border-success/30 p-3 rounded-lg text-success text-sm font-medium">

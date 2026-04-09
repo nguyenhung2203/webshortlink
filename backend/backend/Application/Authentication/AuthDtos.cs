@@ -20,6 +20,12 @@ public sealed record ResetPasswordRequestDto(string Email, string Token, string 
 
 public sealed record VerifyEmailRequestDto(string UserId, string Token);
 
+public sealed record RegisterResponseDto(
+    string Message,
+    string? Code,
+    Guid UserId,
+    string Email);
+
 public sealed record AuthResponseDto(
     string AccessToken,
     string RefreshToken,

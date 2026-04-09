@@ -131,6 +131,20 @@ public sealed class AdminService
             _ => throw new AppException(ErrorCodes.ValidationFailed, "Trang thai user khong hop le.")
         };
 
+        if (user.AccountStatus is UserAccountStatus.Locked or UserAccountStatus.Disabled)
+        {
+            var openSessions = await _dbContext.RefreshSessions
+                .Where(x => x.UserId == user.Id && x.RevokedAtUtc == null)
+                .ToListAsync(cancellationToken);
+
+            foreach (var session in openSessions)
+            {
+                session.RevokedAtUtc = DateTime.UtcNow;
+                session.RevokedReason = $"Admin changed account status to {user.AccountStatus}";
+                session.UpdatedAtUtc = DateTime.UtcNow;
+            }
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
         await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-005:ChangeUserStatus", "AppUser", user.Id.ToString(), current.UserId, current.IpAddress, request, cancellationToken);
         return new MessageResponseDto("Cập nhật trạng thái user thành công.");
@@ -504,6 +518,28 @@ public sealed class AdminService
         var current = _currentUserService.GetRequired();
         var domain = await _dbContext.Domains.FirstOrDefaultAsync(x => x.Id == domainId && !x.IsDeleted, cancellationToken)
             ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy domain", StatusCodes.Status404NotFound);
+
+        var isDefaultDomain = await _dbContext.SystemSettings
+            .AsNoTracking()
+            .AnyAsync(x => x.SettingKey == "DefaultDomain" && x.SettingValue == domain.Host, cancellationToken);
+        if (isDefaultDomain)
+        {
+            throw new AppException(ErrorCodes.Conflict, "Khong the xoa domain dang duoc dat lam mac dinh he thong.", StatusCodes.Status409Conflict);
+        }
+        if (isDefaultDomain)
+        {
+            throw new AppException(ErrorCodes.Conflict, "KhÃ´ng thá»ƒ xÃ³a domain Ä‘ang Ä‘Æ°á»£c Ä‘áº·t lÃ m máº·c Ä‘á»‹nh há»‡ thá»‘ng.", StatusCodes.Status409Conflict);
+        }
+
+        var linkedLinks = await _dbContext.Links.AnyAsync(x => x.DomainId == domainId && !x.IsDeleted, cancellationToken);
+        if (linkedLinks)
+        {
+            throw new AppException(ErrorCodes.Conflict, "Domain dang duoc su dung boi shortlink.", StatusCodes.Status409Conflict);
+        }
+        if (linkedLinks)
+        {
+            throw new AppException(ErrorCodes.Conflict, "Domain Ä‘ang Ä‘Æ°á»£c sá»­ dá»¥ng bá»Ÿi shortlink.", StatusCodes.Status409Conflict);
+        }
 
         domain.IsDeleted = true;
         domain.DeletedAtUtc = DateTime.UtcNow;

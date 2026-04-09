@@ -2,13 +2,15 @@
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { validatePasswordPolicy } from '@/utils/auth'
 import WxButton from '@/components/ui/WxButton.vue'
 import WxInput from '@/components/ui/WxInput.vue'
 import WxPasswordInput from '@/components/ui/WxPasswordInput.vue'
-import { LockIcon, MailIcon } from 'lucide-vue-next'
+import WxTurnstile from '@/components/ui/WxTurnstile.vue'
 
 const email = ref('')
 const password = ref('')
+const turnstileToken = ref<string | null>(null)
 const error = ref('')
 const loading = ref(false)
 
@@ -19,21 +21,29 @@ async function submit() {
   error.value = ''
 
   if (!email.value || !email.value.includes('@')) {
-    error.value = 'Vui lòng nhập định dạng email hợp lệ.'
+    error.value = 'Vui lòng nhập địa chỉ email hợp lệ.'
     return
   }
-  if (!password.value || password.value.length < 6) {
-    error.value = 'Mật khẩu phải có ít nhất 6 ký tự.'
+
+  const passwordError = validatePasswordPolicy(password.value)
+  if (passwordError) {
+    error.value = passwordError
+    return
+  }
+
+  if (import.meta.env.VITE_TURNSTILE_SITE_KEY && !turnstileToken.value) {
+    error.value = 'Vui lòng hoàn tất xác minh bảo mật.'
     return
   }
 
   loading.value = true
 
   try {
-    await authStore.login(email.value, password.value)
+    await authStore.login(email.value, password.value, turnstileToken.value)
     router.push(authStore.role === 'Admin' ? '/admin' : '/app/dashboard')
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể đăng nhập.'
+    turnstileToken.value = null
   } finally {
     loading.value = false
   }
@@ -49,18 +59,20 @@ async function submit() {
         <p class="text-sm text-on-surface-variant mt-2">Đăng nhập để xem danh sách link và biểu đồ truy cập.</p>
       </div>
 
-      <WxInput 
-        v-model="email" 
-        label="Địa chỉ Email" 
-        type="email" 
-        required 
+      <WxInput
+        v-model="email"
+        label="Địa chỉ Email"
+        type="email"
+        required
       />
 
-      <WxPasswordInput 
-        v-model="password" 
-        label="Mật khẩu" 
-        required 
+      <WxPasswordInput
+        v-model="password"
+        label="Mật khẩu"
+        required
       />
+
+      <WxTurnstile v-model="turnstileToken" />
 
       <div class="flex justify-end -mt-2">
         <RouterLink to="/auth/forgot-password" class="text-sm text-primary font-medium hover:underline">Quên mật khẩu?</RouterLink>

@@ -11,6 +11,13 @@ export interface MessageResponseDto {
   message: string
 }
 
+export interface RegisterResponseDto {
+  message: string
+  code?: string | null
+  userId: string
+  email: string
+}
+
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 export interface AuthResponseDto {
   accessToken: string

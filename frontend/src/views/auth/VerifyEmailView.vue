@@ -6,6 +6,7 @@ import WxButton from '@/components/ui/WxButton.vue'
 import WxInput from '@/components/ui/WxInput.vue'
 
 const userId = ref('')
+const email = ref('')
 const token = ref('')
 const error = ref('')
 const successMessage = ref('')
@@ -15,6 +16,7 @@ const router = useRouter()
 
 onMounted(() => {
   if (route.query.userId) userId.value = route.query.userId as string
+  if (route.query.email) email.value = route.query.email as string
   if (route.query.token) token.value = route.query.token as string
 })
 

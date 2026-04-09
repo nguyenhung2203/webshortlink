@@ -2,14 +2,17 @@
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { validatePasswordPolicy } from '@/utils/auth'
 import WxButton from '@/components/ui/WxButton.vue'
 import WxInput from '@/components/ui/WxInput.vue'
 import WxPasswordInput from '@/components/ui/WxPasswordInput.vue'
+import WxTurnstile from '@/components/ui/WxTurnstile.vue'
 
 const fullName = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
+const turnstileToken = ref<string | null>(null)
 const error = ref('')
 const successMessage = ref('')
 const loading = ref(false)
@@ -25,29 +28,52 @@ async function submit() {
     error.value = 'Họ tên phải có ít nhất 3 ký tự.'
     return
   }
+
   if (!email.value || !email.value.includes('@')) {
-    error.value = 'Vui lòng nhập định dạng email hợp lệ.'
+    error.value = 'Vui lòng nhập địa chỉ email hợp lệ.'
     return
   }
-  if (!password.value || password.value.length < 6) {
-    error.value = 'Mật khẩu phải có ít nhất 6 ký tự.'
+
+  const passwordError = validatePasswordPolicy(password.value)
+  if (passwordError) {
+    error.value = passwordError
     return
   }
+
   if (password.value !== confirmPassword.value) {
     error.value = 'Mật khẩu và xác nhận mật khẩu không khớp.'
+    return
+  }
+
+  if (import.meta.env.VITE_TURNSTILE_SITE_KEY && !turnstileToken.value) {
+    error.value = 'Vui lòng hoàn tất xác minh bảo mật.'
     return
   }
 
   loading.value = true
 
   try {
-    const response = await authStore.register(fullName.value, email.value, password.value, confirmPassword.value)
-    successMessage.value = 'Đăng ký thành công! Đang chuyển hướng sang trang Đăng nhập...'
+    const response = await authStore.register(
+      fullName.value,
+      email.value,
+      password.value,
+      confirmPassword.value,
+      turnstileToken.value,
+    )
+
+    successMessage.value = 'Đăng ký thành công! Đang chuyển hướng sang bước xác thực email...'
     setTimeout(() => {
-      router.push('/auth/login')
-    }, 3000)
+      router.push({
+        path: '/auth/verify-email',
+        query: {
+          userId: response.userId,
+          email: response.email,
+        },
+      })
+    }, 1500)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể đăng ký.'
+    turnstileToken.value = null
   } finally {
     loading.value = false
   }
@@ -64,8 +90,8 @@ async function submit() {
       </div>
       <h2 class="mb-2 text-2xl font-bold text-on-surface">Đăng ký thành công!</h2>
       <p class="mb-6 text-on-surface-variant">{{ successMessage }}</p>
-      <RouterLink to="/auth/login">
-        <WxButton variant="primary">Đến trang Đăng nhập</WxButton>
+      <RouterLink to="/auth/verify-email">
+        <WxButton variant="primary">Đến trang xác thực email</WxButton>
       </RouterLink>
     </div>
 
@@ -76,31 +102,37 @@ async function submit() {
         <p class="text-sm text-on-surface-variant mt-2">Đăng ký để trải nghiệm toàn bộ tính năng quản lý link chuyên nghiệp.</p>
       </div>
 
-      <WxInput 
-        v-model="fullName" 
-        label="Họ và tên" 
-        type="text" 
-        required 
+      <WxInput
+        v-model="fullName"
+        label="Họ và tên"
+        type="text"
+        required
       />
 
-      <WxInput 
-        v-model="email" 
-        label="Địa chỉ Email" 
-        type="email" 
-        required 
+      <WxInput
+        v-model="email"
+        label="Địa chỉ Email"
+        type="email"
+        required
       />
 
-      <WxPasswordInput 
-        v-model="password" 
-        label="Mật khẩu tạo mới" 
-        required 
+      <WxPasswordInput
+        v-model="password"
+        label="Mật khẩu tạo mới"
+        required
       />
 
-      <WxPasswordInput 
-        v-model="confirmPassword" 
-        label="Xác nhận mật khẩu" 
-        required 
+      <WxPasswordInput
+        v-model="confirmPassword"
+        label="Xác nhận mật khẩu"
+        required
       />
+
+      <p class="text-xs text-on-surface-variant -mt-2">
+        Mật khẩu cần tối thiểu 8 ký tự, có ít nhất 1 chữ hoa và 1 chữ số.
+      </p>
+
+      <WxTurnstile v-model="turnstileToken" />
 
       <p v-if="error" class="text-danger text-sm font-medium">{{ error }}</p>
 

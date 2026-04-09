@@ -21,7 +21,7 @@ public sealed class RedirectController : ControllerBase
     [HttpGet("/api/public/resolve/{slug}")]
     public async Task<IActionResult> Resolve(string slug, CancellationToken cancellationToken)
     {
-        var response = await _redirectService.ResolveAsync(ResolveHost(), slug, Request.Query["password"], HttpContext, cancellationToken);
+        var response = await _redirectService.ResolveAsync(ResolveHost(), slug, null, HttpContext, cancellationToken);
         return Ok(response);
     }
 
@@ -37,9 +37,7 @@ public sealed class RedirectController : ControllerBase
     {
         try
         {
-            var needsPassword = Request.Query.ContainsKey("p");
-            var password = needsPassword ? Request.Query["p"].ToString() : null;
-            var response = await _redirectService.ResolveAsync(ResolveHost(), slug, password, HttpContext, cancellationToken);
+            var response = await _redirectService.ResolveAsync(ResolveHost(), slug, null, HttpContext, cancellationToken);
             return Redirect(response.RedirectUrl);
         }
         catch (AppException ex)

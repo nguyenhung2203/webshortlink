@@ -89,7 +89,7 @@ onMounted(load)
               <td style="padding: 1rem 1.5rem;">
                 <div style="display: flex; flex-direction: column; gap: 0.15rem;">
                   <span style="font-size: 0.85rem; font-weight: 600; color: #0f172a;">{{ log.resourceType || 'Hệ thống' }}</span>
-                  <span style="font-family: monospace; font-size: 0.8rem; color: #94a3b8;" :title="log.resourceId">{{ log.resourceId ? log.resourceId.substring(0, 15) + '...' : 'N/A' }}</span>
+                  <span style="font-family: monospace; font-size: 0.8rem; color: #94a3b8;" :title="log.resourceId ?? undefined">{{ log.resourceId ? log.resourceId.substring(0, 15) + '...' : 'N/A' }}</span>
                 </div>
               </td>
               
