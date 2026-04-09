@@ -30,6 +30,7 @@ const builtInFeatures: Record<string, FeatureLabel> = {
   'analytics.retention_days':  { featureKey: 'analytics.retention_days',  label: 'Lưu analytics (ngày)', description: 'Thời gian lưu dữ liệu click',               featureType: 'number' },
   'analytics.export_csv':      { featureKey: 'analytics.export_csv',      label: 'Xuất CSV',             description: 'Xuất dữ liệu phân tích sang CSV',           featureType: 'toggle' },
   'api.access':                { featureKey: 'api.access',                label: 'Truy cập API',          description: 'Tích hợp REST API trực tiếp',               featureType: 'toggle' },
+  'links.social_preview':      { featureKey: 'links.social_preview',      label: 'Xem trước MXH',         description: 'Cho phép tùy chỉnh thẻ xem trước OpenGraph', featureType: 'toggle' },
 }
 
 const allFeatures = computed<FeatureLabel[]>(() => {

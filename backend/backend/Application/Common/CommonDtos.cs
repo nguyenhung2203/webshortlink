@@ -18,6 +18,14 @@ public sealed record PublicRedirectAccessRequestDto(string Password);
 
 public sealed record PublicRedirectAccessResponseDto(string RedirectUrl);
 
+public sealed record OgLinkDataDto(
+    string OriginalUrl,
+    string? OgTitle,
+    string? OgDescription,
+    string? OgImageUrl,
+    string Host,
+    string Slug);
+
 public sealed record MessageResponseDto(string Message, string? Code = null);
 
 public sealed class PaginatedResponseDto<T>

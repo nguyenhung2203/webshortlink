@@ -38,7 +38,36 @@ public sealed class RedirectController : ControllerBase
         try
         {
             var response = await _redirectService.ResolveAsync(ResolveHost(), slug, null, HttpContext, cancellationToken);
-            return Redirect(response.RedirectUrl);
+            
+            if (response is OgLinkDataDto og)
+            {
+                var html = $"""
+                <!DOCTYPE html>
+                <html lang="vi">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>{System.Net.WebUtility.HtmlEncode(og.OgTitle ?? "WeShort Link")}</title>
+                    <meta property="og:title" content="{System.Net.WebUtility.HtmlEncode(og.OgTitle ?? "")}">
+                    <meta property="og:description" content="{System.Net.WebUtility.HtmlEncode(og.OgDescription ?? "")}">
+                    <meta property="og:image" content="{System.Net.WebUtility.HtmlEncode(og.OgImageUrl ?? "")}">
+                    <meta property="og:url" content="https://{og.Host}/{og.Slug}">
+                    <meta property="og:type" content="website">
+                    <meta name="twitter:card" content="summary_large_image">
+                    
+                    <!-- Redirect for normal users if they somehow stay on the page -->
+                    <meta http-equiv="refresh" content="0;url={System.Net.WebUtility.HtmlEncode(og.OriginalUrl)}">
+                </head>
+                <body>
+                    <p>Đang chuyển hướng đến <a href="{System.Net.WebUtility.HtmlEncode(og.OriginalUrl)}">{System.Net.WebUtility.HtmlEncode(og.OriginalUrl)}</a>...</p>
+                    <script>window.location.replace("{og.OriginalUrl}");</script>
+                </body>
+                </html>
+                """;
+                return Content(html, "text/html");
+            }
+            
+            var redirectResponse = (PublicRedirectAccessResponseDto)response;
+            return Redirect(redirectResponse.RedirectUrl);
         }
         catch (AppException ex)
         {

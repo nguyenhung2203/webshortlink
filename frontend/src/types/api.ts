@@ -127,6 +127,9 @@ export interface LinkDetail {
   uniqueClicks: number
   createdAtUtc: string
   updatedAtUtc: string | null
+  ogTitle?: string | null
+  ogDescription?: string | null
+  ogImageUrl?: string | null
 }
 
 export interface CreateLinkRequest {
@@ -138,6 +141,9 @@ export interface CreateLinkRequest {
   expiresAtUtc?: string | null
   clickLimit?: number | null
   password?: string | null
+  ogTitle?: string | null
+  ogDescription?: string | null
+  ogImageUrl?: string | null
 }
 
 // ─── Analytics ────────────────────────────────────────────────────────────────

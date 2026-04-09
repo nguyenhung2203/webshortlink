@@ -31,7 +31,7 @@ public sealed class RedirectService
         _defaultHost = appOptions.Value.DefaultDomain;
     }
 
-    public async Task<PublicRedirectAccessResponseDto> ResolveAsync(string host, string slug, string? password, HttpContext httpContext, CancellationToken cancellationToken)
+    public async Task<object> ResolveAsync(string host, string slug, string? password, HttpContext httpContext, CancellationToken cancellationToken)
     {
         var startedAt = Environment.TickCount64;
         var normalizedHost = NormalizeHost(host);
@@ -47,6 +47,17 @@ public sealed class RedirectService
         }
 
         ValidateRedirectPreconditions(link);
+
+        if (IsSocialScraper(httpContext.Request.Headers.UserAgent.ToString()))
+        {
+            return new OgLinkDataDto(
+                link.OriginalUrl,
+                link.OgTitle,
+                link.OgDescription,
+                link.OgImageUrl,
+                normalizedHost,
+                slug);
+        }
 
         if (!string.IsNullOrWhiteSpace(link.PasswordHash))
         {
@@ -374,6 +385,8 @@ public sealed class RedirectService
     {
         if (userAgent.Contains("edg", StringComparison.OrdinalIgnoreCase)) return "Edge";
         if (userAgent.Contains("chrome", StringComparison.OrdinalIgnoreCase)) return "Chrome";
+
+
         if (userAgent.Contains("safari", StringComparison.OrdinalIgnoreCase)) return "Safari";
         if (userAgent.Contains("firefox", StringComparison.OrdinalIgnoreCase)) return "Firefox";
         return "Other";
@@ -386,5 +399,21 @@ public sealed class RedirectService
         if (userAgent.Contains("iphone", StringComparison.OrdinalIgnoreCase)) return "iOS";
         if (userAgent.Contains("mac", StringComparison.OrdinalIgnoreCase)) return "MacOS";
         return "Other";
+    }
+
+    private static bool IsSocialScraper(string userAgent)
+    {
+        if (string.IsNullOrWhiteSpace(userAgent))
+            return false;
+
+        var ua = userAgent.ToLowerInvariant();
+        return ua.Contains("facebookexternalhit") || 
+               ua.Contains("metaexternalhit") ||
+               ua.Contains("twitterbot") || 
+               ua.Contains("telegrambot") || 
+               ua.Contains("linkedinbot") || 
+               ua.Contains("viber") || 
+               ua.Contains("skypeuripreview") ||
+               ua.Contains("zalo");
     }
 }

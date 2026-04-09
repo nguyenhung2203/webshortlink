@@ -130,7 +130,11 @@ public sealed class ApplicationRuntimeSeeder
 
             new PlanFeature { Id = 31, PlanId = 1, FeatureKey = "reports.export", IsEnabled = false, CreatedAtUtc = now },
             new PlanFeature { Id = 32, PlanId = 2, FeatureKey = "reports.export", IsEnabled = true, CreatedAtUtc = now },
-            new PlanFeature { Id = 33, PlanId = 3, FeatureKey = "reports.export", IsEnabled = true, CreatedAtUtc = now }
+            new PlanFeature { Id = 33, PlanId = 3, FeatureKey = "reports.export", IsEnabled = true, CreatedAtUtc = now },
+
+            new PlanFeature { Id = 34, PlanId = 1, FeatureKey = "links.social_preview", IsEnabled = false, CreatedAtUtc = now },
+            new PlanFeature { Id = 35, PlanId = 2, FeatureKey = "links.social_preview", IsEnabled = true, CreatedAtUtc = now },
+            new PlanFeature { Id = 36, PlanId = 3, FeatureKey = "links.social_preview", IsEnabled = true, CreatedAtUtc = now }
         };
 
         foreach (var f in features)

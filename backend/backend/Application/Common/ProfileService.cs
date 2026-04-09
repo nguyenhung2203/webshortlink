@@ -130,6 +130,7 @@ public sealed class ProfileService
                         "links.click_limit" => "Cài đặt giới hạn click",
                         "rules.targeting_advanced" => "Định tuyến theo thiết bị/quốc gia",
                         "reports.export" => "Xuất dữ liệu analytics (CSV)",
+                        "links.social_preview" => "Tùy chỉnh thẻ xem trước MXH (OpenGraph)",
                         _ => feature.FeatureKey
                     };
 

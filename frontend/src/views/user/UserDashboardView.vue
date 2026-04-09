@@ -13,6 +13,7 @@ import {
   BarChart3,
   RefreshCw,
   ExternalLink,
+  Activity,
 } from 'lucide-vue-next'
 import {
   Chart as ChartJS,
@@ -84,6 +85,37 @@ const chartData = computed(() => {
       },
     ],
   }
+})
+
+const heatmapDays = computed(() => {
+  if (!data.value) return []
+  const days = []
+  const today = new Date()
+  today.setHours(0,0,0,0) // Reset time to midnight
+
+  const trendsMap = new Map((data.value.trends || []).map(t => [new Date(t.bucket).toISOString().split('T')[0], t.totalClicks]))
+  
+  const numDays = 52 * 7
+  for(let i = numDays - 1; i >= 0; i--) {
+     const d = new Date(today)
+     d.setDate(today.getDate() - i)
+     const key = d.toISOString().split('T')[0]
+     const clicks = trendsMap.get(key) || 0
+     
+     let level = 0
+     if (clicks > 0) level = 1
+     if (clicks >= 10) level = 2
+     if (clicks >= 50) level = 3
+     if (clicks >= 100) level = 4
+
+     days.push({
+        date: key,
+        clicks: clicks,
+        level: level,
+        isToday: i === 0
+     })
+  }
+  return days
 })
 
 const chartOptions = {
@@ -322,6 +354,46 @@ onMounted(load)
           </div>
         </div>
 
+      </div>
+
+      <!-- Github Style Heatmap -->
+      <div class="db-panel" style="margin-top: 1.5rem;">
+        <div class="db-panel-header">
+          <div>
+            <div class="db-panel-eyebrow">
+              <Activity :size="13" />
+              Mật độ Tương tác (Heatmap)
+            </div>
+            <p class="db-panel-desc">Biểu đồ tần suất click trong 1 năm qua</p>
+          </div>
+        </div>
+        
+        <div style="overflow-x: auto; padding: 1rem 0; width: 100%;">
+          <!-- Grid wrapper -->
+          <div style="display: grid; grid-template-rows: repeat(7, 1fr); grid-auto-flow: column; gap: 4px; width: max-content; margin: 0 auto;">
+            <div 
+              v-for="day in heatmapDays" 
+              :key="day.date" 
+              class="heatmap-cell group"
+              :class="['level-' + day.level, { 'ring-1 ring-blue-500': day.isToday }]"
+            >
+              <!-- Tooltip (CSS based) -->
+              <div class="hidden group-hover:block absolute z-10 bg-slate-800 text-white text-[10px] py-1 px-2 rounded -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap shadow-lg">
+                {{ day.clicks }} clicks - {{ day.date }}
+              </div>
+            </div>
+          </div>
+          
+          <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.5rem; margin-top: 1rem; font-size: 0.75rem; color: #64748b;">
+            <span>Ít</span>
+            <div class="heatmap-cell level-0"></div>
+            <div class="heatmap-cell level-1"></div>
+            <div class="heatmap-cell level-2"></div>
+            <div class="heatmap-cell level-3"></div>
+            <div class="heatmap-cell level-4"></div>
+            <span>Nhiều</span>
+          </div>
+        </div>
       </div>
 
     </template>
@@ -677,6 +749,25 @@ onMounted(load)
   transition: color 0.15s;
 }
 .db-top-link-row:hover .db-top-link-icon { color: #3b82f6; }
+.db-top-link-row:hover .db-top-link-clicks {
+  color: #3b82f6;
+}
+
+/* Heatmap */
+.heatmap-cell {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background-color: #ebedf0;
+  position: relative;
+  cursor: pointer;
+  border: 1px solid rgba(27,31,35,0.06);
+}
+.heatmap-cell.level-0 { background-color: #ebedf0; }
+.heatmap-cell.level-1 { background-color: #9be9a8; }
+.heatmap-cell.level-2 { background-color: #40c463; }
+.heatmap-cell.level-3 { background-color: #30a14e; }
+.heatmap-cell.level-4 { background-color: #216e39; }
 
 /* ═══ Empty State ════════════════════════════════════════════════════════════ */
 .db-empty {

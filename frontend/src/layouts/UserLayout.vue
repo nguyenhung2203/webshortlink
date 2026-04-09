@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref, onUnmounted } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
-import { Home, Link as LinkIcon, BarChart2, CreditCard, User, LogOut, Globe } from 'lucide-vue-next'
+import { Home, Link as LinkIcon, BarChart2, CreditCard, User, LogOut, Globe, Search as SearchIcon, Command, ArrowRight } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
@@ -62,6 +62,51 @@ function logout() {
   authStore.logout()
   router.push('/auth/login')
 }
+
+// === COMMAND PALETTE FEATURE ===
+const isCommandOpen = ref(false)
+const commandSearch = ref('')
+const commandInputRef = ref<HTMLInputElement | null>(null)
+
+function handleKeyDown(e: KeyboardEvent) {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault()
+    isCommandOpen.value = !isCommandOpen.value
+    if (isCommandOpen.value) {
+      setTimeout(() => { commandInputRef.value?.focus() }, 50)
+    } else {
+      commandSearch.value = ''
+    }
+  }
+  if (e.key === 'Escape' && isCommandOpen.value) {
+    isCommandOpen.value = false
+    commandSearch.value = ''
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown)
+})
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown)
+})
+
+function executeCommand() {
+  if (!commandSearch.value.trim()) return
+  const q = commandSearch.value.trim()
+  
+  if (q.startsWith('http://') || q.startsWith('https://')) {
+    // Tự động chuyển qua trang tạo link nếu gõ link
+    router.push({ name: 'user-create-link', query: { url: q } })
+  } else {
+    // Tìm kiếm trong Links
+    router.push({ name: 'user-links', query: { search: q } })
+  }
+  
+  isCommandOpen.value = false
+  commandSearch.value = ''
+}
+// ===============================
 </script>
 
 <template>
@@ -142,5 +187,73 @@ function logout() {
         </RouterLink>
       </nav>
     </div>
+
+    <!-- COMMAND PALETTE MODAL -->
+    <div v-if="isCommandOpen" class="fixed inset-0 z-[999] flex items-start justify-center pt-[15vh] px-4 sm:px-0">
+      <!-- Backdrop -->
+      <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" @click="isCommandOpen = false"></div>
+      
+      <!-- Command Box -->
+      <div 
+        class="relative w-full max-w-xl scale-100 overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5 transition-all"
+        style="animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);"
+      >
+        <div class="flex items-center border-b border-slate-100 px-4 py-3">
+          <SearchIcon class="h-5 w-5 text-slate-400" />
+          <input
+            ref="commandInputRef"
+            v-model="commandSearch"
+            type="text"
+            class="ml-3 flex-1 appearance-none bg-transparent outline-none placeholder:text-slate-400 text-slate-900 sm:text-sm"
+            placeholder="Dán link dài để rút gọn ngay, hoặc tìm kiếm tag..."
+            @keyup.enter="executeCommand"
+          />
+          <kbd class="hidden sm:flex items-center gap-1 rounded bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500">
+            ESC
+          </kbd>
+        </div>
+        
+        <div class="max-h-80 overflow-y-auto px-4 py-3">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Gợi ý hành động</p>
+          <div 
+            class="flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer hover:bg-blue-50 group"
+            @click="router.push('/app/links/create'); isCommandOpen = false"
+          >
+            <div class="flex items-center gap-3">
+              <div class="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100 text-blue-600">
+                <LinkIcon :size="16" />
+              </div>
+              <span class="text-sm font-medium text-slate-700 group-hover:text-blue-700">Tạo mới Link gốc</span>
+            </div>
+            <ArrowRight :size="14" class="text-slate-400 group-hover:text-blue-500" />
+          </div>
+          <div 
+            class="flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer hover:bg-blue-50 group mt-1"
+            @click="router.push('/app/analytics'); isCommandOpen = false"
+          >
+            <div class="flex items-center gap-3">
+              <div class="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-100 text-emerald-600">
+                <BarChart2 :size="16" />
+              </div>
+              <span class="text-sm font-medium text-slate-700 group-hover:text-blue-700">Xem Báo cáo Tổng thể</span>
+            </div>
+            <ArrowRight :size="14" class="text-slate-400 group-hover:text-blue-500" />
+          </div>
+        </div>
+
+        <div class="bg-slate-50 px-4 py-3 border-t border-slate-100 text-xs text-slate-500 flex justify-between items-center">
+          <span class="flex items-center gap-1"><Command :size="12"/> Spotlight <span class="bg-slate-200 text-slate-700 px-1 rounded ml-1">Ctrl</span>+<span class="bg-slate-200 text-slate-700 px-1 rounded">K</span></span>
+          <span>Dùng Enter để xác nhận</span>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
+
+<style scoped>
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+</style>

@@ -8,7 +8,10 @@ public sealed record CreateLinkRequestDto(
     string? Tag,
     DateTime? ExpiresAtUtc,
     int? ClickLimit,
-    string? Password);
+    string? Password,
+    string? OgTitle,
+    string? OgDescription,
+    string? OgImageUrl);
 
 public sealed record UpdateLinkRequestDto(
     string OriginalUrl,
@@ -17,7 +20,10 @@ public sealed record UpdateLinkRequestDto(
     string? Tag,
     DateTime? ExpiresAtUtc,
     int? ClickLimit,
-    string? Password);
+    string? Password,
+    string? OgTitle = null,
+    string? OgDescription = null,
+    string? OgImageUrl = null);
 
 public sealed record ToggleLinkStatusRequestDto(bool IsActive);
 
@@ -52,7 +58,10 @@ public sealed record LinkDetailDto(
     long TotalClicks,
     long UniqueClicks,
     DateTime CreatedAtUtc,
-    DateTime? UpdatedAtUtc);
+    DateTime? UpdatedAtUtc,
+    string? OgTitle = null,
+    string? OgDescription = null,
+    string? OgImageUrl = null);
 
 public sealed record CachedLinkDto(
     Guid Id,
@@ -64,7 +73,10 @@ public sealed record CachedLinkDto(
     DateTime? ExpiresAtUtc,
     int? ClickLimit,
     string? PasswordHash,
-    long TotalClicks);
+    long TotalClicks,
+    string? OgTitle = null,
+    string? OgDescription = null,
+    string? OgImageUrl = null);
 
 public sealed record CreateLinkRuleRequestDto(
     string RuleType,
