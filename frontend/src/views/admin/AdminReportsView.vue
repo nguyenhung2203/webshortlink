@@ -27,6 +27,7 @@ onMounted(load)
 
 <template>
   <div class="ui-root">
+    
     <div class="ui-header">
       <div class="ui-header-left">
         <div class="ui-eyebrow"><BarChart2 :size="13" /> Hệ thống phân tích</div>
@@ -34,8 +35,8 @@ onMounted(load)
         <p class="ui-subtitle">Dữ liệu thống kê tăng trưởng khách hàng và việc nâng cấp gói dịch vụ.</p>
       </div>
       <div>
-        <button class="ui-btn ui-btn-outline" :disabled="loading" @click="load">
-          <RefreshCw :size="14" :class="{ 'animate-spin': loading }" /> Làm mới
+        <button class="ui-btn ui-btn-outline" @click="load" :disabled="loading">
+          <RefreshCw :size="14" :class="{'animate-spin': loading}" /> Làm mới
         </button>
       </div>
     </div>
@@ -46,18 +47,22 @@ onMounted(load)
 
     <div v-if="loading" style="display: flex; flex-direction: column; gap: 1.5rem;">
       <div class="ui-card-grid-4">
-        <div v-for="i in 4" :key="`r-${i}`" class="ui-skeleton" style="height: 120px;" />
+        <div class="ui-skeleton" style="height: 120px;" v-for="i in 4" :key="`r-${i}`" />
       </div>
       <div class="ui-skeleton" style="height: 250px; border-radius: 12px;" />
     </div>
 
     <template v-else-if="reports">
+      
       <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        
+        <!-- Metrics -->
         <div class="ui-card-grid ui-card-grid-4">
+          
           <div class="ui-panel" style="background: white;">
             <div class="ui-panel-body" style="display: flex; flex-direction: column; justify-content: center; padding: 1.5rem;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Người dùng</span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Người Dùng</span>
                 <Users :size="18" style="color: #3b82f6;" />
               </div>
               <div style="font-size: 2.25rem; font-weight: 800; color: #0f172a; line-height: 1;">{{ (reports.totalUsers ?? 0).toLocaleString() }}</div>
@@ -77,7 +82,7 @@ onMounted(load)
           <div class="ui-panel" style="background: white;">
             <div class="ui-panel-body" style="display: flex; flex-direction: column; justify-content: center; padding: 1.5rem;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Traffic ingest</span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Traffic Ingest</span>
                 <MousePointerClick :size="18" style="color: #8b5cf6;" />
               </div>
               <div style="font-size: 2.25rem; font-weight: 800; color: #0f172a; line-height: 1;">{{ (reports.totalClicks ?? 0).toLocaleString() }}</div>
@@ -92,27 +97,26 @@ onMounted(load)
               </div>
               <div style="font-size: 2.25rem; font-weight: 800; color: #0f172a; line-height: 1;">{{ (reports.activeSubscriptions ?? 0).toLocaleString() }}</div>
               <div style="margin-top: 0.75rem; font-size: 0.8rem; color: #64748b; font-weight: 500;">
-                Tỷ lệ phủ:
-                <strong style="color: #0f172a;">{{ reports.totalUsers > 0 ? ((reports.activeSubscriptions / reports.totalUsers) * 100).toFixed(1) : 0 }}%</strong>
+                Tỷ lệ phủ: <strong style="color: #0f172a;">{{ reports.totalUsers > 0 ? ((reports.activeSubscriptions / reports.totalUsers) * 100).toFixed(1) : 0 }}%</strong>
               </div>
             </div>
           </div>
+
         </div>
 
+        <!-- Breakdown Section -->
         <div v-if="reports.planBreakdown" class="ui-panel" style="background: white; padding: 0;">
           <div class="ui-panel-header" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #f1f5f9;">
-            <h3 class="ui-panel-title" style="display: flex; align-items: center; gap: 0.5rem;">
-              <PieChart :size="16" style="color: #3b82f6;" /> Phân bổ gói dịch vụ
-            </h3>
+            <h3 class="ui-panel-title" style="display: flex; align-items: center; gap: 0.5rem;"><PieChart :size="16" style="color: #3b82f6;" /> Phân bổ Gói dịch vụ</h3>
           </div>
           <div class="ui-panel-body" style="padding: 1.5rem;">
             <div style="display: flex; flex-direction: column; gap: 1.25rem;">
               <div v-for="item in reports.planBreakdown" :key="item.planName" style="display: flex; align-items: center; gap: 1rem;">
                 <span style="font-size: 0.85rem; font-weight: 700; color: #475569; width: 80px; flex-shrink: 0; text-transform: uppercase;">{{ item.planName }}</span>
                 <div style="flex: 1; background: #e2e8f0; border-radius: 999px; height: 10px; overflow: hidden; display: flex;">
-                  <div
+                  <div 
+                    style="height: 100%; border-radius: 999px; transition: width 1s ease-out;" 
                     :style="`width: ${Math.max(item.percent, 1)}%; background: ${item.planName.toLowerCase() === 'plus' ? '#f59e0b' : item.planName.toLowerCase() === 'pro' ? '#3b82f6' : '#94a3b8'};`"
-                    style="height: 100%; border-radius: 999px; transition: width 1s ease-out;"
                   ></div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.75rem; width: 100px; justify-content: flex-end;">
@@ -123,6 +127,7 @@ onMounted(load)
             </div>
           </div>
         </div>
+
       </div>
     </template>
   </div>
