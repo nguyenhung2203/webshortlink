@@ -20,8 +20,8 @@ const navItems = [
   { to: '/admin/audit', label: 'Nhật ký (Audit)', shortLabel: 'Audit', icon: ClipboardList },
 ]
 
-function logout() {
-  authStore.logout()
+async function logout() {
+  await authStore.logout()
   router.push('/auth/login')
 }
 

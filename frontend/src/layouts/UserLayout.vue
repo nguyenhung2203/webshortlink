@@ -58,8 +58,8 @@ function isNavActive(path: string) {
   return route.path === path
 }
 
-function logout() {
-  authStore.logout()
+async function logout() {
+  await authStore.logout()
   router.push('/auth/login')
 }
 
