@@ -147,8 +147,9 @@ onMounted(load)
         <table style="width: 100%; border-collapse: collapse; min-width: 900px; text-align: left;">
           <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
             <tr>
-              <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; width: 60px;">STT</th>
-              <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Định danh</th>
+               <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; width: 60px;">STT</th>
+               <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Email</th>
+               <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Họ tên</th>
               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Gói Dịch vụ</th>
               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Trạng thái</th>
               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Tổng Links</th>
@@ -161,20 +162,19 @@ onMounted(load)
               <td style="padding: 1rem 1.5rem; font-weight: 600; color: #94a3b8;">
                 {{ (filter.pageIndex - 1) * filter.pageSize + index + 1 }}
               </td>
-              <td style="padding: 1rem 1.5rem;">
-                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                  <div style="width: 32px; height: 32px; border-radius: 50%; background: #e0f2fe; color: #0284c7; display: grid; place-items: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0;">
-                    {{ user.email.charAt(0).toUpperCase() }}
-                  </div>
-                  <div style="min-width: 0;">
-                    <p style="margin: 0; font-weight: 700; color: #0f172a; font-size: 0.95rem; line-height: 1.2;">
-                      {{ user.email }}
-                      <span v-if="user.role === 'Admin'" style="margin-left: 0.5rem; padding: 0.1rem 0.4rem; background: #fee2e2; color: #991b1b; font-size: 0.6rem; font-weight: 800; border-radius: 4px; border: 1px solid #fecaca; vertical-align: middle;">ADMIN</span>
-                    </p>
-                    <p style="margin: 0; font-size: 0.75rem; color: #64748b; margin-top: 0.1rem;">{{ user.fullName || 'Chưa thiết lập tên' }}</p>
-                  </div>
-                </div>
-              </td>
+               <td style="padding: 1rem 1.25rem;">
+                 <div style="display: flex; align-items: center; gap: 0.5rem;">
+                   <div style="width: 28px; height: 28px; border-radius: 50%; background: #e0f2fe; color: #0284c7; display: grid; place-items: center; font-weight: 800; font-size: 0.75rem; flex-shrink: 0;">
+                     {{ user.email.charAt(0).toUpperCase() }}
+                   </div>
+                   <span style="font-weight: 700; color: #0f172a; font-size: 0.9rem;">{{ user.email }}</span>
+                   <span v-if="user.role === 'Admin'" style="padding: 0.1rem 0.3rem; background: #fee2e2; color: #991b1b; font-size: 0.55rem; font-weight: 800; border-radius: 4px; border: 1px solid #fecaca;">ADMIN</span>
+                 </div>
+               </td>
+               
+               <td style="padding: 1rem 1.25rem;">
+                 <span style="font-size: 0.85rem; color: #64748b;">{{ user.fullName || '-' }}</span>
+               </td>
               
               <td style="padding: 1rem 1.5rem;">
                 <span style="padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;" :style="planBadgeClass(user.planName)">

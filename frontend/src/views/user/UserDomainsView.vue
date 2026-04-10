@@ -202,11 +202,11 @@ onMounted(load)
               </div>
 
                <!-- Message if pending -->
-               <div v-if="!domain.isVerified" class="ui-alert ui-alert-warning" style="margin: 1rem 0 0; padding: 1rem; border-radius: 10px; width: 100%; display: flex; flex-direction: column; gap: 0.5rem;">
-                 <div style="font-weight: 700; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
-                   <Clock :size="16" /> Đang chờ Admin thiết lập
+               <div v-if="!domain.isVerified" class="ui-alert ui-alert-warning" style="margin: 1.25rem 0 0; padding: 1.25rem; border-radius: 12px; width: 100%; display: flex; flex-direction: column; gap: 0.75rem; border: 1px solid #fde68a;">
+                 <div style="font-weight: 800; display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem; color: #92400e; margin-left: -0.2rem;">
+                   <Clock :size="18" /> Đang chờ Admin thiết lập
                  </div>
-                 <p style="margin: 0; font-size: 0.85rem; line-height: 1.5; color: #92400e;">
+                 <p style="margin: 0; font-size: 0.85rem; line-height: 1.6; color: #b45309; text-align: left;">
                    Hệ thống đã ghi nhận yêu cầu của bạn. Quản trị viên đang cấu hình máy chủ và chứng chỉ bảo mật (SSL) cho tên miền này. Kết quả sẽ được hiển thị tại đây sớm nhất.
                  </p>
                </div>
