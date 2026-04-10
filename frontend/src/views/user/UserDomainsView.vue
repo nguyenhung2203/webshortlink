@@ -203,7 +203,7 @@ onMounted(load)
 
                <!-- Message if pending -->
                <div v-if="!domain.isVerified" class="ui-alert ui-alert-warning" style="margin: 1.25rem 0 0; padding: 1.25rem; border-radius: 12px; width: 100%; display: flex; flex-direction: column; gap: 0.75rem; border: 1px solid #fde68a;">
-                 <div style="font-weight: 800; display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem; color: #92400e; margin-left: -0.2rem;">
+                 <div style="font-weight: 800; display: flex; text-align: left; gap: 0.5rem; font-size: 0.95rem; color: #92400e; margin-left: -0.2rem;">
                    <Clock :size="18" /> Đang chờ Admin thiết lập
                  </div>
                  <p style="margin: 0; font-size: 0.85rem; line-height: 1.6; color: #b45309; text-align: left;">
