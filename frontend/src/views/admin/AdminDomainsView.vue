@@ -210,12 +210,12 @@ const formatDate = (dateValue: string | null) => {
             />
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 1rem;">
-            <div>
+          <div class="admin-form-grid">
+            <div class="admin-form-col">
               <label class="ui-label">Hạn sử dụng</label>
               <input v-model="newDomainForm.expiredAt" type="date" class="ui-input" style="width: 100%;" />
             </div>
-            <div>
+            <div class="admin-form-col">
               <label class="ui-label">Ghi chú (Note)</label>
               <input v-model="newDomainForm.notes" type="text" class="ui-input" placeholder="Thông tin thêm..." style="width: 100%;" />
             </div>
@@ -384,3 +384,21 @@ const formatDate = (dateValue: string | null) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 1rem;
+}
+.admin-form-col {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 640px) {
+  .admin-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

@@ -143,14 +143,14 @@ onMounted(load)
                 />
               </div>
 
-              <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem;">
-                <div>
+              <div class="form-row-multi">
+                <div class="form-col">
                    <label class="ui-label">Hạn sử dụng (Nếu có)</label>
-                   <input v-model="newDomainForm.expiredAt" type="date" class="ui-form-input" />
+                   <input v-model="newDomainForm.expiredAt" type="date" class="ui-form-input" style="width: 100%;" />
                 </div>
-                <div>
+                <div class="form-col">
                    <label class="ui-label">Ghi chú thêm (Đuôi miền, yêu cầu đặc biệt...)</label>
-                   <input v-model="newDomainForm.notes" type="text" class="ui-form-input" placeholder="Ví dụ: .vn, dùng cho chiến dịch hè..." />
+                   <input v-model="newDomainForm.notes" type="text" class="ui-form-input" placeholder="Ví dụ: .vn, dùng cho chiến dịch hè..." style="width: 100%;" />
                 </div>
               </div>
 
@@ -307,4 +307,14 @@ onMounted(load)
 .btn-delete-yes { background: #ef4444; color: #fff; border: none; padding: 0.2rem 0.6rem; min-height: unset; height: 28px; font-size: 0.8rem; }
 .btn-delete-yes:hover { background: #dc2626; }
 .btn-delete-cancel { padding: 0.2rem 0.6rem; min-height: unset; height: 28px; font-size: 0.8rem; color: #475569; }
+
+.form-row-multi { display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; }
+.form-col { display: flex; flex-direction: column; }
+
+@media (max-width: 640px) {
+  .form-row-multi { grid-template-columns: 1fr; }
+  .instruction-title { font-size: 0.95rem; }
+  .domain-item { flex-direction: column; gap: 1rem; }
+  .actions-group { width: 100%; justify-content: flex-end; }
+}
 </style>
