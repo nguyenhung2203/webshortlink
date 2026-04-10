@@ -280,62 +280,54 @@ const formatDate = (dateValue: string | null) => {
         <table style="width: 100%; border-collapse: collapse; min-width: 900px; text-align: left;">
           <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
             <tr>
-               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Domain & Chủ sở hữu</th>
-               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Sử dụng</th>
-               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Hạn dùng & Note</th>
-               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Phản hồi từ Admin</th>
-               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Trạng thái</th>
-               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; text-align: right;">Hành động</th>
+               <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Tên miền</th>
+               <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Khách hàng</th>
+               <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Links</th>
+               <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Hạn dùng</th>
+               <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Ghi chú</th>
+               <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Phản hồi</th>
+               <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Trạng thái</th>
+               <th style="padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; text-align: right;">Hành động</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="domain in domains" :key="domain.id" style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s;" class="hover:bg-slate-50">
-              
-              <td style="padding: 1rem 1.5rem;">
-                <div style="display: flex; flex-direction: column; gap: 0.2rem;">
-                  <span style="font-family: inherit; font-weight: 700; font-size: 0.95rem; color: #0f172a;">
-                    {{ domain.host }}
-                    <span v-if="domain.isGlobal" class="ui-badge ui-badge-success" style="font-size: 0.6rem; padding: 0.1rem 0.3rem; margin-left: 0.5rem; vertical-align: top;">GLOBAL</span>
-                  </span>
-                  <div style="display: flex; flex-direction: column; gap: 0.1rem; font-size: 0.8rem;">
-                    <span v-if="!domain.isGlobal" style="color: #3b82f6; font-weight: 500;">User: {{ domain.userEmail }}</span>
-                    <span v-else style="color: #059669; font-weight: 500;">By Admin</span>
-                  </div>
-                </div>
-              </td>
-              
-              <td style="padding: 1rem 1.5rem;">
-                <span class="ui-badge" style="background: #f1f5f9; color: #475569; font-weight: 600; border: 1px solid #e2e8f0;">
-                  {{ domain.linksCount }} Links
-                </span>
-              </td>
-
-              <td style="padding: 1rem 1.5rem;">
-                <div style="display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.8rem;">
-                  <span v-if="domain.expiredAtUtc" style="color: #0f172a; font-weight: 600;">{{ formatDate(domain.expiredAtUtc) }}</span>
-                  <span v-else style="color: #94a3b8;">Vô thời hạn</span>
-                  <span v-if="domain.userNotes" style="color: #64748b; font-style: italic; max-width: 150px;" class="truncate" :title="domain.userNotes">{{ domain.userNotes }}</span>
-                </div>
-              </td>
-
-              <td style="padding: 1rem 1.5rem;">
-                <div style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.75rem;">
-                  <div v-if="domain.adminFeedback" style="color: #059669; font-weight: 600; font-style: italic; max-width: 250px;" class="truncate" :title="domain.adminFeedback">
-                    "{{ domain.adminFeedback }}"
-                  </div>
-                  <div style="display: flex; align-items: center; gap: 0.4rem; color: #64748b;">
-                    <Clock :size="12" /> {{ formatDate(domain.createdAtUtc) }}
-                  </div>
-                </div>
-              </td>
-              
-              <td style="padding: 1rem 1.5rem;">
-                 <div style="display: flex; align-items: flex-start; flex-direction: column; gap: 0.4rem;">
-                   <span v-if="!domain.isVerified" class="ui-badge ui-badge-warning" style="font-weight: 800; font-size: 0.7rem;"><Clock :size="12" style="margin-right: 0.2rem;" /> UNVERIFIED</span>
-                   <span v-else class="ui-badge ui-badge-success" style="font-weight: 800; font-size: 0.7rem;"><ShieldCheck :size="12" style="margin-right: 0.2rem;" /> SECURE / VERIFIED</span>
-                   <span v-if="domain.isDefault" class="ui-badge" style="background: #a855f7; color: white; font-weight: 700; font-size: 0.6rem; padding: 0.2rem 0.5rem; border-radius: 4px;">SYSTEM DEFAULT</span>
-                 </div>
+              <td style="padding: 1rem 1.25rem;">
+                 <span style="font-weight: 700; color: #0f172a;">{{ domain.host }}</span>
+                 <span v-if="domain.isGlobal" class="ui-badge ui-badge-success" style="font-size: 0.6rem; padding: 0.1rem 0.3rem; margin-left: 0.4rem;">GLOBAL</span>
                </td>
+
+               <td style="padding: 1rem 1.25rem;">
+                 <span v-if="!domain.isGlobal" style="font-size: 0.85rem; color: #3b82f6; font-weight: 500;">{{ domain.userEmail }}</span>
+                 <span v-else style="font-size: 0.85rem; color: #64748b;">Hệ thống</span>
+               </td>
+                            <td style="padding: 1rem 1.25rem;">
+                 <span style="font-weight: 600; font-size: 0.9rem;">{{ domain.linksCount }}</span>
+               </td>
+
+               <td style="padding: 1rem 1.25rem;">
+                 <span v-if="domain.expiredAtUtc" style="font-size: 0.85rem; color: #0f172a;">{{ formatDate(domain.expiredAtUtc) }}</span>
+                 <span v-else style="color: #cbd5e1; font-size: 0.8rem;">-</span>
+               </td>
+
+               <td style="padding: 1rem 1.25rem;">
+                 <span v-if="domain.userNotes" style="font-size: 0.85rem; color: #64748b; max-width: 120px;" class="truncate" :title="domain.userNotes">{{ domain.userNotes }}</span>
+                 <span v-else style="color: #cbd5e1;">-</span>
+               </td>
+
+               <td style="padding: 1rem 1.25rem;">
+                 <div v-if="domain.adminFeedback" style="font-size: 0.8rem; color: #059669; font-weight: 500; max-width: 180px;" class="truncate" :title="domain.adminFeedback">
+                   {{ domain.adminFeedback }}
+                 </div>
+                 <span v-else style="color: #cbd5e1;">-</span>
+               </td>
+                            <td style="padding: 1rem 1.25rem;">
+                  <div style="display: flex; gap: 0.3rem; align-items: center;">
+                    <span v-if="!domain.isVerified" class="ui-badge ui-badge-warning" style="font-size: 0.65rem;">PENDING</span>
+                    <span v-else class="ui-badge ui-badge-success" style="font-size: 0.65rem;">VERIFIED</span>
+                    <span v-if="domain.isDefault" class="ui-badge" style="background: #a855f7; color: white; font-size: 0.65rem;">DEFAULT</span>
+                  </div>
+                </td>
 
               <td style="padding: 1rem 1.5rem; text-align: right;">
                 <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem;">
