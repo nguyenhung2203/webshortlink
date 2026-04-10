@@ -363,11 +363,17 @@ const ps = (idx: number) => planStyle[idx] ?? planStyle[2]
   /* Base Grid */
   .pricing-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr;
     gap: 1.5rem;
     max-width: 1100px;
     margin: 0 auto;
     align-items: stretch;
+  }
+  
+  @media (min-width: 1024px) {
+    .pricing-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
   }
 
   /* Card Base */
