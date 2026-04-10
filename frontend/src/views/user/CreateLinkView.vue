@@ -199,7 +199,7 @@ async function submit() {
     </div>
 
     <!-- Form + Social Preview (2-column layout) -->
-    <div v-else style="display: grid; grid-template-columns: 1fr 380px; gap: 1.5rem; align-items: start;">
+    <div v-else class="create-layout lk-grid-responsive">
 
       <!-- Left: Form -->
       <div class="ui-panel">
@@ -389,7 +389,7 @@ async function submit() {
               <p style="font-size: 10px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">
                 {{ selectedDomainHost.toUpperCase() }}{{ form.customSlug ? '/' + form.customSlug.toUpperCase() : '' }}
               </p>
-              <h4 style="font-size: 15px; font-weight: 700; color: #0f172a; line-height: 1.35; margin: 0 0 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word;">
+              <h4 style="font-size: 15px; font-weight: 700; color: #0f172a; line-height: 1.35; margin: 0 0 4px; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word;">
                 {{ mockTitle || form.originalUrl || 'WeShort - Hệ thống chuyển hướng mạnh mẽ' }}
               </h4>
               <p style="font-size: 13px; color: #64748b; margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; word-break: break-word;">
@@ -404,3 +404,17 @@ async function submit() {
 
   </div>
 </template>
+
+<style scoped>
+.lk-grid-responsive {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .lk-grid-responsive {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

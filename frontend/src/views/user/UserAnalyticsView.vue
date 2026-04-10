@@ -14,7 +14,9 @@ import {
   Globe,
   MonitorSmartphone,
   Share2,
-  Lock
+  Lock,
+  MapPin,
+  Filter
 } from 'lucide-vue-next'
 import {
   Chart as ChartJS,
@@ -248,10 +250,10 @@ onMounted(bootstrap)
         
         <!-- Compact KPIs Panel -->
         <div class="ui-panel">
-          <div class="ui-panel-body" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; padding: 1.25rem 0;">
+          <div class="ui-panel-body kpi-grid">
             
             <!-- KPI 1 -->
-            <div style="display: flex; align-items: center; justify-content: center; gap: 1.25rem; border-right: 1px solid #e2e8f0;">
+            <div class="kpi-item">
               <div style="width: 48px; height: 48px; background: #eff6ff; color: #3b82f6; border-radius: 14px; display: grid; place-items: center; flex-shrink: 0;">
                 <MousePointerClick :size="22"/>
               </div>
@@ -262,7 +264,7 @@ onMounted(bootstrap)
             </div>
 
             <!-- KPI 2 -->
-            <div style="display: flex; align-items: center; justify-content: center; gap: 1.25rem; border-right: 1px solid #e2e8f0;">
+            <div class="kpi-item">
               <div style="width: 48px; height: 48px; background: #ecfdf5; color: #10b981; border-radius: 14px; display: grid; place-items: center; flex-shrink: 0;">
                 <Users :size="22"/>
               </div>
@@ -273,7 +275,7 @@ onMounted(bootstrap)
             </div>
 
             <!-- KPI 3 -->
-            <div style="display: flex; align-items: center; justify-content: center; gap: 1.25rem;">
+            <div class="kpi-item-last">
               <div style="width: 48px; height: 48px; background: #fffbeb; color: #f59e0b; border-radius: 14px; display: grid; place-items: center; flex-shrink: 0;">
                 <Bot :size="22"/>
               </div>
@@ -287,7 +289,7 @@ onMounted(bootstrap)
         </div>
 
         <!-- 2-Column Grid: Chart (Left) + Breakdown (Right) -->
-        <div class="ui-card-grid" style="grid-template-columns: 2fr 1fr; align-items: start;">
+        <div class="ui-card-grid chart-grid">
           
           <!-- Chart -->
           <div class="ui-panel">
@@ -399,7 +401,46 @@ onMounted(bootstrap)
 </template>
 
 <style scoped>
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  padding: 1.25rem 0;
+}
+.kpi-item, .kpi-item-last {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+}
+.kpi-item {
+  border-right: 1px solid #e2e8f0;
+}
+.chart-grid {
+  grid-template-columns: 2fr 1fr;
+  align-items: start;
+}
+
 @media (min-width: 1024px) {
   .ui-card-grid-3 .ui-panel:nth-child(n) { grid-column: auto; }
+}
+
+@media (max-width: 768px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  .kpi-item, .kpi-item-last {
+    justify-content: flex-start;
+  }
+  .kpi-item {
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 1rem;
+  }
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
