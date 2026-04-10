@@ -51,7 +51,7 @@ const pageTitle = computed(() => {
     <!-- Sidebar Desktop -->
     <aside class="admin-sidebar" style="width: 260px; background-color: #0f172a; color: #f8fafc; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 4px 0 24px rgba(0,0,0,0.1); z-index: 20;">
       <!-- Logo -->
-      <div style="height: 64px; display: flex; items-center; justify-content: flex-start; padding: 0 1.5rem; border-bottom: 1px solid #1e293b; align-items: center; gap: 0.75rem;">
+      <div style="height: 64px; display: flex; align-items: center; justify-content: flex-start; padding: 0 1.5rem; border-bottom: 1px solid #1e293b; gap: 0.75rem;">
         <TerminalSquare :size="24" style="color: #38bdf8;" />
         <span style="font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px; color: #f8fafc;">WS<span style="color: #38bdf8;">/</span>ADMIN</span>
       </div>
@@ -106,19 +106,22 @@ const pageTitle = computed(() => {
           </div>
 
           <div style="display: flex; align-items: center; gap: 0.75rem; border-left: 1px solid #e2e8f0; padding-left: 1.5rem;">
-            <div style="text-align: right;">
+            <div style="text-align: right;" class="admin-user-info">
               <div style="font-size: 0.85rem; font-weight: 700; color: #0f172a;">{{ authStore.user?.role }} Account</div>
               <div style="font-size: 0.75rem; color: #64748b;">{{ authStore.user?.email }}</div>
             </div>
             <div style="width: 36px; height: 36px; border-radius: 8px; background: #38bdf8; color: white; display: grid; place-items: center; font-weight: 800; font-size: 1rem;">
               {{ (authStore.user?.email || 'A').charAt(0).toUpperCase() }}
             </div>
+            <button @click="logout" class="admin-mobile-logout" style="background: none; border: none; color: #ef4444; padding: 0.5rem; cursor: pointer; display: none;" title="Đăng xuất">
+              <LogOut :size="20" />
+            </button>
           </div>
         </div>
       </header>
 
       <!-- Content Area -->
-      <main style="flex: 1; overflow-y: auto; padding: 2rem; position: relative;">
+      <main style="flex: 1; overflow-y: auto; padding: 2rem; position: relative;" class="admin-main-area">
         <!-- Container for max width scaling -->
         <div style="max-width: 1400px; margin: 0 auto;">
           <RouterView />
@@ -133,6 +136,15 @@ const pageTitle = computed(() => {
 <style scoped>
   @media (max-width: 768px) {
     .admin-sidebar {
+      display: none !important;
+    }
+    .admin-mobile-logout {
+      display: block !important;
+    }
+    .admin-main-area {
+      padding: 1rem !important;
+    }
+    .admin-user-info {
       display: none !important;
     }
   }

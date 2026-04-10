@@ -185,6 +185,13 @@ function executeCommand() {
           <component :is="item.icon" :size="20" />
           {{ item.shortLabel }}
         </RouterLink>
+        <button
+          class="flex flex-col items-center justify-center gap-1 min-w-[72px] flex-shrink-0 text-[10px] font-medium transition-colors text-red-500 hover:bg-red-50"
+          @click="logout"
+        >
+          <LogOut :size="20" />
+          Đăng xuất
+        </button>
       </nav>
     </div>
 
