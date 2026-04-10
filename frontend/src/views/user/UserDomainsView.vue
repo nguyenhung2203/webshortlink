@@ -207,43 +207,27 @@ onMounted(load)
                 </div>
               </div>
 
-              <!-- Required Actions / Token -->
-              <div v-if="!domain.isVerified" class="token-container">
-                <p class="token-label">Mã xác thực HTTP File (Token)</p>
-                <div 
-                  @click="copyToken(domain.verificationToken)"
-                  title="Nhấn để copy mã xác thực"
-                  class="token-box"
-                >
-                  <span class="token-text">{{ domain.verificationToken }}</span>
-                  <Copy :size="14" class="copy-icon" />
-                </div>
+              <!-- Message if pending -->
+              <div v-if="!domain.isVerified" class="ui-alert ui-alert-warning" style="margin: 1rem 0 0; padding: 0.75rem; font-size: 0.8rem;">
+                Tên miền đã được ghi nhận. Vui lòng đợi Quản trị viên (Admin) cấu hình chứng chỉ bảo mật và hệ thống DNS để phê duyệt cho bạn sử dụng.
               </div>
 
               <!-- Actions -->
-              <div class="actions-group">
-                <button 
-                  v-if="!domain.isVerified"
-                  class="ui-btn ui-btn-outline btn-verify"
-                  :disabled="verifyLoadingId === domain.id"
-                  @click="verifyDomain(domain.id)"
-                >
-                  <RefreshCw :size="14" :class="{'animate-spin': verifyLoadingId === domain.id}" /> Kiểm tra xác minh
-                </button>
+              <div class="actions-group" style="padding-top: 1rem;">
                 
                 <!-- Inline Delete Confirmation -->
                 <div class="delete-group" v-if="confirmDeleteId === domain.id">
-                   <span class="delete-confirm-text">Xóa tên miền?</span>
-                   <button @click="deleteDomain(domain.id)" class="ui-btn ui-btn-primary btn-delete-yes">Xóa</button>
-                   <button @click="confirmDeleteId = null" class="ui-btn ui-btn-ghost btn-delete-cancel">Hủy</button>
+                   <span class="delete-confirm-text">Hủy yêu cầu này?</span>
+                   <button @click="deleteDomain(domain.id)" class="ui-btn ui-btn-primary btn-delete-yes">Đồng ý</button>
+                   <button @click="confirmDeleteId = null" class="ui-btn ui-btn-ghost btn-delete-cancel">Không</button>
                 </div>
                 <button 
                   v-else
                   class="ui-btn ui-btn-ghost btn-delete"
-                  title="Xóa domain"
+                  title="Hủy tên miền"
                   @click="confirmDeleteId = domain.id"
                 >
-                  <Trash2 :size="16" />
+                  <Trash2 :size="16" /> Hủy yêu cầu
                 </button>
               </div>
 
