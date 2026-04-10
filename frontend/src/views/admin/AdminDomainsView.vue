@@ -280,11 +280,12 @@ const formatDate = (dateValue: string | null) => {
         <table style="width: 100%; border-collapse: collapse; min-width: 900px; text-align: left;">
           <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
             <tr>
-              <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Domain & Chủ sở hữu</th>
-              <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Sử dụng</th>
-              <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Phản hồi / Token</th>
-              <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Trạng thái</th>
-              <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; text-align: right;">Hành động Admin</th>
+               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Domain & Chủ sở hữu</th>
+               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Sử dụng</th>
+               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Hạn dùng & Note</th>
+               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Phản hồi từ Admin</th>
+               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Trạng thái</th>
+               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; text-align: right;">Hành động</th>
             </tr>
           </thead>
           <tbody>
@@ -299,8 +300,6 @@ const formatDate = (dateValue: string | null) => {
                   <div style="display: flex; flex-direction: column; gap: 0.1rem; font-size: 0.8rem;">
                     <span v-if="!domain.isGlobal" style="color: #3b82f6; font-weight: 500;">User: {{ domain.userEmail }}</span>
                     <span v-else style="color: #059669; font-weight: 500;">By Admin</span>
-                    <span v-if="domain.expiredAtUtc" style="color: #64748b;"><Clock :size="10" /> Hạn: {{ formatDate(domain.expiredAtUtc) }}</span>
-                    <span v-if="domain.userNotes" style="color: #94a3b8; font-style: italic;" :title="domain.userNotes">Note: {{ domain.userNotes }}</span>
                   </div>
                 </div>
               </td>
@@ -309,6 +308,14 @@ const formatDate = (dateValue: string | null) => {
                 <span class="ui-badge" style="background: #f1f5f9; color: #475569; font-weight: 600; border: 1px solid #e2e8f0;">
                   {{ domain.linksCount }} Links
                 </span>
+              </td>
+
+              <td style="padding: 1rem 1.5rem;">
+                <div style="display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.8rem;">
+                  <span v-if="domain.expiredAtUtc" style="color: #0f172a; font-weight: 600;">{{ formatDate(domain.expiredAtUtc) }}</span>
+                  <span v-else style="color: #94a3b8;">Vô thời hạn</span>
+                  <span v-if="domain.userNotes" style="color: #64748b; font-style: italic; max-width: 150px;" class="truncate" :title="domain.userNotes">{{ domain.userNotes }}</span>
+                </div>
               </td>
 
               <td style="padding: 1rem 1.5rem;">
