@@ -166,7 +166,7 @@ function executeCommand() {
           >
             FREE
           </span>
-          <span class="text-sm font-bold text-on-surface ml-1 truncate max-w-[90px] xs:max-w-[150px]">{{ authStore.user?.fullName || authStore.user?.email || 'N/A' }}</span>
+          <span class="text-sm font-bold text-on-surface ml-1 whitespace-nowrap">{{ authStore.user?.fullName || authStore.user?.email || 'N/A' }}</span>
           <button @click="logout" class="md:hidden flex items-center justify-center p-1.5 text-red-500 hover:bg-red-50 rounded" title="Đăng xuất">
             <LogOut :size="20" />
           </button>

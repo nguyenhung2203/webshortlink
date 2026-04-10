@@ -107,7 +107,7 @@ const pageTitle = computed(() => {
 
           <div style="display: flex; align-items: center; gap: 0.75rem; border-left: 1px solid #e2e8f0; padding-left: 1.5rem;" class="admin-account-block">
             <div style="text-align: right;" class="admin-user-info">
-              <div style="font-size: 0.85rem; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px;">{{ authStore.user?.fullName || 'Hệ thống Admin' }}</div>
+              <div style="font-size: 0.85rem; font-weight: 700; color: #0f172a; white-space: nowrap;">{{ authStore.user?.fullName || 'Hệ thống Admin' }}</div>
               <div class="admin-hide-mobile" style="font-size: 0.75rem; color: #64748b;">{{ authStore.user?.email }}</div>
             </div>
             <div class="admin-avatar admin-hide-mobile" style="width: 36px; height: 36px; border-radius: 8px; background: #38bdf8; color: white; display: grid; place-items: center; font-weight: 800; font-size: 1rem; flex-shrink: 0;">
