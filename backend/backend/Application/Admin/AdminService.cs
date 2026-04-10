@@ -468,8 +468,9 @@ public sealed class AdminService
                 x.IsGlobal,
                 x.Host == defaultHost))
             .ToListAsync(cancellationToken);
-    }
 
+        return domains;
+    }
 
     public async Task<MessageResponseDto> SetDefaultDomainAsync(Guid domainId, CancellationToken cancellationToken)
     {
