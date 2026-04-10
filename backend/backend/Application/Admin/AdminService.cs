@@ -450,6 +450,7 @@ public sealed class AdminService
             .FirstOrDefaultAsync(cancellationToken);
             
         var defaultHost = defaultDomainHost ?? string.Empty;
+        var nullDomainLinksCount = await _dbContext.Links.LongCountAsync(x => x.DomainId == null && !x.IsDeleted, cancellationToken);
 
         return await _dbContext.Domains.AsNoTracking()
             .Include(x => x.User)
@@ -463,11 +464,12 @@ public sealed class AdminService
                 x.VerifiedAtUtc,
                 x.CreatedAtUtc,
                 x.User.Email!,
-                x.Links.LongCount(l => !l.IsDeleted),
+                (x.Host == defaultHost ? nullDomainLinksCount : 0) + x.Links.LongCount(l => !l.IsDeleted),
                 x.IsGlobal,
                 x.Host == defaultHost))
             .ToListAsync(cancellationToken);
     }
+
 
     public async Task<MessageResponseDto> SetDefaultDomainAsync(Guid domainId, CancellationToken cancellationToken)
     {
