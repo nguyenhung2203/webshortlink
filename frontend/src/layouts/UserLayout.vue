@@ -174,12 +174,12 @@ function executeCommand() {
         <RouterView />
       </main>
 
-      <nav class="z-10 flex h-14 shrink-0 border-t border-outline-variant bg-surface-container shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:hidden">
+      <nav class="z-10 flex h-14 shrink-0 border-t border-outline-variant bg-surface-container shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:hidden overflow-x-auto" style="scrollbar-width: none;">
         <RouterLink
           v-for="item in navItems"
           :key="item.to"
           :to="item.to"
-          class="flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors"
+          class="flex flex-col items-center justify-center gap-1 min-w-[72px] flex-shrink-0 text-[10px] font-medium transition-colors"
           :class="isNavActive(item.to) ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'"
         >
           <component :is="item.icon" :size="20" />

@@ -819,13 +819,21 @@ onMounted(load)
 
 @media (max-width: 600px) {
   .db-kpi-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
   .db-kpi-value {
     font-size: 1.4rem;
   }
   .db-top-link-url {
-    max-width: 100px;
+    max-width: 120px;
+  }
+  .db-panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .db-top-link-stats {
+    align-items: flex-start;
   }
 }
 </style>

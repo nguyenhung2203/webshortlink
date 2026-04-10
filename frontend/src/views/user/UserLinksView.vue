@@ -903,4 +903,47 @@ onMounted(load)
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* ═══ Responsive ═════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .lk-toolbar-top {
+    flex-wrap: wrap;
+  }
+  .lk-toolbar-search {
+    width: 100%;
+    min-width: 100%;
+    order: 1;
+  }
+  .lk-toolbar-divider { display: none; }
+  .lk-btn-ghost-sm { order: 2; margin-top: 0.25rem; }
+  .lk-btn-primary { order: 3; width: 100%; justify-content: center; margin-top: 0.25rem; }
+  
+  .lk-toolbar-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .lk-filter-group {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .lk-date-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .lk-date-input {
+    width: 40%;
+  }
+  .lk-meta {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e2e8f0;
+  }
+  .lk-pagination {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
 </style>
