@@ -142,12 +142,12 @@ function executeCommand() {
     </aside>
 
     <div class="flex min-w-0 flex-1 flex-col">
-      <header class="z-10 flex h-14 shrink-0 items-center justify-between border-b border-outline-variant bg-surface-container px-6 shadow-sm">
-        <div>
+      <header class="z-10 flex h-14 shrink-0 items-center justify-between border-b border-outline-variant bg-surface-container px-4 md:px-6 shadow-sm gap-2">
+        <div class="min-w-0 flex-1">
           <p class="hidden text-xs text-on-surface-variant md:block">Khu vực người dùng</p>
-          <h1 class="text-lg font-bold">{{ title }}</h1>
+          <h1 class="text-lg font-bold truncate">{{ title }}</h1>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 md:gap-3 shrink-0">
           <span 
             v-if="authStore.user?.currentPlanId === 2"
             class="rounded-full bg-primary/20 border border-primary/30 px-3 py-1 text-xs font-black text-primary uppercase drop-shadow-sm tracking-widest"
@@ -166,7 +166,10 @@ function executeCommand() {
           >
             FREE
           </span>
-          <span class="text-sm font-bold text-on-surface ml-1">{{ authStore.user?.fullName || authStore.user?.email }}</span>
+          <span class="text-sm font-bold text-on-surface hidden sm:inline ml-1 truncate max-w-[150px]">{{ authStore.user?.fullName || authStore.user?.email }}</span>
+          <button @click="logout" class="md:hidden flex items-center justify-center p-1.5 text-red-500 hover:bg-red-50 rounded" title="Đăng xuất">
+            <LogOut :size="20" />
+          </button>
         </div>
       </header>
 
@@ -185,13 +188,6 @@ function executeCommand() {
           <component :is="item.icon" :size="20" />
           {{ item.shortLabel }}
         </RouterLink>
-        <button
-          class="flex flex-col items-center justify-center gap-1 min-w-[72px] flex-shrink-0 text-[10px] font-medium transition-colors text-red-500 hover:bg-red-50"
-          @click="logout"
-        >
-          <LogOut :size="20" />
-          Đăng xuất
-        </button>
       </nav>
     </div>
 

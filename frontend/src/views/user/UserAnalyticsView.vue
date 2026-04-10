@@ -178,8 +178,8 @@ onMounted(bootstrap)
 <template>
   <div class="ui-root">
     <!-- Action Bar / Selector -->
-    <div class="ui-action-bar" style="justify-content: space-between; background: #fff; padding: 0.6rem 1rem; border: 1px solid #e2e8f0; border-radius: 10px;">
-      <div style="display: flex; align-items: center; gap: 0.75rem;">
+    <div class="ui-action-bar analytics-header-bar" style="background: #fff; padding: 0.6rem 1rem; border: 1px solid #e2e8f0; border-radius: 10px;">
+      <div class="analytics-selector-wrap" style="display: flex; align-items: center; gap: 0.75rem;">
         <span style="font-size: 0.9rem; font-weight: 600; color: #475569; white-space: nowrap;">
           <Filter :size="15" style="display:inline; vertical-align:text-bottom; margin-right: 2px" />
           Phân tích:
@@ -195,7 +195,7 @@ onMounted(bootstrap)
       </div>
       <button 
         v-if="selectedLinkId"
-        class="ui-btn ui-btn-outline" 
+        class="ui-btn ui-btn-outline analytics-detail-btn" 
         style="padding: 0.4rem 0.8rem; background: #f8fafc;"
         @click="router.push(`/app/links/${selectedLinkId}`)"
       >
@@ -441,6 +441,21 @@ onMounted(bootstrap)
   }
   .chart-grid {
     grid-template-columns: 1fr;
+  }
+  .analytics-header-bar {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 1rem;
+  }
+  .analytics-selector-wrap {
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .analytics-selector-wrap select {
+    width: 100%;
+  }
+  .analytics-detail-btn {
+    align-self: flex-start;
   }
 }
 </style>
