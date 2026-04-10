@@ -282,8 +282,8 @@ onMounted(load)
 .domain-info { display: flex; gap: 1rem; flex: 1; min-width: 250px; }
 .domain-icon-box { width: 44px; height: 44px; border-radius: 12px; background: #eff6ff; display: grid; place-items: center; flex-shrink: 0; }
 .domain-icon { color: #3b82f6; }
-.domain-host { margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a; }
-.domain-status { display: flex; align-items: center; gap: 0.5rem; }
+.domain-host { margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a; line-height: 1.2; }
+.domain-status { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; padding-right: 0.5rem; }
 .mt-1 { margin-top: 0.35rem; }
 .flex-center { display: inline-flex; align-items: center; gap: 0.2rem; }
 
