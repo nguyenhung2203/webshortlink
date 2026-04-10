@@ -130,10 +130,27 @@ const pageTitle = computed(() => {
 
     </div>
 
+    <!-- Mobile Bottom Navigation -->
+    <nav class="admin-mobile-nav">
+      <RouterLink 
+        v-for="item in navItems" 
+        :key="item.to" 
+        :to="item.to" 
+        class="admin-mobile-nav-item"
+        :class="{'active': route.path === item.to || (item.to !== '/admin' && route.path.startsWith(item.to)) || (item.to === '/admin' && route.path === '/admin')}"
+      >
+        <component :is="item.icon" :size="20" />
+        <span>{{ item.shortLabel }}</span>
+      </RouterLink>
+    </nav>
+
   </div>
 </template>
 
 <style scoped>
+  .admin-mobile-nav {
+    display: none;
+  }
   @media (max-width: 768px) {
     .admin-sidebar {
       display: none !important;
@@ -146,6 +163,43 @@ const pageTitle = computed(() => {
     }
     .admin-user-info {
       display: none !important;
+    }
+    .admin-wrapper {
+      padding-bottom: 60px; /* Space for the bottom nav */
+    }
+    .admin-mobile-nav {
+      display: flex !important;
+      overflow-x: auto;
+      scrollbar-width: none;
+      background: #ffffff;
+      border-top: 1px solid #e2e8f0;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .admin-mobile-nav::-webkit-scrollbar {
+      display: none;
+    }
+    .admin-mobile-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      min-width: 76px;
+      flex-shrink: 0;
+      color: #94a3b8;
+      font-size: 10px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .admin-mobile-nav-item.active {
+      color: #38bdf8;
     }
   }
 </style>

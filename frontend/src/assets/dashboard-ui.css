@@ -226,9 +226,19 @@
   gap: 1rem;
   grid-template-columns: 1fr;
 }
-@media (min-width: 768px) {
-  .ui-card-grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+@media (min-width: 640px) {
+  .ui-card-grid-2, .ui-card-grid-3, .ui-card-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
   .ui-card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .ui-card-grid-4 { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 1280px) {
   .ui-card-grid-4 { grid-template-columns: repeat(4, 1fr); }
 }
 
