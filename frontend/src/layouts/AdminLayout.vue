@@ -107,11 +107,11 @@ const pageTitle = computed(() => {
 
           <div style="display: flex; align-items: center; gap: 0.75rem; border-left: 1px solid #e2e8f0; padding-left: 1.5rem;" class="admin-account-block">
             <div style="text-align: right;" class="admin-user-info">
-              <div style="font-size: 0.85rem; font-weight: 700; color: #0f172a;">{{ authStore.user?.role }} Account</div>
-              <div style="font-size: 0.75rem; color: #64748b;">{{ authStore.user?.email }}</div>
+              <div style="font-size: 0.85rem; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px;">{{ authStore.user?.fullName || 'Hệ thống Admin' }}</div>
+              <div class="admin-hide-mobile" style="font-size: 0.75rem; color: #64748b;">{{ authStore.user?.email }}</div>
             </div>
-            <div class="admin-avatar" style="width: 36px; height: 36px; border-radius: 8px; background: #38bdf8; color: white; display: grid; place-items: center; font-weight: 800; font-size: 1rem; flex-shrink: 0;">
-              {{ (authStore.user?.email || 'A').charAt(0).toUpperCase() }}
+            <div class="admin-avatar admin-hide-mobile" style="width: 36px; height: 36px; border-radius: 8px; background: #38bdf8; color: white; display: grid; place-items: center; font-weight: 800; font-size: 1rem; flex-shrink: 0;">
+              {{ (authStore.user?.fullName || authStore.user?.email || 'A').charAt(0).toUpperCase() }}
             </div>
             <button @click="logout" class="admin-mobile-logout" style="background: none; border: none; color: #ef4444; padding: 0.25rem 0 0.25rem 0.5rem; cursor: pointer; display: none;" title="Đăng xuất">
               <LogOut :size="20" />
@@ -160,9 +160,6 @@ const pageTitle = computed(() => {
     }
     .admin-main-area {
       padding: 1.25rem 1rem 1rem !important;
-    }
-    .admin-user-info {
-      display: none !important;
     }
     .admin-hide-mobile {
       display: none !important;
