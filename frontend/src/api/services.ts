@@ -240,8 +240,12 @@ export const AdminService = {
     apiRequest<any>('/api/admin/domains', { method: 'POST', body: { userId: userId || null, host, isGlobal }, token }),
   checkDomainDns: (token: string, domainId: string) =>
     apiRequest<any>('/api/admin/domains/' + domainId + '/check-dns', { token }),
-  verifyDomain: (token: string, domainId: string) =>
-    apiRequest<ApiMessageResponse>('/api/admin/domains/' + domainId + '/verify', { method: 'PATCH', token }),
+  verifyDomain: (token: string, domainId: string, adminFeedback?: string | null) =>
+    apiRequest<ApiMessageResponse>('/api/admin/domains/' + domainId + '/verify', { 
+      method: 'PATCH', 
+      body: { adminFeedback },
+      token 
+    }),
   setDefaultDomain: (token: string, domainId: string) =>
     apiRequest<ApiMessageResponse>('/api/admin/domains/' + domainId + '/set-default', { method: 'PATCH', token }),
   deleteDomain: (token: string, domainId: string) =>

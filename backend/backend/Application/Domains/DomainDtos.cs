@@ -13,7 +13,7 @@ public sealed record DomainListItemDto(
     Guid Id,
     string Host,
     bool IsVerified,
-    string VerificationToken,
+    string? AdminFeedback,
     DateTime? VerifiedAtUtc,
     DateTime CreatedAtUtc,
     bool IsDefault = false);

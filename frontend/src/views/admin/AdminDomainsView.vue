@@ -69,14 +69,23 @@ const checkDns = async (domainId: string) => {
   }
 }
 
-const verifyDomain = async (domainId: string) => {
-  if (!authStore.accessToken) return
-  if (!confirm('LƯU Ý: Chuyển domain này thành trạng thái đã xác minh (Verified) mà bỏ qua DNS check thật sự?')) return
+const verifyDomainId = ref<string | null>(null)
+const adminFeedback = ref('')
+
+const openVerifyModal = (domainId: string) => {
+  verifyDomainId.value = domainId
+  adminFeedback.value = 'Tên miền đã được cấu hình DNS và SSL thành công. Bạn có thể sử dụng ngay.'
+}
+
+const verifyDomain = async () => {
+  if (!authStore.accessToken || !verifyDomainId.value) return
   
+  const domainId = verifyDomainId.value
   actionLoading.value[domainId + '-verify'] = true
   try {
-    const res = await AdminService.verifyDomain(authStore.accessToken, domainId)
-    alert(res.message || 'Đã force-verify domain')
+    const res = await AdminService.verifyDomain(authStore.accessToken, domainId, adminFeedback.value)
+    alert(res.message || 'Đã xác minh domain và gửi phản hồi cho người dùng')
+    verifyDomainId.value = null
     await loadData()
   } catch (err) {
     alert(err instanceof Error ? err.message : 'Lỗi xác minh domain')
@@ -207,6 +216,33 @@ const formatDate = (dateValue: string | null) => {
       </div>
     </div>
 
+    <!-- Modal Phê duyệt Domain & Phản hồi -->
+    <div v-if="verifyDomainId" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100;">
+      <div class="ui-panel" style="width: 100%; max-width: 450px; padding: 2rem;">
+        <h2 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: 1rem;">Phê duyệt Tên miền</h2>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.25rem;">Xác minh và gửi hướng dẫn/thông báo cho khách hàng.</p>
+        
+        <div style="margin-bottom: 1.5rem;">
+          <label class="ui-label">Phản hồi của Admin (Hiện cho User)</label>
+          <textarea 
+            v-model="adminFeedback" 
+            class="ui-input" 
+            rows="4" 
+            style="width: 100%; height: auto; padding: 0.75rem; line-height: 1.5; border-radius: 8px;"
+            placeholder="Nhập ghi chú hoặc thông báo cho khách..."
+          ></textarea>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+          <button @click="verifyDomainId = null" class="ui-btn ui-btn-ghost">Hủy</button>
+          <button @click="verifyDomain" :disabled="actionLoading[verifyDomainId + '-verify']" class="ui-btn ui-btn-primary">
+            <RefreshCw v-if="actionLoading[verifyDomainId + '-verify']" :size="14" class="animate-spin" />
+            <span v-else>Xác nhận & Duyệt</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Main Content -->
     <div v-if="error" class="ui-alert ui-alert-error">
       <AlertCircle :size="16" /> {{ error }}
@@ -228,7 +264,7 @@ const formatDate = (dateValue: string | null) => {
             <tr>
               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Domain & Chủ sở hữu</th>
               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Sử dụng</th>
-              <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Timeline & Token</th>
+              <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Phản hồi / Token</th>
               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Trạng thái</th>
               <th style="padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; text-align: right;">Hành động Admin</th>
             </tr>
@@ -255,11 +291,11 @@ const formatDate = (dateValue: string | null) => {
 
               <td style="padding: 1rem 1.5rem;">
                 <div style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.75rem;">
-                  <div style="display: flex; align-items: center; gap: 0.4rem; color: #64748b;">
-                    <Clock :size="12" /> Tạo: {{ formatDate(domain.createdAtUtc) }}
+                  <div v-if="domain.adminFeedback" style="color: #059669; font-weight: 600; font-style: italic; max-width: 250px;" class="truncate" :title="domain.adminFeedback">
+                    "{{ domain.adminFeedback }}"
                   </div>
-                  <div style="color: #94a3b8; font-family: monospace;" title="TXT Record / Token">
-                    Token: {{ domain.verificationToken.substring(0,8) }}...
+                  <div style="display: flex; align-items: center; gap: 0.4rem; color: #64748b;">
+                    <Clock :size="12" /> {{ formatDate(domain.createdAtUtc) }}
                   </div>
                 </div>
               </td>
@@ -297,10 +333,10 @@ const formatDate = (dateValue: string | null) => {
                   </button>
                   <button
                     v-if="!domain.isVerified"
-                    @click="verifyDomain(domain.id)"
+                    @click="openVerifyModal(domain.id)"
                     :disabled="actionLoading[domain.id + '-verify']"
                     class="ui-btn ui-btn-outline"
-                    title="Ép xác minh (Force Verify)"
+                    title="Duyệt Domain (Approve)"
                     style="font-size: 0.8rem; padding: 0.4rem 0.6rem; color: #10b981; border-color: #10b981;"
                   >
                     <RefreshCw v-if="actionLoading[domain.id + '-verify']" :size="14" class="animate-spin" />

@@ -460,7 +460,7 @@ public sealed class AdminService
                 x.Id,
                 x.Host,
                 x.IsVerified,
-                x.VerificationToken,
+                x.AdminFeedback,
                 x.VerifiedAtUtc,
                 x.CreatedAtUtc,
                 x.User.Email!,
@@ -468,8 +468,6 @@ public sealed class AdminService
                 x.IsGlobal,
                 x.Host == defaultHost))
             .ToListAsync(cancellationToken);
-
-        return domains;
     }
 
     public async Task<MessageResponseDto> SetDefaultDomainAsync(Guid domainId, CancellationToken cancellationToken)
@@ -510,21 +508,22 @@ public sealed class AdminService
         return new MessageResponseDto("Đã đặt tên miền này thành mặc định (System Default Domain).");
     }
 
-    public async Task<MessageResponseDto> VerifyDomainAsync(Guid domainId, CancellationToken cancellationToken)
+    public async Task<MessageResponseDto> VerifyDomainAsync(Guid domainId, AdminVerifyDomainRequestDto request, CancellationToken cancellationToken)
     {
         var current = _currentUserService.GetRequired();
         var domain = await _dbContext.Domains.FirstOrDefaultAsync(x => x.Id == domainId && !x.IsDeleted, cancellationToken)
             ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy domain", StatusCodes.Status404NotFound);
 
         domain.IsVerified = true;
+        domain.AdminFeedback = request.AdminFeedback;
         domain.VerifiedAtUtc = DateTime.UtcNow;
         domain.UpdatedAtUtc = DateTime.UtcNow;
         domain.UpdatedByUserId = current.UserId.ToString();
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-DOMAIN-VERIFY", "Domain", domain.Id.ToString(), current.UserId, current.IpAddress, new { domain.Host }, cancellationToken);
+        await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-DOMAIN-VERIFY", "Domain", domain.Id.ToString(), current.UserId, current.IpAddress, new { domain.Host, request.AdminFeedback }, cancellationToken);
 
-        return new MessageResponseDto("Đã chuyển trạng thái domain thành Verified.");
+        return new MessageResponseDto("Đã chuyển trạng thái domain thành Verified và lưu phản hồi.");
     }
 
     public async Task<MessageResponseDto> DeleteDomainAsync(Guid domainId, CancellationToken cancellationToken)
@@ -618,7 +617,7 @@ public sealed class AdminService
 
         await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-DOMAIN-CREATE", "Domain", domain.Id.ToString(), current.UserId, current.IpAddress, new { domain.Host, targetUserId, request.IsGlobal }, cancellationToken);
 
-        return new AdminDomainListItemDto(domain.Id, domain.Host, domain.IsVerified, domain.VerificationToken, domain.VerifiedAtUtc, domain.CreatedAtUtc, user.Email!, 0, domain.IsGlobal);
+        return new AdminDomainListItemDto(domain.Id, domain.Host, domain.IsVerified, domain.AdminFeedback, domain.VerifiedAtUtc, domain.CreatedAtUtc, user.Email!, 0, domain.IsGlobal, false);
     }
 
     private string BuildShortUrl(string host, string slug)

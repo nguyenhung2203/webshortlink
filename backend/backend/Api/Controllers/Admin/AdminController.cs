@@ -97,8 +97,8 @@ public sealed class AdminController : ControllerBase
         => Ok(await _adminService.CheckDomainDnsAsync(domainId, cancellationToken));
 
     [HttpPatch("domains/{domainId:guid}/verify")]
-    public async Task<IActionResult> VerifyDomain(Guid domainId, CancellationToken cancellationToken)
-        => Ok(await _adminService.VerifyDomainAsync(domainId, cancellationToken));
+    public async Task<IActionResult> VerifyDomain(Guid domainId, [FromBody] AdminVerifyDomainRequestDto request, CancellationToken cancellationToken)
+        => Ok(await _adminService.VerifyDomainAsync(domainId, request, cancellationToken));
 
     [HttpPatch("domains/{domainId:guid}/set-default")]
     public async Task<IActionResult> SetDefaultDomain(Guid domainId, CancellationToken cancellationToken)

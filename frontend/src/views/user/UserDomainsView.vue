@@ -15,7 +15,6 @@ const successMessage = ref('')
 const showAdd = ref(false)
 const newHost = ref('')
 const addLoading = ref(false)
-const verifyLoadingId = ref<string | null>(null)
 const confirmDeleteId = ref<string | null>(null)
 
 const currentPlanId = ref(1)
@@ -54,31 +53,6 @@ async function addDomain() {
   }
 }
 
-async function verifyDomain(domainId: string) {
-  if (!authStore.accessToken) return
-  verifyLoadingId.value = domainId
-  try {
-    const domain = domains.value.find((item) => item.id === domainId)
-    if (!domain?.verificationToken) {
-      throw new Error('Thiếu mã xác minh.')
-    }
-
-    const result = await DomainService.verify(authStore.accessToken, domainId, domain.verificationToken)
-    if (result?.verified) {
-      successMessage.value = 'Tên miền đã được xác minh thành công!'
-      setTimeout(() => successMessage.value = '', 5000)
-    } else {
-      error.value = 'Xác minh chưa thành công. Hãy đảm bảo bạn đã tạo file đúng cấu trúc và đường dẫn.'
-      setTimeout(() => error.value = '', 7000)
-    }
-    await load()
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Lỗi khi xác minh tên miền.'
-  } finally {
-    verifyLoadingId.value = null
-  }
-}
-
 async function deleteDomain(domainId: string) {
   if (!authStore.accessToken) return
   try {
@@ -89,17 +63,6 @@ async function deleteDomain(domainId: string) {
     await load()
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể xóa tên miền.'
-  }
-}
-
-async function copyToken(token: string) {
-  try {
-    await navigator.clipboard.writeText(token)
-    successMessage.value = 'Đã copy mã xác thực!'
-    setTimeout(() => successMessage.value = '', 3000)
-  } catch (err) {
-    error.value = 'Không thể copy mã, vui lòng copy thủ công.'
-    setTimeout(() => error.value = '', 3000)
   }
 }
 
@@ -145,14 +108,12 @@ onMounted(load)
           <div class="ui-panel-body flex-gap">
             <Shield :size="24" class="icon-shield" />
             <div>
-              <h3 class="instruction-title">Hướng dẫn cấu hình và xác minh</h3>
+              <h3 class="instruction-title">Quy trình sử dụng Tên miền riêng</h3>
               <p class="instruction-desc">
-                Để tên miền hoạt động, bạn cần cấu hình DNS trỏ <strong class="code-badge">CNAME</strong> hoặc <strong class="code-badge">A Record</strong> về máy chủ của chúng tôi. <br>
-                Sau đó chứng minh sở hữu bằng cách tạo file tại máy chủ hiện tại của bạn: <br>
-                <strong class="code-path">http://{domain-cua-ban}/.well-known/webshortlink-verification.txt</strong> <br>
-                Nội dung file chỉ chứa duy nhất mã xác nhận (Token) được cấp bên dưới.
-                <br><br>
-                <em class="note-text">* Phân hệ xác minh liên thông DNS TXT đang được phát triển, hiện tại vui lòng dùng phương pháp xác minh file HTTP.</em>
+                1. Khai báo tên miền bạn sở hữu (ví dụ: link.brand.com). <br>
+                2. Cấu hình DNS tại nhà cung cấp tên miền của bạn (trỏ CNAME về <strong>wesortlink.io.vn</strong>). <br>
+                3. Đội ngũ kỹ thuật của chúng tôi sẽ thiết lập máy chủ và cấp chứng chỉ SSL cho bạn. <br>
+                4. Sau khi Admin phê duyệt, bạn có thể bắt đầu rút gọn link với thương hiệu riêng.
               </p>
             </div>
           </div>
@@ -207,10 +168,21 @@ onMounted(load)
                 </div>
               </div>
 
-              <!-- Message if pending -->
-              <div v-if="!domain.isVerified" class="ui-alert ui-alert-warning" style="margin: 1rem 0 0; padding: 0.75rem; font-size: 0.8rem;">
-                Tên miền đã được ghi nhận. Vui lòng đợi Quản trị viên (Admin) cấu hình chứng chỉ bảo mật và hệ thống DNS để phê duyệt cho bạn sử dụng.
-              </div>
+               <!-- Message if pending -->
+               <div v-if="!domain.isVerified" class="ui-alert ui-alert-warning" style="margin: 1rem 0 0; padding: 1rem; font-size: 0.85rem; line-height: 1.5; border-radius: 10px;">
+                 <div style="font-weight: 700; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                   <Clock :size="16" /> Đang chờ Admin thiết lập
+                 </div>
+                 Hệ thống đã ghi nhận yêu cầu của bạn. Quản trị viên đang cấu hình máy chủ và chứng chỉ bảo mật (SSL) cho tên miền này. Kết quả sẽ được hiển thị tại đây sớm nhất.
+               </div>
+ 
+               <!-- Admin Feedback if verified -->
+               <div v-if="domain.isVerified && domain.adminFeedback" class="ui-alert ui-alert-success" style="margin: 1rem 0 0; padding: 1rem; font-size: 0.85rem; line-height: 1.5; border-radius: 10px;">
+                 <div style="font-weight: 700; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                   <CheckCircle :size="16" /> Thông báo từ Admin
+                 </div>
+                 "{{ domain.adminFeedback }}"
+               </div>
 
               <!-- Actions -->
               <div class="actions-group" style="padding-top: 1rem;">

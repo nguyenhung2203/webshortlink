@@ -144,11 +144,13 @@ public sealed record AdminPaymentListItemDto(
     DateTime CreatedAtUtc,
     DateTime? PaidAtUtc);
 
+public sealed record AdminVerifyDomainRequestDto(string? AdminFeedback);
+
 public sealed record AdminDomainListItemDto(
     Guid Id,
     string Host,
     bool IsVerified,
-    string VerificationToken,
+    string? AdminFeedback,
     DateTime? VerifiedAtUtc,
     DateTime CreatedAtUtc,
     string UserEmail,
