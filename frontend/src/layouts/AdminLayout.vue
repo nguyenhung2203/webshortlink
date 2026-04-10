@@ -89,31 +89,31 @@ const pageTitle = computed(() => {
     <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
       
       <!-- Topbar -->
-      <header style="height: 64px; background: #ffffff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; flex-shrink: 0; z-index: 10;">
+      <header class="admin-header" style="height: 64px; background: #ffffff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; flex-shrink: 0; z-index: 10;">
         
         <!-- Breadcrumb / Title -->
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <h1 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">{{ pageTitle }}</h1>
-          <span style="color: #cbd5e1;">/</span>
-          <span style="font-size: 0.85rem; font-weight: 600; color: #64748b;">Hệ thống lõi</span>
+        <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 0; flex: 1;">
+          <h1 class="admin-page-title" style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ pageTitle }}</h1>
+          <span class="admin-hide-mobile" style="color: #cbd5e1;">/</span>
+          <span class="admin-hide-mobile" style="font-size: 0.85rem; font-weight: 600; color: #64748b; white-space: nowrap;">Hệ thống lõi</span>
         </div>
 
         <!-- System Status & Account -->
-        <div style="display: flex; align-items: center; gap: 1.5rem;">
-          <div style="display: flex; align-items: center; gap: 0.5rem; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 0.35rem 0.75rem; border-radius: 999px;">
+        <div style="display: flex; align-items: center; gap: 1.5rem;" class="admin-topbar-right">
+          <div class="admin-hide-mobile" style="display: flex; align-items: center; gap: 0.5rem; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 0.35rem 0.75rem; border-radius: 999px;">
             <div style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; animation: pulse 2s infinite;"></div>
             <span style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase;">System Ops Nominal</span>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 0.75rem; border-left: 1px solid #e2e8f0; padding-left: 1.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.75rem; border-left: 1px solid #e2e8f0; padding-left: 1.5rem;" class="admin-account-block">
             <div style="text-align: right;" class="admin-user-info">
               <div style="font-size: 0.85rem; font-weight: 700; color: #0f172a;">{{ authStore.user?.role }} Account</div>
               <div style="font-size: 0.75rem; color: #64748b;">{{ authStore.user?.email }}</div>
             </div>
-            <div style="width: 36px; height: 36px; border-radius: 8px; background: #38bdf8; color: white; display: grid; place-items: center; font-weight: 800; font-size: 1rem;">
+            <div class="admin-avatar" style="width: 36px; height: 36px; border-radius: 8px; background: #38bdf8; color: white; display: grid; place-items: center; font-weight: 800; font-size: 1rem; flex-shrink: 0;">
               {{ (authStore.user?.email || 'A').charAt(0).toUpperCase() }}
             </div>
-            <button @click="logout" class="admin-mobile-logout" style="background: none; border: none; color: #ef4444; padding: 0.5rem; cursor: pointer; display: none;" title="Đăng xuất">
+            <button @click="logout" class="admin-mobile-logout" style="background: none; border: none; color: #ef4444; padding: 0.25rem 0 0.25rem 0.5rem; cursor: pointer; display: none;" title="Đăng xuất">
               <LogOut :size="20" />
             </button>
           </div>
@@ -159,10 +159,20 @@ const pageTitle = computed(() => {
       display: block !important;
     }
     .admin-main-area {
-      padding: 1rem !important;
+      padding: 1.25rem 1rem 1rem !important;
     }
     .admin-user-info {
       display: none !important;
+    }
+    .admin-hide-mobile {
+      display: none !important;
+    }
+    .admin-header {
+      padding: 0 1rem !important;
+    }
+    .admin-account-block {
+      border-left: none !important;
+      padding-left: 0 !important;
     }
     .admin-wrapper {
       padding-bottom: 60px; /* Space for the bottom nav */
