@@ -1,6 +1,6 @@
 namespace WebShortlink.Backend.Application.Domains;
 
-public sealed record CreateDomainRequestDto(string Host);
+public sealed record CreateDomainRequestDto(string Host, DateTime? ExpiredAtUtc, string? UserNotes);
 
 public sealed record VerifyDomainRequestDto(string VerificationToken);
 
@@ -16,4 +16,6 @@ public sealed record DomainListItemDto(
     string? AdminFeedback,
     DateTime? VerifiedAtUtc,
     DateTime CreatedAtUtc,
+    DateTime? ExpiredAtUtc,
+    string? UserNotes,
     bool IsDefault = false);

@@ -466,6 +466,8 @@ public sealed class AdminService
                 x.User.Email!,
                 (x.Host == defaultHost ? nullDomainLinksCount : 0) + x.Links.LongCount(l => !l.IsDeleted),
                 x.IsGlobal,
+                x.ExpiredAtUtc,
+                x.UserNotes,
                 x.Host == defaultHost))
             .ToListAsync(cancellationToken);
     }
@@ -608,6 +610,8 @@ public sealed class AdminService
             VerificationToken = Convert.ToHexString(Guid.NewGuid().ToByteArray()).ToLowerInvariant(),
             IsVerified = false,
             IsGlobal = request.IsGlobal,
+            ExpiredAtUtc = request.ExpiredAtUtc,
+            UserNotes = request.UserNotes,
             CreatedAtUtc = DateTime.UtcNow,
             CreatedByUserId = current.UserId.ToString()
         };
@@ -617,7 +621,7 @@ public sealed class AdminService
 
         await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-DOMAIN-CREATE", "Domain", domain.Id.ToString(), current.UserId, current.IpAddress, new { domain.Host, targetUserId, request.IsGlobal }, cancellationToken);
 
-        return new AdminDomainListItemDto(domain.Id, domain.Host, domain.IsVerified, domain.AdminFeedback, domain.VerifiedAtUtc, domain.CreatedAtUtc, user.Email!, 0, domain.IsGlobal, false);
+        return new AdminDomainListItemDto(domain.Id, domain.Host, domain.IsVerified, domain.AdminFeedback, domain.VerifiedAtUtc, domain.CreatedAtUtc, user.Email!, 0, domain.IsGlobal, domain.ExpiredAtUtc, domain.UserNotes, false);
     }
 
     private string BuildShortUrl(string host, string slug)

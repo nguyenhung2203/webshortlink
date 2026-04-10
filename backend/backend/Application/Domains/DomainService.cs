@@ -43,7 +43,7 @@ public sealed class DomainService
         return await _dbContext.Domains.AsNoTracking()
             .Where(x => x.UserId == current.UserId && !x.IsDeleted)
             .OrderByDescending(x => x.CreatedAtUtc)
-            .Select(x => new DomainListItemDto(x.Id, x.Host, x.IsVerified, x.AdminFeedback, x.VerifiedAtUtc, x.CreatedAtUtc, x.Host == defaultHost))
+            .Select(x => new DomainListItemDto(x.Id, x.Host, x.IsVerified, x.AdminFeedback, x.VerifiedAtUtc, x.CreatedAtUtc, x.ExpiredAtUtc, x.UserNotes, x.Host == defaultHost))
             .ToListAsync(cancellationToken);
     }
 
@@ -60,7 +60,7 @@ public sealed class DomainService
             .Where(x => (x.UserId == current.UserId || x.IsGlobal) && !x.IsDeleted && x.IsVerified)
             .OrderByDescending(x => x.IsGlobal) // Đưa Global lên đầu
             .ThenByDescending(x => x.CreatedAtUtc)
-            .Select(x => new DomainListItemDto(x.Id, x.Host, x.IsVerified, x.AdminFeedback, x.VerifiedAtUtc, x.CreatedAtUtc, x.Host == defaultHost))
+            .Select(x => new DomainListItemDto(x.Id, x.Host, x.IsVerified, x.AdminFeedback, x.VerifiedAtUtc, x.CreatedAtUtc, x.ExpiredAtUtc, x.UserNotes, x.Host == defaultHost))
             .ToListAsync(cancellationToken);
     }
 
@@ -89,6 +89,8 @@ public sealed class DomainService
             Host = normalizedHost,
             VerificationToken = Convert.ToHexString(Guid.NewGuid().ToByteArray()).ToLowerInvariant(),
             IsVerified = false,
+            ExpiredAtUtc = request.ExpiredAtUtc,
+            UserNotes = request.UserNotes,
             CreatedAtUtc = DateTime.UtcNow,
             CreatedByUserId = current.UserId.ToString()
         };
@@ -96,7 +98,7 @@ public sealed class DomainService
         _dbContext.Domains.Add(domain);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return new DomainListItemDto(domain.Id, domain.Host, domain.IsVerified, domain.AdminFeedback, domain.VerifiedAtUtc, domain.CreatedAtUtc,
+        return new DomainListItemDto(domain.Id, domain.Host, domain.IsVerified, domain.AdminFeedback, domain.VerifiedAtUtc, domain.CreatedAtUtc, domain.ExpiredAtUtc, domain.UserNotes,
             domain.Host == (await _dbContext.SystemSettings.Where(x => x.SettingKey == "DefaultDomain").Select(x => x.SettingValue).FirstOrDefaultAsync(cancellationToken)));
     }
 

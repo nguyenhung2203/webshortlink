@@ -12,6 +12,8 @@ public class CustomDomain : SoftDeleteEntity
     public string? AdminFeedback { get; set; }
     public DateTime? VerifiedAtUtc { get; set; }
     public bool IsGlobal { get; set; }
+    public DateTime? ExpiredAtUtc { get; set; }
+    public string? UserNotes { get; set; }
 
     public AppUser User { get; set; } = null!;
     public ICollection<Link> Links { get; set; } = new List<Link>();

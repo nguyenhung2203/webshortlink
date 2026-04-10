@@ -13,7 +13,7 @@ const error = ref('')
 const actionLoading = ref<Record<string, boolean>>({})
 
 const isModalOpen = ref(false)
-const newDomainForm = ref({ userId: '', host: '', isGlobal: false })
+const newDomainForm = ref({ userId: '', host: '', isGlobal: false, expiredAt: '', notes: '' })
 const modalError = ref('')
 
 const loadData = async () => {
@@ -43,10 +43,17 @@ const createDomainForUser = async () => {
   actionLoading.value['create'] = true
   modalError.value = ''
   try {
-    await AdminService.createDomain(authStore.accessToken!, newDomainForm.value.userId || '', newDomainForm.value.host, newDomainForm.value.isGlobal)
+    await AdminService.createDomain(
+      authStore.accessToken!, 
+      newDomainForm.value.userId || '', 
+      newDomainForm.value.host, 
+      newDomainForm.value.isGlobal,
+      newDomainForm.value.expiredAt || undefined,
+      newDomainForm.value.notes || undefined
+    )
     alert('Thêm domain thành công!')
     isModalOpen.value = false
-    newDomainForm.value = { userId: '', host: '', isGlobal: false }
+    newDomainForm.value = { userId: '', host: '', isGlobal: false, expiredAt: '', notes: '' }
     await loadData()
   } catch (err) {
     modalError.value = err instanceof Error ? err.message : 'Lỗi thêm domain'
@@ -203,6 +210,17 @@ const formatDate = (dateValue: string | null) => {
             />
           </div>
 
+          <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 1rem;">
+            <div>
+              <label class="ui-label">Hạn sử dụng</label>
+              <input v-model="newDomainForm.expiredAt" type="date" class="ui-input" style="width: 100%;" />
+            </div>
+            <div>
+              <label class="ui-label">Ghi chú (Note)</label>
+              <input v-model="newDomainForm.notes" type="text" class="ui-input" placeholder="Thông tin thêm..." style="width: 100%;" />
+            </div>
+          </div>
+
           <button 
             @click="createDomainForUser" 
             :disabled="actionLoading['create']"
@@ -278,8 +296,12 @@ const formatDate = (dateValue: string | null) => {
                     {{ domain.host }}
                     <span v-if="domain.isGlobal" class="ui-badge ui-badge-success" style="font-size: 0.6rem; padding: 0.1rem 0.3rem; margin-left: 0.5rem; vertical-align: top;">GLOBAL</span>
                   </span>
-                  <span v-if="!domain.isGlobal" style="font-size: 0.8rem; color: #3b82f6; font-weight: 500;">User: {{ domain.userEmail }}</span>
-                  <span v-else style="font-size: 0.8rem; color: #059669; font-weight: 500;">By Admin</span>
+                  <div style="display: flex; flex-direction: column; gap: 0.1rem; font-size: 0.8rem;">
+                    <span v-if="!domain.isGlobal" style="color: #3b82f6; font-weight: 500;">User: {{ domain.userEmail }}</span>
+                    <span v-else style="color: #059669; font-weight: 500;">By Admin</span>
+                    <span v-if="domain.expiredAtUtc" style="color: #64748b;"><Clock :size="10" /> Hạn: {{ formatDate(domain.expiredAtUtc) }}</span>
+                    <span v-if="domain.userNotes" style="color: #94a3b8; font-style: italic;" :title="domain.userNotes">Note: {{ domain.userNotes }}</span>
+                  </div>
                 </div>
               </td>
               
@@ -301,12 +323,12 @@ const formatDate = (dateValue: string | null) => {
               </td>
               
               <td style="padding: 1rem 1.5rem;">
-                <div style="display: flex; align-items: center; flex-direction: column; gap: 0.3rem;">
-                  <span v-if="!domain.isVerified" class="ui-badge ui-badge-warning" style="font-weight: 800;"><Clock :size="12" style="margin-right: 0.2rem;" /> UNVERIFIED</span>
-                  <span v-else class="ui-badge ui-badge-success" style="font-weight: 800;"><ShieldCheck :size="12" style="margin-right: 0.2rem;" /> SECURE / VERIFIED</span>
-                  <span v-if="domain.isDefault" class="ui-badge" style="background: #a855f7; color: white; font-weight: 700; width: fit-content; font-size: 0.6rem;">DEFAULT DOMAIN</span>
-                </div>
-              </td>
+                 <div style="display: flex; align-items: flex-start; flex-direction: column; gap: 0.4rem;">
+                   <span v-if="!domain.isVerified" class="ui-badge ui-badge-warning" style="font-weight: 800; font-size: 0.7rem;"><Clock :size="12" style="margin-right: 0.2rem;" /> UNVERIFIED</span>
+                   <span v-else class="ui-badge ui-badge-success" style="font-weight: 800; font-size: 0.7rem;"><ShieldCheck :size="12" style="margin-right: 0.2rem;" /> SECURE / VERIFIED</span>
+                   <span v-if="domain.isDefault" class="ui-badge" style="background: #a855f7; color: white; font-weight: 700; font-size: 0.6rem; padding: 0.2rem 0.5rem; border-radius: 4px;">SYSTEM DEFAULT</span>
+                 </div>
+               </td>
 
               <td style="padding: 1rem 1.5rem; text-align: right;">
                 <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem;">
@@ -321,16 +343,17 @@ const formatDate = (dateValue: string | null) => {
                     <RefreshCw v-if="actionLoading[domain.id + '-default']" :size="14" class="animate-spin" />
                     <span v-else style="font-weight: bold;">Set Default</span>
                   </button>
-                  <button
-                    @click="checkDns(domain.id)"
-                    :disabled="actionLoading[domain.id + '-check']"
-                    class="ui-btn"
-                    title="Ping Check DNS"
-                    style="background: #3b82f6; color: white; border: none; font-size: 0.8rem; padding: 0.4rem 0.6rem;"
-                  >
-                    <RefreshCw v-if="actionLoading[domain.id + '-check']" :size="14" class="animate-spin" />
-                    <Search v-else :size="14" /> Check
-                  </button>
+                   <button
+                     v-if="!domain.isVerified"
+                     @click="checkDns(domain.id)"
+                     :disabled="actionLoading[domain.id + '-check']"
+                     class="ui-btn"
+                     title="Ping Check DNS"
+                     style="background: #3b82f6; color: white; border: none; font-size: 0.8rem; padding: 0.4rem 0.6rem;"
+                   >
+                     <RefreshCw v-if="actionLoading[domain.id + '-check']" :size="14" class="animate-spin" />
+                     <Search v-else :size="14" /> Check
+                   </button>
                   <button
                     v-if="!domain.isVerified"
                     @click="openVerifyModal(domain.id)"

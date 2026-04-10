@@ -187,8 +187,8 @@ export const UserService = {
 export const DomainService = {
   list: (token: string) =>
     apiRequest<any[]>('/api/user/domains', { token }),
-  create: (token: string, host: string) =>
-    apiRequest<any>('/api/user/domains', { method: 'POST', body: { host }, token }),
+  create: (token: string, host: string, expiredAtUtc?: string, userNotes?: string) =>
+    apiRequest<any>('/api/user/domains', { method: 'POST', body: { host, expiredAtUtc, userNotes }, token }),
   verify: (token: string, domainId: string, verificationToken: string) =>
     apiRequest<any>(`/api/user/domains/${domainId}/verify`, { method: 'POST', body: { verificationToken }, token }),
   delete: (token: string, domainId: string) =>
@@ -236,8 +236,8 @@ export const AdminService = {
     apiRequest<ApiMessageResponse>('/api/admin/payments/' + paymentId + '/approve', { method: 'PATCH', token }),
   getDomains: (token: string) =>
     apiRequest<any[]>('/api/admin/domains', { token }),
-  createDomain: (token: string, userId: string | null, host: string, isGlobal: boolean = false) =>
-    apiRequest<any>('/api/admin/domains', { method: 'POST', body: { userId: userId || null, host, isGlobal }, token }),
+  createDomain: (token: string, userId: string | null, host: string, isGlobal: boolean = false, expiredAtUtc?: string, userNotes?: string) =>
+    apiRequest<any>('/api/admin/domains', { method: 'POST', body: { userId: userId || null, host, isGlobal, expiredAtUtc, userNotes }, token }),
   checkDomainDns: (token: string, domainId: string) =>
     apiRequest<any>('/api/admin/domains/' + domainId + '/check-dns', { token }),
   verifyDomain: (token: string, domainId: string, adminFeedback?: string | null) =>

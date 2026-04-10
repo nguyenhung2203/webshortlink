@@ -156,6 +156,8 @@ public sealed record AdminDomainListItemDto(
     string UserEmail,
     long LinksCount,
     bool IsGlobal,
+    DateTime? ExpiredAtUtc,
+    string? UserNotes,
     bool IsDefault = false);
 
 public sealed record AdminDomainDnsCheckResultDto(
@@ -163,5 +165,5 @@ public sealed record AdminDomainDnsCheckResultDto(
     string Host,
     string Message);
 
-public sealed record AdminCreateDomainForUserRequestDto(Guid? UserId, string Host, bool IsGlobal);
+public sealed record AdminCreateDomainForUserRequestDto(Guid? UserId, string Host, bool IsGlobal, DateTime? ExpiredAtUtc = null, string? UserNotes = null);
 

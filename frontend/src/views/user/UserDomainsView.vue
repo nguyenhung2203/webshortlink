@@ -13,7 +13,7 @@ const loading = ref(true)
 const error = ref('')
 const successMessage = ref('')
 const showAdd = ref(false)
-const newHost = ref('')
+const newDomainForm = ref({ host: '', expiredAt: '', notes: '' })
 const addLoading = ref(false)
 const confirmDeleteId = ref<string | null>(null)
 
@@ -38,12 +38,16 @@ async function load() {
 }
 
 async function addDomain() {
-  if (!authStore.accessToken || !newHost.value.trim()) return
+  if (!authStore.accessToken || !newDomainForm.value.host.trim()) return
   addLoading.value = true
   error.value = ''
   try {
-    await DomainService.create(authStore.accessToken, newHost.value.trim())
-    newHost.value = ''
+    await DomainService.create(authStore.accessToken, 
+      newDomainForm.value.host.trim(), 
+      newDomainForm.value.expiredAt || undefined,
+      newDomainForm.value.notes || undefined
+    )
+    newDomainForm.value = { host: '', expiredAt: '', notes: '' }
     showAdd.value = false
     await load()
   } catch (err) {
@@ -51,6 +55,11 @@ async function addDomain() {
   } finally {
     addLoading.value = false
   }
+}
+
+const formatDate = (date: string | null) => {
+  if (!date) return 'Vô thời hạn'
+  return new Date(date).toLocaleDateString('vi-VN')
 }
 
 async function deleteDomain(domainId: string) {
@@ -123,18 +132,34 @@ onMounted(load)
         <div v-if="showAdd" class="ui-panel add-panel">
           <div class="ui-panel-body">
             <h3 class="instruction-title mb-4">Kết nối tên miền mới</h3>
-            <div class="form-group">
-              <input
-                v-model="newHost"
-                type="text"
-                class="ui-form-input flex-1"
-                placeholder="Ví dụ: go.yourbrand.com"
-                @keydown.enter="addDomain"
-              />
-              <button class="ui-btn ui-btn-primary" :disabled="addLoading" @click="addDomain">
-                Khai báo
-              </button>
-              <button class="ui-btn ui-btn-ghost" @click="showAdd = false">Hủy</button>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <div class="form-group-vertical">
+                <label class="ui-label">Tên miền (Host)</label>
+                <input
+                  v-model="newDomainForm.host"
+                  type="text"
+                  class="ui-form-input"
+                  placeholder="Ví dụ: go.yourbrand.com"
+                />
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem;">
+                <div>
+                   <label class="ui-label">Hạn sử dụng (Nếu có)</label>
+                   <input v-model="newDomainForm.expiredAt" type="date" class="ui-form-input" />
+                </div>
+                <div>
+                   <label class="ui-label">Ghi chú thêm (Đuôi miền, yêu cầu đặc biệt...)</label>
+                   <input v-model="newDomainForm.notes" type="text" class="ui-form-input" placeholder="Ví dụ: .vn, dùng cho chiến dịch hè..." />
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.5rem;">
+                <button class="ui-btn ui-btn-primary" :disabled="addLoading" @click="addDomain">
+                  <Plus :size="14" /> Gửi yêu cầu Khai báo
+                </button>
+                <button class="ui-btn ui-btn-ghost" @click="showAdd = false">Hủy</button>
+              </div>
             </div>
           </div>
         </div>
@@ -164,8 +189,16 @@ onMounted(load)
                     <span v-else class="ui-badge ui-badge-warning flex-center">
                       <Clock :size="11" /> Đang chờ xác minh
                     </span>
+                    <span v-if="domain.expiredAtUtc" class="ui-badge ui-badge-outline flex-center" style="font-size: 0.7rem;">
+                      <Clock :size="10" /> Hạn: {{ formatDate(domain.expiredAtUtc) }}
+                    </span>
                   </div>
                 </div>
+              </div>
+
+              <!-- Extra User Info -->
+              <div v-if="domain.userNotes" style="font-size: 0.8rem; color: #64748b; margin-top: 0.5rem; background: #f8fafc; padding: 0.5rem; border-radius: 6px; border-left: 3px solid #e2e8f0;">
+                <strong>Ghi chú của bạn:</strong> {{ domain.userNotes }}
               </div>
 
                <!-- Message if pending -->
