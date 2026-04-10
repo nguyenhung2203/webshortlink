@@ -196,18 +196,20 @@ onMounted(load)
                 </div>
               </div>
 
-               <!-- Message if pending -->
-               <div v-if="!domain.isVerified" class="ui-alert ui-alert-warning" style="margin: 1rem 0 0; padding: 1rem; font-size: 0.85rem; line-height: 1.5; border-radius: 10px; width: 100%;">
-                 <div style="font-weight: 700; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem;">
-                   <Clock :size="16" /> Đang chờ Admin thiết lập
-                 </div>
-                 Hệ thống đã ghi nhận yêu cầu của bạn. Quản trị viên đang cấu hình máy chủ và chứng chỉ bảo mật (SSL) cho tên miền này. Kết quả sẽ được hiển thị tại đây sớm nhất.
-               </div>
-
               <!-- Extra User Info -->
               <div v-if="domain.userNotes" style="font-size: 0.8rem; color: #64748b; margin-top: 0.75rem; background: #f8fafc; padding: 0.6rem 0.75rem; border-radius: 6px; border-left: 3px solid #e2e8f0; width: 100%;">
                 <strong>Ghi chú của bạn:</strong> {{ domain.userNotes }}
               </div>
+
+               <!-- Message if pending -->
+               <div v-if="!domain.isVerified" class="ui-alert ui-alert-warning" style="margin: 1rem 0 0; padding: 1rem; border-radius: 10px; width: 100%; display: flex; flex-direction: column; gap: 0.5rem;">
+                 <div style="font-weight: 700; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                   <Clock :size="16" /> Đang chờ Admin thiết lập
+                 </div>
+                 <p style="margin: 0; font-size: 0.85rem; line-height: 1.5; color: #92400e;">
+                   Hệ thống đã ghi nhận yêu cầu của bạn. Quản trị viên đang cấu hình máy chủ và chứng chỉ bảo mật (SSL) cho tên miền này. Kết quả sẽ được hiển thị tại đây sớm nhất.
+                 </p>
+               </div>
  
                <!-- Admin Feedback if verified -->
                <div v-if="domain.isVerified && domain.adminFeedback" class="ui-alert ui-alert-success" style="margin: 1rem 0 0; padding: 1rem; font-size: 0.85rem; line-height: 1.5; border-radius: 10px;">
