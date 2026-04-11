@@ -17,4 +17,5 @@ public static class ErrorCodes
     public const string DomainNotVerified = "DOMAIN_NOT_VERIFIED";
     public const string InvalidRule = "INVALID_RULE";
     public const string RateLimited = "RATE_LIMITED";
+    public const string ServerError = "SERVER_ERROR";
 }

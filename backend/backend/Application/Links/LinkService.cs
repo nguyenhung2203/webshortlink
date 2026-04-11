@@ -16,6 +16,9 @@ public sealed class LinkService
     private const string LinkLimitFeatureKey = "links.max_count";
     private const string CustomSlugFeatureKey = "links.custom_slug";
     private const string DomainsFeatureKey = "domains.custom";
+    private const string WrapperFeatureKey = "links.wrapper";
+    private const string WrapperLandingFeatureKey = "links.wrapper_landing";
+    private const string WrapperCtaFeatureKey = "links.wrapper_cta";
     private readonly ApplicationDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILinkCacheService _linkCacheService;
@@ -41,7 +44,7 @@ public sealed class LinkService
 
     public async Task<LinkDetailDto> CreateAsync(CreateLinkRequestDto request, CancellationToken cancellationToken)
     {
-        ValidateLinkInput(request.OriginalUrl, request.ClickLimit);
+        ValidateLinkInput(request);
         var current = _currentUserService.GetRequired();
         var limit = await _planCapabilityService.GetLimitAsync(current.UserId, LinkLimitFeatureKey, cancellationToken) ?? 100;
         var currentCount = await _dbContext.Links.CountAsync(x => x.UserId == current.UserId && !x.IsDeleted, cancellationToken);
@@ -64,6 +67,10 @@ public sealed class LinkService
             throw new AppException(ErrorCodes.Conflict, "Slug đã tồn tại.", StatusCodes.Status409Conflict);
         }
 
+        var redirectMode = ParseRedirectMode(request.RedirectMode);
+        ValidateWrapperInput(request.IsWrapperEnabled, redirectMode, request.DelaySeconds, request.OgImageUrl, request.WrapperImageUrl, request.BrandLogoUrl, request.CtaButtonUrl);
+        await EnsureWrapperCapabilitiesAsync(current.UserId, request.IsWrapperEnabled, redirectMode, request.CtaButtonUrl, cancellationToken);
+
         var link = new Link
         {
             Id = Guid.NewGuid(),
@@ -81,6 +88,21 @@ public sealed class LinkService
             OgTitle = request.OgTitle?.Trim(),
             OgDescription = request.OgDescription?.Trim(),
             OgImageUrl = request.OgImageUrl?.Trim(),
+            IsWrapperEnabled = request.IsWrapperEnabled,
+            RedirectMode = redirectMode,
+            DelaySeconds = request.IsWrapperEnabled && redirectMode == LinkRedirectMode.Delay ? request.DelaySeconds ?? 3 : null,
+            WrapperTitle = request.WrapperTitle?.Trim(),
+            WrapperDescription = request.WrapperDescription?.Trim(),
+            WrapperImageUrl = request.WrapperImageUrl?.Trim(),
+            ContinueButtonText = request.ContinueButtonText?.Trim(),
+            WarningText = request.WarningText?.Trim(),
+            WrapperTheme = request.WrapperTheme?.Trim(),
+            BrandName = request.BrandName?.Trim(),
+            BrandLogoUrl = request.BrandLogoUrl?.Trim(),
+            CtaTitle = request.CtaTitle?.Trim(),
+            CtaDescription = request.CtaDescription?.Trim(),
+            CtaButtonText = request.CtaButtonText?.Trim(),
+            CtaButtonUrl = request.CtaButtonUrl?.Trim(),
         };
 
         if (!string.IsNullOrWhiteSpace(request.Password))
@@ -215,7 +237,7 @@ public sealed class LinkService
 
     public async Task<LinkDetailDto> UpdateAsync(Guid linkId, UpdateLinkRequestDto request, CancellationToken cancellationToken)
     {
-        ValidateLinkInput(request.OriginalUrl, request.ClickLimit);
+        ValidateLinkInput(request);
         var current = _currentUserService.GetRequired();
         var link = await _dbContext.Links
             .Include(x => x.Domain)
@@ -240,6 +262,9 @@ public sealed class LinkService
         link.OriginalUrl = request.OriginalUrl.Trim();
         link.Description = request.Description?.Trim();
         link.Tag = request.Tag?.Trim();
+        var redirectMode = ParseRedirectMode(request.RedirectMode);
+        ValidateWrapperInput(request.IsWrapperEnabled, redirectMode, request.DelaySeconds, request.OgImageUrl, request.WrapperImageUrl, request.BrandLogoUrl, request.CtaButtonUrl);
+        await EnsureWrapperCapabilitiesAsync(current.UserId, request.IsWrapperEnabled, redirectMode, request.CtaButtonUrl, cancellationToken);
         if (request.ExpiresAtUtc.HasValue && request.ExpiresAtUtc != link.ExpiresAtUtc)
         {
             await _planCapabilityService.EnsureFeatureEnabledAsync(current.UserId, "links.expiration", cancellationToken);
@@ -265,6 +290,22 @@ public sealed class LinkService
             link.OgDescription = request.OgDescription?.Trim();
             link.OgImageUrl = request.OgImageUrl?.Trim();
         }
+
+        link.IsWrapperEnabled = request.IsWrapperEnabled;
+        link.RedirectMode = redirectMode;
+        link.DelaySeconds = request.IsWrapperEnabled && redirectMode == LinkRedirectMode.Delay ? request.DelaySeconds ?? 3 : null;
+        link.WrapperTitle = request.WrapperTitle?.Trim();
+        link.WrapperDescription = request.WrapperDescription?.Trim();
+        link.WrapperImageUrl = request.WrapperImageUrl?.Trim();
+        link.ContinueButtonText = request.ContinueButtonText?.Trim();
+        link.WarningText = request.WarningText?.Trim();
+        link.WrapperTheme = request.WrapperTheme?.Trim();
+        link.BrandName = request.BrandName?.Trim();
+        link.BrandLogoUrl = request.BrandLogoUrl?.Trim();
+        link.CtaTitle = request.CtaTitle?.Trim();
+        link.CtaDescription = request.CtaDescription?.Trim();
+        link.CtaButtonText = request.CtaButtonText?.Trim();
+        link.CtaButtonUrl = request.CtaButtonUrl?.Trim();
 
         if (!string.IsNullOrWhiteSpace(request.Password))
         {
@@ -377,12 +418,54 @@ public sealed class LinkService
             link.TotalClicks,
             link.OgTitle,
             link.OgDescription,
-            link.OgImageUrl), cancellationToken);
+            link.OgImageUrl,
+            link.IsWrapperEnabled,
+            link.RedirectMode.ToString(),
+            link.DelaySeconds,
+            link.WrapperTitle,
+            link.WrapperDescription,
+            link.WrapperImageUrl,
+            link.ContinueButtonText,
+            link.WarningText,
+            link.WrapperTheme,
+            link.BrandName,
+            link.BrandLogoUrl,
+            link.CtaTitle,
+            link.CtaDescription,
+            link.CtaButtonText,
+            link.CtaButtonUrl), cancellationToken);
     }
 
-    private static void ValidateLinkInput(string originalUrl, int? clickLimit)
+    private async Task EnsureWrapperCapabilitiesAsync(Guid userId, bool isWrapperEnabled, LinkRedirectMode redirectMode, string? ctaButtonUrl, CancellationToken cancellationToken)
     {
-        if (!Uri.TryCreate(originalUrl, UriKind.Absolute, out _))
+        if (!isWrapperEnabled)
+        {
+            return;
+        }
+
+        await _planCapabilityService.EnsureFeatureEnabledAsync(userId, WrapperFeatureKey, cancellationToken);
+
+        if (redirectMode == LinkRedirectMode.LandingPage)
+        {
+            await _planCapabilityService.EnsureFeatureEnabledAsync(userId, WrapperLandingFeatureKey, cancellationToken);
+        }
+
+        if (!string.IsNullOrWhiteSpace(ctaButtonUrl))
+        {
+            await _planCapabilityService.EnsureFeatureEnabledAsync(userId, WrapperCtaFeatureKey, cancellationToken);
+        }
+
+    }
+
+    private static void ValidateLinkInput(CreateLinkRequestDto request)
+        => ValidateLinkInput(request.OriginalUrl, request.ClickLimit, request.DelaySeconds, request.OgImageUrl, request.WrapperImageUrl, request.BrandLogoUrl, request.CtaButtonUrl, request.IsWrapperEnabled, request.RedirectMode);
+
+    private static void ValidateLinkInput(UpdateLinkRequestDto request)
+        => ValidateLinkInput(request.OriginalUrl, request.ClickLimit, request.DelaySeconds, request.OgImageUrl, request.WrapperImageUrl, request.BrandLogoUrl, request.CtaButtonUrl, request.IsWrapperEnabled, request.RedirectMode);
+
+    private static void ValidateLinkInput(string originalUrl, int? clickLimit, int? delaySeconds, string? ogImageUrl, string? wrapperImageUrl, string? brandLogoUrl, string? ctaButtonUrl, bool isWrapperEnabled, string? redirectMode)
+    {
+        if (!IsAllowedAbsoluteUrl(originalUrl))
         {
             throw new AppException(ErrorCodes.ValidationFailed, "Original URL không hợp lệ.");
         }
@@ -390,6 +473,56 @@ public sealed class LinkService
         if (clickLimit.HasValue && clickLimit <= 0)
         {
             throw new AppException(ErrorCodes.ValidationFailed, "Click limit phải lớn hơn 0.");
+        }
+    }
+
+    private static bool IsAllowedAbsoluteUrl(string value)
+    {
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri))
+        {
+            return false;
+        }
+
+        return uri.Scheme is "http" or "https";
+    }
+
+    private static LinkRedirectMode ParseRedirectMode(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return LinkRedirectMode.Instant;
+        }
+
+        return Enum.TryParse<LinkRedirectMode>(value, true, out var mode)
+            ? mode
+            : throw new AppException(ErrorCodes.ValidationFailed, "Redirect mode khong hop le.");
+    }
+
+    private static void ValidateWrapperInput(bool isWrapperEnabled, LinkRedirectMode redirectMode, int? delaySeconds, string? ogImageUrl, string? wrapperImageUrl, string? brandLogoUrl, string? ctaButtonUrl)
+    {
+        if (!string.IsNullOrWhiteSpace(ogImageUrl) && !IsAllowedAbsoluteUrl(ogImageUrl))
+        {
+            throw new AppException(ErrorCodes.ValidationFailed, "OG image URL khong hop le.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(wrapperImageUrl) && !IsAllowedAbsoluteUrl(wrapperImageUrl))
+        {
+            throw new AppException(ErrorCodes.ValidationFailed, "Wrapper image URL khong hop le.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(brandLogoUrl) && !IsAllowedAbsoluteUrl(brandLogoUrl))
+        {
+            throw new AppException(ErrorCodes.ValidationFailed, "Brand logo URL khong hop le.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(ctaButtonUrl) && !IsAllowedAbsoluteUrl(ctaButtonUrl))
+        {
+            throw new AppException(ErrorCodes.ValidationFailed, "CTA URL khong hop le.");
+        }
+
+        if (isWrapperEnabled && redirectMode == LinkRedirectMode.Delay && (!delaySeconds.HasValue || delaySeconds.Value < 1 || delaySeconds.Value > 30))
+        {
+            throw new AppException(ErrorCodes.ValidationFailed, "Delay redirect chi ho tro tu 1 den 30 giay.");
         }
     }
 
@@ -426,6 +559,21 @@ public sealed class LinkService
             link.UpdatedAtUtc,
             link.OgTitle,
             link.OgDescription,
-            link.OgImageUrl);
+            link.OgImageUrl,
+            link.IsWrapperEnabled,
+            link.RedirectMode.ToString(),
+            link.DelaySeconds,
+            link.WrapperTitle,
+            link.WrapperDescription,
+            link.WrapperImageUrl,
+            link.ContinueButtonText,
+            link.WarningText,
+            link.WrapperTheme,
+            link.BrandName,
+            link.BrandLogoUrl,
+            link.CtaTitle,
+            link.CtaDescription,
+            link.CtaButtonText,
+            link.CtaButtonUrl);
     }
 }

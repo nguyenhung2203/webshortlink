@@ -4,7 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { LinkService, UserService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
 import type { ShortLink } from '@/types/api'
-import { Settings2, Link as LinkIcon, AlertCircle, Copy, CheckCircle2, ChevronDown, ChevronUp, Lock, Image } from 'lucide-vue-next'
+import { Settings2, Link as LinkIcon, AlertCircle, Copy, CheckCircle2, ChevronDown, ChevronUp, Lock, Image, ShieldCheck, Info, Sparkles } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
@@ -24,6 +24,21 @@ const defaultForm = {
   expiresAtUtc: '',
   clickLimit: null as number | null,
   password: '',
+  isWrapperEnabled: false,
+  redirectMode: 'Instant',
+  delaySeconds: 3,
+  wrapperTitle: '',
+  wrapperDescription: '',
+  wrapperImageUrl: '',
+  continueButtonText: 'Tiếp tục đến trang đích',
+  warningText: 'Bạn sắp rời khỏi website hiện tại.',
+  wrapperTheme: 'brand',
+  brandName: '',
+  brandLogoUrl: '',
+  ctaTitle: '',
+  ctaDescription: '',
+  ctaButtonText: '',
+  ctaButtonUrl: '',
 }
 
 const form = ref<any>({ ...defaultForm })
@@ -47,6 +62,9 @@ const canUseCustomDomain = computed(() => currentPlanId.value >= 2)
 const canUseCustomSlug = computed(() => currentPlanId.value >= 2)
 const canUsePremiumLinkSettings = computed(() => currentPlanId.value >= 2)
 const canUseSocialPreview = computed(() => currentPlanId.value >= 2)
+const canUseWrapper = computed(() => currentPlanId.value >= 2)
+const canUseWrapperLanding = computed(() => currentPlanId.value >= 3)
+const canUseWrapperCta = computed(() => currentPlanId.value >= 3)
 
 const result = ref<ShortLink | null>(null)
 const error = ref('')
@@ -122,6 +140,40 @@ async function submit() {
     }
   }
 
+  if (form.value.isWrapperEnabled && !canUseWrapper.value) {
+    error.value = 'Tinh nang boc link yeu cau goi Pro hoac Plus.'
+    return
+  }
+
+  if (form.value.isWrapperEnabled && form.value.redirectMode === 'LandingPage' && !canUseWrapperLanding.value) {
+    error.value = 'Landing wrapper chi co trong goi Plus.'
+    return
+  }
+
+  if (!canUseWrapperCta.value && (form.value.ctaTitle || form.value.ctaDescription || form.value.ctaButtonText || form.value.ctaButtonUrl)) {
+    error.value = 'CTA block chi co trong goi Plus.'
+    return
+  }
+
+  if (form.value.isWrapperEnabled && form.value.redirectMode === 'Delay') {
+    const delay = Number(form.value.delaySeconds)
+    if (Number.isNaN(delay) || delay < 1 || delay > 30) {
+      error.value = 'Delay redirect chi ho tro tu 1 den 30 giay.'
+      return
+    }
+  }
+
+  for (const [fieldLabel, value] of [
+    ['Anh wrapper', form.value.wrapperImageUrl],
+    ['Logo thuong hieu', form.value.brandLogoUrl],
+    ['CTA URL', form.value.ctaButtonUrl],
+  ] as const) {
+    if (value && !String(value).startsWith('https://')) {
+      error.value = `${fieldLabel} phai la link https:// cong khai.`
+      return
+    }
+  }
+
   loading.value = true
 
   try {
@@ -144,6 +196,21 @@ async function submit() {
       ogTitle: (canUseSocialPreview.value && mockTitle.value) ? mockTitle.value : undefined,
       ogDescription: (canUseSocialPreview.value && mockDesc.value) ? mockDesc.value : undefined,
       ogImageUrl: (canUseSocialPreview.value && mockImg.value) ? mockImg.value : undefined,
+      isWrapperEnabled: canUseWrapper.value ? !!form.value.isWrapperEnabled : false,
+      redirectMode: form.value.isWrapperEnabled ? form.value.redirectMode : 'Instant',
+      delaySeconds: form.value.isWrapperEnabled && form.value.redirectMode === 'Delay' ? Number(form.value.delaySeconds) : null,
+      wrapperTitle: form.value.isWrapperEnabled ? (form.value.wrapperTitle || undefined) : undefined,
+      wrapperDescription: form.value.isWrapperEnabled ? (form.value.wrapperDescription || undefined) : undefined,
+      wrapperImageUrl: form.value.isWrapperEnabled ? (form.value.wrapperImageUrl || undefined) : undefined,
+      continueButtonText: form.value.isWrapperEnabled ? (form.value.continueButtonText || undefined) : undefined,
+      warningText: form.value.isWrapperEnabled ? (form.value.warningText || undefined) : undefined,
+      wrapperTheme: form.value.isWrapperEnabled ? (form.value.wrapperTheme || undefined) : undefined,
+      brandName: form.value.isWrapperEnabled ? (form.value.brandName || undefined) : undefined,
+      brandLogoUrl: form.value.isWrapperEnabled ? (form.value.brandLogoUrl || undefined) : undefined,
+      ctaTitle: form.value.isWrapperEnabled && canUseWrapperCta.value ? (form.value.ctaTitle || undefined) : undefined,
+      ctaDescription: form.value.isWrapperEnabled && canUseWrapperCta.value ? (form.value.ctaDescription || undefined) : undefined,
+      ctaButtonText: form.value.isWrapperEnabled && canUseWrapperCta.value ? (form.value.ctaButtonText || undefined) : undefined,
+      ctaButtonUrl: form.value.isWrapperEnabled && canUseWrapperCta.value ? (form.value.ctaButtonUrl || undefined) : undefined,
     })
     
     form.value = { ...defaultForm }
@@ -298,7 +365,126 @@ async function submit() {
 
             <hr style="border: 0; border-top: 1px dotted #cbd5e1; margin: 0;" />
 
-            <!-- Step 3: Advanced Options -->
+            <!-- Step 3: Wrapper -->
+            <div>
+              <label class="ui-form-label" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; font-size: 1rem; color: #0f172a; margin-bottom: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <ShieldCheck :size="18" style="color: #4f46e5;" />
+                  <span>Bọc link & Smart Redirect</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span v-if="form.isWrapperEnabled" style="font-size: 0.7rem; font-weight: 700; color: #10b981; text-transform: uppercase;">Đang bật</span>
+                  <input v-model="form.isWrapperEnabled" type="checkbox" :disabled="!canUseWrapper" style="width: 1.25rem; height: 1.25rem; cursor: pointer;" />
+                </div>
+              </label>
+              <p style="font-size: 0.85rem; color: #64748b; margin: 0 0 1rem;">
+                Hiển thị một trang đệm trung gian để bảo vệ link gốc khỏi bị các nền tảng quét/chặn và tăng độ chuyên nghiệp.
+              </p>
+
+              <div v-if="form.isWrapperEnabled" style="display: flex; flex-direction: column; gap: 1.25rem; background: #ffffff; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                
+                <!-- Tiny Tip -->
+                <div style="padding: 0.5rem 0.85rem; background: #f0f9ff; border-radius: 8px; font-size: 0.75rem; color: #036ae1; display: flex; align-items: center; gap: 0.4rem; border: 1px solid #e0f2fe;">
+                  <Info :size="12" />
+                  <span>Trang chờ giúp bảo vệ liên kết và tăng nhận diện thương hiệu.</span>
+                </div>
+
+                <!-- Part 1: Logic & Appearance -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+                  <div class="ui-form-group" style="margin: 0;">
+                    <label class="ui-form-label" style="font-size: 0.7rem; color: #475569; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;">Cách hoạt động</label>
+                    <select v-model="form.redirectMode" class="ui-form-select">
+                      <option value="Instant">Chuyển hướng ngay</option>
+                      <option value="Delay">Chờ đếm ngược</option>
+                      <option value="ManualContinue">Bấm nút thủ công</option>
+                      <option value="LandingPage" :disabled="!canUseWrapperLanding">Trang Landing Page</option>
+                    </select>
+                  </div>
+                  <div v-if="form.redirectMode === 'Delay'" class="ui-form-group" style="margin: 0;">
+                    <label class="ui-form-label" style="font-size: 0.7rem; color: #475569; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;">Thời gian chờ</label>
+                    <div style="position: relative;">
+                      <input v-model="form.delaySeconds" type="number" min="1" max="30" class="ui-form-input" style="padding-right: 2.5rem;" />
+                      <span style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); font-size: 0.7rem; color: #94a3b8;">giây</span>
+                    </div>
+                  </div>
+                  <div class="ui-form-group" style="margin: 0;">
+                    <label class="ui-form-label" style="font-size: 0.7rem; color: #475569; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;">Chủ đề màu</label>
+                    <select v-model="form.wrapperTheme" class="ui-form-select">
+                      <option value="brand">Thương hiệu</option>
+                      <option value="light">Sáng tối giản</option>
+                      <option value="dark">Tối hiện đại</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Part 2: Content Details -->
+                <div style="display: flex; flex-direction: column; gap: 1rem; padding: 1rem; background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9;">
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label" style="font-size: 0.7rem; color: #475569; font-weight: 700; text-transform: uppercase;">Tiêu đề chính</label>
+                      <input v-model="form.wrapperTitle" class="ui-form-input" placeholder="VD: Chào mừng bạn đến..." />
+                    </div>
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label" style="font-size: 0.7rem; color: #475569; font-weight: 700; text-transform: uppercase;">Nội dung nút</label>
+                      <input v-model="form.continueButtonText" class="ui-form-input" placeholder="VD: Tiếp tục" />
+                    </div>
+                  </div>
+
+                  <div class="ui-form-group" style="margin: 0;">
+                    <label class="ui-form-label" style="font-size: 0.7rem; color: #475569; font-weight: 700; text-transform: uppercase;">Mô tả ngắn</label>
+                    <textarea v-model="form.wrapperDescription" class="ui-form-input" style="resize: none; min-height: 56px;" placeholder="Lời chào hoặc thông tin thêm về link..."></textarea>
+                  </div>
+                  
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label" style="font-size: 0.7rem; color: #475569; font-weight: 700; text-transform: uppercase;">Ảnh chờ (URL)</label>
+                      <input v-model="form.wrapperImageUrl" class="ui-form-input" placeholder="https://..." />
+                    </div>
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label" style="font-size: 0.7rem; color: #475569; font-weight: 700; text-transform: uppercase;">Lời nhắc nhỏ</label>
+                      <input v-model="form.warningText" class="ui-form-input" placeholder="VD: Hãy cẩn thận trang giả mạo" />
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label" style="font-size: 0.7rem; color: #475569; font-weight: 700; text-transform: uppercase;">Tên Shop/Thương hiệu</label>
+                      <input v-model="form.brandName" class="ui-form-input" placeholder="VD: WeShort Team" />
+                    </div>
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label" style="font-size: 0.7rem; color: #475569; font-weight: 700; text-transform: uppercase;">Link Logo</label>
+                      <input v-model="form.brandLogoUrl" class="ui-form-input" placeholder="Link ảnh logo của bạn" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Part 3: Advanced CTA -->
+                <div v-if="canUseWrapperCta" style="padding: 1.25rem; border-radius: 12px; background: #fffbeb; border: 1px dashed #fbbf24;">
+                  <div style="font-size: 0.7rem; font-weight: 800; color: #b45309; text-transform: uppercase; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.35rem;">
+                    <Sparkles :size="12" /> Khối kêu gọi hành động (CTA)
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label" style="font-size: 0.7rem; color: #92400e; font-weight: 700; opacity: 0.9;">Tiêu đề KM</label>
+                      <input v-model="form.ctaTitle" class="ui-form-input" placeholder="Vd: Giảm giá 50%" style="background: #fff;" />
+                    </div>
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label" style="font-size: 0.7rem; color: #92400e; font-weight: 700; opacity: 0.9;">Tên nút bấm</label>
+                      <input v-model="form.ctaButtonText" class="ui-form-input" placeholder="Xem ngay" style="background: #fff;" />
+                    </div>
+                  </div>
+                  <div class="ui-form-group" style="margin-top: 0.75rem;">
+                    <label class="ui-form-label" style="font-size: 0.7rem; color: #92400e; font-weight: 700; opacity: 0.9;">Link liên kết quảng cáo</label>
+                    <input v-model="form.ctaButtonUrl" class="ui-form-input" placeholder="Dán link web cần quảng cáo thêm vào đây..." style="background: #fff;" />
+                  </div>
+                </div>
+                <div v-else style="padding: 0.75rem; text-align: center; border: 1px dashed #e2e8f0; border-radius: 12px; font-size: 0.75rem; color: #94a3b8; background: #fafafa; margin-top: 0.5rem;">
+                  Nâng cấp gói <b>PLUS</b> để thêm quảng cáo vào trang chờ.
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 4: Advanced Options -->
             <div>
               <button 
                 type="button" 
@@ -344,7 +530,6 @@ async function submit() {
               </button>
               <button type="button" class="ui-btn ui-btn-ghost" @click="router.push('/app/links')">Hủy</button>
             </div>
-
           </form>
         </div>
       </div>
@@ -416,11 +601,31 @@ async function submit() {
               </p>
             </div>
           </div>
+
+          <div style="margin-top: 1.5rem;">
+            <label style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 0.5rem;">Preview wrapper:</label>
+            <div style="background: #0f172a; color: #e2e8f0; border-radius: 16px; overflow: hidden; border: 1px solid rgba(148,163,184,0.2);">
+              <div :style="{ padding: '1rem 1.25rem', background: form.wrapperTheme === 'dark' ? 'linear-gradient(135deg,#111827,#1f2937)' : form.wrapperTheme === 'light' ? 'linear-gradient(135deg,#e2e8f0,#cbd5e1)' : 'linear-gradient(135deg,#0ea5e9,#2563eb)', color: form.wrapperTheme === 'light' ? '#0f172a' : '#fff' }">
+                <strong>{{ form.brandName || selectedDomainHost }}</strong>
+              </div>
+              <div style="padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                <img v-if="form.wrapperImageUrl" :src="form.wrapperImageUrl" style="width: 100%; height: 140px; object-fit: cover; border-radius: 12px;" />
+                <div style="font-size: 1rem; font-weight: 700;">{{ form.wrapperTitle || mockTitle || 'Bạn sắp đến trang đích' }}</div>
+                <div style="font-size: 0.85rem; color: #cbd5e1;">{{ form.wrapperDescription || mockDesc || 'Xác nhận trước khi tiếp tục mở liên kết.' }}</div>
+                <div style="font-size: 0.75rem; color: #fde68a; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.35); border-radius: 10px; padding: 0.65rem 0.75rem;">
+                  {{ form.warningText || 'Bạn sắp rời khỏi website hiện tại.' }}
+                </div>
+                <div v-if="form.redirectMode === 'Delay'" style="font-size: 0.8rem; color: #93c5fd;">Tự chuyển sau {{ form.delaySeconds || 3 }} giây</div>
+                <button type="button" class="ui-btn ui-btn-primary" style="justify-content: center;">
+                  {{ form.continueButtonText || 'Tiếp tục đến trang đích' }}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
     </div>
-
   </div>
 </template>
 

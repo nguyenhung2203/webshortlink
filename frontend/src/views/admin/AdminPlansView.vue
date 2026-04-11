@@ -31,6 +31,9 @@ const builtInFeatures: Record<string, FeatureLabel> = {
   'analytics.export_csv':      { featureKey: 'analytics.export_csv',      label: 'Xuất CSV',             description: 'Xuất dữ liệu phân tích sang CSV',           featureType: 'toggle' },
   'api.access':                { featureKey: 'api.access',                label: 'Truy cập API',          description: 'Tích hợp REST API trực tiếp',               featureType: 'toggle' },
   'links.social_preview':      { featureKey: 'links.social_preview',      label: 'Xem trước MXH',         description: 'Cho phép tùy chỉnh thẻ xem trước OpenGraph', featureType: 'toggle' },
+  'links.wrapper':             { featureKey: 'links.wrapper',             label: 'Bọc link cơ bản',       description: 'Cho phép sử dụng trang đệm trung gian',      featureType: 'toggle' },
+  'links.wrapper_landing':     { featureKey: 'links.wrapper_landing',     label: 'Giao diện Landing',     description: 'Bọc link kiểu trang đích chuyên nghiệp',    featureType: 'toggle' },
+  'links.wrapper_cta':         { featureKey: 'links.wrapper_cta',         label: 'Nút bấm CTA',           description: 'Thêm khối kêu gọi hành động vào trang bọc',  featureType: 'toggle' },
 }
 
 const allFeatures = computed<FeatureLabel[]>(() => {
@@ -58,12 +61,19 @@ const saveFeature = async () => {
   if (!editModal.value || !authStore.accessToken) return
   saving.value = true; saveError.value = ''
   try {
-    await AdminService.updatePlanFeature(authStore.accessToken, editModal.value.planId, editModal.value.fl.featureKey,
-      { isEnabled: editForm.value.isEnabled, limitValue: editForm.value.limitValue, featureValue: null })
+    const payload = {
+      isEnabled: editForm.value.isEnabled,
+      limitValue: typeof editForm.value.limitValue === 'number' ? editForm.value.limitValue : null,
+      featureValue: null
+    }
+    await AdminService.updatePlanFeature(authStore.accessToken, editModal.value.planId, editModal.value.fl.featureKey, payload)
     editModal.value = null
     await loadData()
-  } catch (err) { saveError.value = err instanceof Error ? err.message : 'Lỗi lưu'
-  } finally { saving.value = false }
+  } catch (err) { 
+    saveError.value = err instanceof Error ? err.message : 'Lỗi lưu'
+  } finally { 
+    saving.value = false 
+  }
 }
 
 // ─── Add feature modal ─────────────────────────────────────────────────────────

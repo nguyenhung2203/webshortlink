@@ -11,7 +11,22 @@ public sealed record CreateLinkRequestDto(
     string? Password,
     string? OgTitle,
     string? OgDescription,
-    string? OgImageUrl);
+    string? OgImageUrl,
+    bool IsWrapperEnabled = false,
+    string? RedirectMode = null,
+    int? DelaySeconds = null,
+    string? WrapperTitle = null,
+    string? WrapperDescription = null,
+    string? WrapperImageUrl = null,
+    string? ContinueButtonText = null,
+    string? WarningText = null,
+    string? WrapperTheme = null,
+    string? BrandName = null,
+    string? BrandLogoUrl = null,
+    string? CtaTitle = null,
+    string? CtaDescription = null,
+    string? CtaButtonText = null,
+    string? CtaButtonUrl = null);
 
 public sealed record UpdateLinkRequestDto(
     string OriginalUrl,
@@ -23,7 +38,22 @@ public sealed record UpdateLinkRequestDto(
     string? Password,
     string? OgTitle = null,
     string? OgDescription = null,
-    string? OgImageUrl = null);
+    string? OgImageUrl = null,
+    bool IsWrapperEnabled = false,
+    string? RedirectMode = null,
+    int? DelaySeconds = null,
+    string? WrapperTitle = null,
+    string? WrapperDescription = null,
+    string? WrapperImageUrl = null,
+    string? ContinueButtonText = null,
+    string? WarningText = null,
+    string? WrapperTheme = null,
+    string? BrandName = null,
+    string? BrandLogoUrl = null,
+    string? CtaTitle = null,
+    string? CtaDescription = null,
+    string? CtaButtonText = null,
+    string? CtaButtonUrl = null);
 
 public sealed record ToggleLinkStatusRequestDto(bool IsActive);
 
@@ -61,7 +91,22 @@ public sealed record LinkDetailDto(
     DateTime? UpdatedAtUtc,
     string? OgTitle = null,
     string? OgDescription = null,
-    string? OgImageUrl = null);
+    string? OgImageUrl = null,
+    bool IsWrapperEnabled = false,
+    string? RedirectMode = null,
+    int? DelaySeconds = null,
+    string? WrapperTitle = null,
+    string? WrapperDescription = null,
+    string? WrapperImageUrl = null,
+    string? ContinueButtonText = null,
+    string? WarningText = null,
+    string? WrapperTheme = null,
+    string? BrandName = null,
+    string? BrandLogoUrl = null,
+    string? CtaTitle = null,
+    string? CtaDescription = null,
+    string? CtaButtonText = null,
+    string? CtaButtonUrl = null);
 
 public sealed record CachedLinkDto(
     Guid Id,
@@ -76,7 +121,22 @@ public sealed record CachedLinkDto(
     long TotalClicks,
     string? OgTitle = null,
     string? OgDescription = null,
-    string? OgImageUrl = null);
+    string? OgImageUrl = null,
+    bool IsWrapperEnabled = false,
+    string? RedirectMode = null,
+    int? DelaySeconds = null,
+    string? WrapperTitle = null,
+    string? WrapperDescription = null,
+    string? WrapperImageUrl = null,
+    string? ContinueButtonText = null,
+    string? WarningText = null,
+    string? WrapperTheme = null,
+    string? BrandName = null,
+    string? BrandLogoUrl = null,
+    string? CtaTitle = null,
+    string? CtaDescription = null,
+    string? CtaButtonText = null,
+    string? CtaButtonUrl = null);
 
 public sealed record CreateLinkRuleRequestDto(
     string RuleType,

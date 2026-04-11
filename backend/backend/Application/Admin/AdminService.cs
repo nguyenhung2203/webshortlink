@@ -654,40 +654,65 @@ public sealed class AdminService
 
     public async Task<MessageResponseDto> UpdatePlanFeatureAsync(int planId, string featureKey, AdminUpdateFeatureRequestDto request, CancellationToken cancellationToken)
     {
-        var current = _currentUserService.GetRequired();
-        var plan = await _dbContext.Plans.FirstOrDefaultAsync(x => x.Id == planId, cancellationToken)
-            ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy gói dịch vụ.", StatusCodes.Status404NotFound);
-
-        var feature = await _dbContext.PlanFeatures
-            .FirstOrDefaultAsync(x => x.PlanId == planId && x.FeatureKey == featureKey, cancellationToken);
-
-        if (feature == null)
+        try
         {
-            feature = new PlanFeature
+            var current = _currentUserService.GetRequired();
+
+            var plan = await _dbContext.Plans.AsNoTracking().FirstOrDefaultAsync(x => x.Id == planId, cancellationToken)
+                ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy gói dịch vụ.", StatusCodes.Status404NotFound);
+
+            var feature = await _dbContext.PlanFeatures
+                .FirstOrDefaultAsync(x => x.PlanId == planId && x.FeatureKey == featureKey, cancellationToken);
+
+            if (feature == null)
             {
-                PlanId = planId,
-                FeatureKey = featureKey,
-                IsEnabled = request.IsEnabled,
-                LimitValue = request.LimitValue,
-                FeatureValue = request.FeatureValue,
-                CreatedAtUtc = DateTime.UtcNow,
-                CreatedByUserId = current.UserId.ToString()
-            };
-            _dbContext.PlanFeatures.Add(feature);
+                // Must generate ID manually because ValueGeneratedNever is used
+                var maxId = await _dbContext.PlanFeatures.Select(x => (int?)x.Id).MaxAsync(cancellationToken) ?? 0;
+                feature = new PlanFeature
+                {
+                    Id = maxId + 1,
+                    PlanId = planId,
+                    FeatureKey = featureKey,
+                    IsEnabled = request.IsEnabled,
+                    LimitValue = request.LimitValue,
+                    FeatureValue = request.FeatureValue,
+                    CreatedAtUtc = DateTime.UtcNow,
+                    CreatedByUserId = current.UserId.ToString()
+                };
+                _dbContext.PlanFeatures.Add(feature);
+            }
+            else
+            {
+                feature.IsEnabled = request.IsEnabled;
+                feature.LimitValue = request.LimitValue;
+                feature.FeatureValue = request.FeatureValue;
+                feature.UpdatedAtUtc = DateTime.UtcNow;
+                feature.UpdatedByUserId = current.UserId.ToString();
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            // Audit log called outside the main save to avoid blocking if audit fails
+            try
+            {
+                await _auditLogService.WriteAsync(
+                    AuditActorType.Admin,
+                    "ADM-API-PLAN-FEATURE-UPDATE",
+                    "PlanFeature",
+                    feature.Id.ToString(),
+                    current.UserId,
+                    current.IpAddress,
+                    new { planId, featureKey, isEnabled = request.IsEnabled },
+                    cancellationToken);
+            }
+            catch { /* Audit failure shouldn't stop the return if DB saved successfully */ }
+
+            return new MessageResponseDto($"Thành công: Đã cập nhật tính năng '{featureKey}' cho gói '{plan.Name}'.");
         }
-        else
+        catch (Exception ex) when (ex is not AppException)
         {
-            feature.IsEnabled = request.IsEnabled;
-            feature.LimitValue = request.LimitValue;
-            feature.FeatureValue = request.FeatureValue;
-            feature.UpdatedAtUtc = DateTime.UtcNow;
-            feature.UpdatedByUserId = current.UserId.ToString();
+            throw new AppException(ErrorCodes.ServerError, $"Lỗi hệ thống khi lưu tính năng: {ex.Message} (Inner: {ex.InnerException?.Message})", StatusCodes.Status500InternalServerError);
         }
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-        await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-PLAN-FEATURE-UPDATE", "PlanFeature", feature.Id.ToString(), current.UserId, current.IpAddress, new { planId, featureKey, request }, cancellationToken);
-
-        return new MessageResponseDto($"Đã cập nhật tính năng '{featureKey}' cho gói '{plan.Name}'.");
     }
 
     public async Task<IReadOnlyCollection<AdminFeatureLabelDto>> GetFeatureLabelsAsync(CancellationToken cancellationToken)

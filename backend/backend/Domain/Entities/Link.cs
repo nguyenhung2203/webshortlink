@@ -19,6 +19,21 @@ public class Link : SoftDeleteEntity
     public string? OgTitle { get; set; }
     public string? OgDescription { get; set; }
     public string? OgImageUrl { get; set; }
+    public bool IsWrapperEnabled { get; set; }
+    public LinkRedirectMode RedirectMode { get; set; } = LinkRedirectMode.Instant;
+    public int? DelaySeconds { get; set; }
+    public string? WrapperTitle { get; set; }
+    public string? WrapperDescription { get; set; }
+    public string? WrapperImageUrl { get; set; }
+    public string? ContinueButtonText { get; set; }
+    public string? WarningText { get; set; }
+    public string? WrapperTheme { get; set; }
+    public string? BrandName { get; set; }
+    public string? BrandLogoUrl { get; set; }
+    public string? CtaTitle { get; set; }
+    public string? CtaDescription { get; set; }
+    public string? CtaButtonText { get; set; }
+    public string? CtaButtonUrl { get; set; }
     public long TotalClicks { get; set; }
     public long UniqueClicks { get; set; }
     public byte[] RowVersion { get; set; } = Array.Empty<byte>();
