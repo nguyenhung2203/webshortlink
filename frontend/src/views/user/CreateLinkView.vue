@@ -378,7 +378,10 @@ async function submit() {
                 </div>
               </label>
               <p style="font-size: 0.85rem; color: #64748b; margin: 0 0 1rem;">
-                Hiển thị một trang đệm trung gian để bảo vệ link gốc khỏi bị các nền tản              <div v-if="form.isWrapperEnabled" style="display: flex; flex-direction: column; gap: 1.5rem; background: #f8fafc; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+                Hiển thị một trang đệm trung gian để bảo vệ link gốc khỏi bị các nền tảng quét/chặn và tăng độ chuyên nghiệp.
+              </p>
+
+              <div v-if="form.isWrapperEnabled" style="display: flex; flex-direction: column; gap: 1.5rem; background: #f8fafc; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0;">
                 
                 <!-- Quick Guide Panel -->
                 <div style="padding: 1rem; background: #f0f7ff; border: 1px solid #bae6fd; border-radius: 10px; display: flex; gap: 0.75rem;">
