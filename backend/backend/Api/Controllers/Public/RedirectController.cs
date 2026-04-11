@@ -211,8 +211,9 @@ public sealed class RedirectController : ControllerBase
         var isManual = wrapper.RedirectMode.Equals("ManualContinue", StringComparison.OrdinalIgnoreCase);
         var isLanding = wrapper.RedirectMode.Equals("LandingPage", StringComparison.OrdinalIgnoreCase);
         var effectiveDelay = isManual ? 0 : delaySeconds;
+        var rawContinueUrl = wrapper.ContinueUrl; // Do not HTML encode for JS block
         var autoRedirectScript = effectiveDelay > 0
-            ? $"let s={effectiveDelay};const el=document.getElementById('count');if(el){{el.textContent=s;}}setInterval(function(){{s--;if(el&&s>=0){{el.textContent=s;}}if(s<=0){{window.location.replace('{continueUrl}');}}}},1000);"
+            ? $"let s={effectiveDelay};const el=document.getElementById('count');if(el){{el.textContent=s;}}const timer=setInterval(function(){{s--;if(el&&s>=0){{el.textContent=s;}}if(s<=0){{clearInterval(timer);window.location.replace('{rawContinueUrl}');}}}},1000);"
             : string.Empty;
         var imageBlock = string.IsNullOrWhiteSpace(image) ? string.Empty : $"<img class=\"hero\" src=\"{image}\" alt=\"wrapper image\">";
         var logoBlock = string.IsNullOrWhiteSpace(brandLogo) ? string.Empty : $"<img class=\"logo\" src=\"{brandLogo}\" alt=\"brand logo\">";
