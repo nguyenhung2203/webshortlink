@@ -31,6 +31,9 @@ const builtInFeatures: Record<string, FeatureLabel> = {
   'analytics.export_csv':      { featureKey: 'analytics.export_csv',      label: 'Xuất CSV',             description: 'Xuất dữ liệu phân tích sang CSV',           featureType: 'toggle' },
   'api.access':                { featureKey: 'api.access',                label: 'Truy cập API',          description: 'Tích hợp REST API trực tiếp',               featureType: 'toggle' },
   'links.social_preview':      { featureKey: 'links.social_preview',      label: 'Xem trước MXH',         description: 'Cho phép tùy chỉnh thẻ xem trước OpenGraph', featureType: 'toggle' },
+  'links.wrapper':             { featureKey: 'links.wrapper',             label: 'Bọc link cơ bản',       description: 'Cho phép sử dụng trang đệm trung gian',      featureType: 'toggle' },
+  'links.wrapper_landing':     { featureKey: 'links.wrapper_landing',     label: 'Giao diện Landing',     description: 'Bọc link kiểu trang đích chuyên nghiệp',    featureType: 'toggle' },
+  'links.wrapper_cta':         { featureKey: 'links.wrapper_cta',         label: 'Nút bấm CTA',           description: 'Thêm khối kêu gọi hành động vào trang bọc',  featureType: 'toggle' },
 }
 
 const allFeatures = computed<FeatureLabel[]>(() => {

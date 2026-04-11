@@ -4,7 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { LinkService, UserService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
 import type { ShortLink } from '@/types/api'
-import { Settings2, Link as LinkIcon, AlertCircle, Copy, CheckCircle2, ChevronDown, ChevronUp, Lock, Image } from 'lucide-vue-next'
+import { Settings2, Link as LinkIcon, AlertCircle, Copy, CheckCircle2, ChevronDown, ChevronUp, Lock, Image, ShieldCheck, Info, Sparkles } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
@@ -367,84 +367,114 @@ async function submit() {
 
             <!-- Step 3: Wrapper -->
             <div>
-              <label class="ui-form-label" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; font-size: 1rem; color: #0f172a; margin-bottom: 0.75rem;">
-                <span>Bọc link / Smart Redirect</span>
-                <input v-model="form.isWrapperEnabled" type="checkbox" :disabled="!canUseWrapper" />
+              <label class="ui-form-label" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; font-size: 1rem; color: #0f172a; margin-bottom: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <ShieldCheck :size="18" style="color: #4f46e5;" />
+                  <span>Bọc link & Smart Redirect</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span v-if="form.isWrapperEnabled" style="font-size: 0.7rem; font-weight: 700; color: #10b981; text-transform: uppercase;">Đang bật</span>
+                  <input v-model="form.isWrapperEnabled" type="checkbox" :disabled="!canUseWrapper" style="width: 1.25rem; height: 1.25rem; cursor: pointer;" />
+                </div>
               </label>
               <p style="font-size: 0.85rem; color: #64748b; margin: 0 0 1rem;">
-                Hiển thị lớp trung gian trước khi sang trang đích để tracking tốt hơn và tăng độ tin cậy khi chia sẻ.
+                Hiển thị một trang đệm trung gian để bảo vệ link gốc khỏi bị các nền tảng quét/chặn và tăng độ chuyên nghiệp.
               </p>
               <div v-if="!canUseWrapper" style="background: #fffbeb; border: 1px solid #fde68a; padding: 0.85rem 1rem; border-radius: 10px; color: #b45309; font-size: 0.85rem; margin-bottom: 1rem;">
                 <Lock :size="14" style="vertical-align: middle; margin-right: 0.25rem;" /> Bọc link yêu cầu gói Pro hoặc Plus.
               </div>
 
-              <div v-if="form.isWrapperEnabled" style="display: flex; flex-direction: column; gap: 1rem; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0;">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
-                  <div class="ui-form-group" style="margin: 0;">
-                    <label class="ui-form-label">Kiểu redirect</label>
-                    <select v-model="form.redirectMode" class="ui-form-select">
-                      <option value="Instant">Redirect ngay</option>
-                      <option value="Delay">Redirect sau vài giây</option>
-                      <option value="ManualContinue">Hiện trang trung gian rồi bấm tiếp tục</option>
-                      <option value="LandingPage" :disabled="!canUseWrapperLanding">Landing wrapper</option>
-                    </select>
-                  </div>
-                  <div v-if="form.redirectMode === 'Delay'" class="ui-form-group" style="margin: 0;">
-                    <label class="ui-form-label">Thời gian chờ (giây)</label>
-                    <input v-model="form.delaySeconds" type="number" min="1" max="30" class="ui-form-input" />
-                  </div>
-                  <div class="ui-form-group" style="margin: 0;">
-                    <label class="ui-form-label">Theme wrapper</label>
-                    <select v-model="form.wrapperTheme" class="ui-form-select">
-                      <option value="brand">Brand</option>
-                      <option value="light">Light</option>
-                      <option value="dark">Dark</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
-                  <div class="ui-form-group" style="margin: 0;">
-                    <label class="ui-form-label">Tiêu đề wrapper</label>
-                    <input v-model="form.wrapperTitle" class="ui-form-input" placeholder="Ví dụ: Bạn sắp đến trang ưu đãi" />
-                  </div>
-                  <div class="ui-form-group" style="margin: 0;">
-                    <label class="ui-form-label">Nút tiếp tục</label>
-                    <input v-model="form.continueButtonText" class="ui-form-input" placeholder="Tiếp tục đến trang đích" />
-                  </div>
-                </div>
-
-                <div class="ui-form-group" style="margin: 0;">
-                  <label class="ui-form-label">Mô tả wrapper</label>
-                  <textarea v-model="form.wrapperDescription" class="ui-form-input" style="resize: vertical; min-height: 84px;" placeholder="Mô tả ngắn giúp người dùng biết họ sắp được chuyển đi đâu."></textarea>
-                </div>
-
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
-                  <div class="ui-form-group" style="margin: 0;">
-                    <label class="ui-form-label">Ảnh wrapper</label>
-                    <input v-model="form.wrapperImageUrl" class="ui-form-input" placeholder="https://..." />
-                  </div>
-                  <div class="ui-form-group" style="margin: 0;">
-                    <label class="ui-form-label">Cảnh báo</label>
-                    <input v-model="form.warningText" class="ui-form-input" placeholder="Bạn sắp rời khỏi website hiện tại." />
+              <div v-if="form.isWrapperEnabled" style="display: flex; flex-direction: column; gap: 1.5rem; background: #f8fafc; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <!-- Section 1: Redirect Settings -->
+                <div style="padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0;">
+                  <h4 style="font-size: 0.85rem; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <Settings2 :size="14" /> Cấu hình chuyển hướng
+                  </h4>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label">Kiểu chuyển hướng</label>
+                      <select v-model="form.redirectMode" class="ui-form-select">
+                        <option value="Instant">Chuyển ngay (Instant)</option>
+                        <option value="Delay">Chờ đếm ngược (Delay)</option>
+                        <option value="ManualContinue">Bấm xác nhận (Manual)</option>
+                        <option value="LandingPage" :disabled="!canUseWrapperLanding">Giao diện Landing Page</option>
+                      </select>
+                      <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #64748b; line-height: 1.4; display: flex; align-items: flex-start; gap: 0.3rem;">
+                        <Info :size="12" style="margin-top: 2px; flex-shrink: 0;" />
+                        <span v-if="form.redirectMode === 'Instant'">Hệ thống sẽ chuyển hướng ngay lập tức nhưng vẫn qua lớp bảo vệ.</span>
+                        <span v-else-if="form.redirectMode === 'Delay'">Người dùng sẽ thấy đồng hồ đếm ngược trước khi tự động chuyển đi.</span>
+                        <span v-else-if="form.redirectMode === 'ManualContinue'">Người dùng phải chủ động bấm nút để tiếp tục đến trang đích.</span>
+                        <span v-else-if="form.redirectMode === 'LandingPage'">Trang đệm đầy đủ thông tin, ảnh bìa và khối nội dung như một website.</span>
+                      </div>
+                    </div>
+                    <div v-if="form.redirectMode === 'Delay'" class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label">Thời gian chờ (giây)</label>
+                      <input v-model="form.delaySeconds" type="number" min="1" max="30" class="ui-form-input" />
+                    </div>
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label">Giao diện (Theme)</label>
+                      <select v-model="form.wrapperTheme" class="ui-form-select">
+                        <option value="brand">Thương hiệu (Brand)</option>
+                        <option value="light">Sáng (Light)</option>
+                        <option value="dark">Tối (Dark)</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
-                  <div class="ui-form-group" style="margin: 0;">
-                    <label class="ui-form-label">Tên thương hiệu</label>
-                    <input v-model="form.brandName" class="ui-form-input" placeholder="Tên brand hiển thị trên wrapper" />
-                  </div>
-                  <div class="ui-form-group" style="margin: 0;">
-                    <label class="ui-form-label">Logo thương hiệu</label>
-                    <input v-model="form.brandLogoUrl" class="ui-form-input" placeholder="https://..." />
+                <!-- Section 2: Content Settings -->
+                <div>
+                  <h4 style="font-size: 0.85rem; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <Image :size="14" /> Nội dung hiển thị
+                  </h4>
+                  <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                      <div class="ui-form-group" style="margin: 0;">
+                        <label class="ui-form-label">Tiêu đề trang đệm</label>
+                        <input v-model="form.wrapperTitle" class="ui-form-input" placeholder="Ví dụ: Bạn sắp đến trang ưu đãi" />
+                      </div>
+                      <div class="ui-form-group" style="margin: 0;">
+                        <label class="ui-form-label">Chữ hiển thị trên nút</label>
+                        <input v-model="form.continueButtonText" class="ui-form-input" placeholder="Tiếp tục đến trang đích" />
+                      </div>
+                    </div>
+
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label">Mô tả ngắn</label>
+                      <textarea v-model="form.wrapperDescription" class="ui-form-input" style="resize: vertical; min-height: 84px;" placeholder="Giới thiệu về đích đến của link này..."></textarea>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                      <div class="ui-form-group" style="margin: 0;">
+                        <label class="ui-form-label">Đường dẫn ảnh bìa (URL)</label>
+                        <input v-model="form.wrapperImageUrl" class="ui-form-input" placeholder="Dán link ảnh tại đây" />
+                      </div>
+                      <div class="ui-form-group" style="margin: 0;">
+                        <label class="ui-form-label">Lời nhắc/Cảnh báo</label>
+                        <input v-model="form.warningText" class="ui-form-input" placeholder="Bạn sắp rời khỏi website hiện tại." />
+                      </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; background: #fff; padding: 1rem; border-radius: 10px; border: 1px solid #e2e8f0;">
+                      <div class="ui-form-group" style="margin: 0;">
+                        <label class="ui-form-label">Tên thương hiệu</label>
+                        <input v-model="form.brandName" class="ui-form-input" placeholder="Tên shop hoặc website của bạn" />
+                      </div>
+                      <div class="ui-form-group" style="margin: 0;">
+                        <label class="ui-form-label">Link Logo thương hiệu</label>
+                        <input v-model="form.brandLogoUrl" class="ui-form-input" placeholder="Logo tỉ lệ 1:1 sẽ đẹp nhất" />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div style="padding: 1rem; border-radius: 10px; border: 1px dashed #cbd5e1; background: #fff;">
-                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem;">
-                    <strong style="font-size: 0.9rem; color: #0f172a;">CTA block</strong>
-                    <span v-if="!canUseWrapperCta" style="font-size: 0.75rem; color: #b45309; font-weight: 700;">Plus only</span>
+                <!-- Section 3: CTA Block -->
+                <div style="padding: 1.25rem; border-radius: 12px; border: 1px solid #fbbf24; background: #fffbeb;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem;">
+                    <h4 style="font-size: 0.85rem; font-weight: 800; color: #92400e; text-transform: uppercase; margin: 0; display: flex; align-items: center; gap: 0.4rem;">
+                      <Sparkles :size="14" /> Khối hành động (CTA)
+                    </h4>
+                    <span v-if="!canUseWrapperCta" class="ui-badge" style="background: #ef4444; color: white; font-size: 0.65rem;">Yêu cầu Gói PLUS</span>
                   </div>
                   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
                     <div class="ui-form-group" style="margin: 0;">
