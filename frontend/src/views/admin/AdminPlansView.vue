@@ -61,12 +61,19 @@ const saveFeature = async () => {
   if (!editModal.value || !authStore.accessToken) return
   saving.value = true; saveError.value = ''
   try {
-    await AdminService.updatePlanFeature(authStore.accessToken, editModal.value.planId, editModal.value.fl.featureKey,
-      { isEnabled: editForm.value.isEnabled, limitValue: editForm.value.limitValue, featureValue: null })
+    const payload = {
+      isEnabled: editForm.value.isEnabled,
+      limitValue: typeof editForm.value.limitValue === 'number' ? editForm.value.limitValue : null,
+      featureValue: null
+    }
+    await AdminService.updatePlanFeature(authStore.accessToken, editModal.value.planId, editModal.value.fl.featureKey, payload)
     editModal.value = null
     await loadData()
-  } catch (err) { saveError.value = err instanceof Error ? err.message : 'Lỗi lưu'
-  } finally { saving.value = false }
+  } catch (err) { 
+    saveError.value = err instanceof Error ? err.message : 'Lỗi lưu'
+  } finally { 
+    saving.value = false 
+  }
 }
 
 // ─── Add feature modal ─────────────────────────────────────────────────────────
