@@ -175,7 +175,7 @@ public sealed class RedirectController : ControllerBase
             return forwarded;
         }
 
-        return Request.Host.Host;
+        return Request.Headers.Host.ToString();
     }
 
     private static string BuildAbsoluteShortlinkUrl(string host, string path)
