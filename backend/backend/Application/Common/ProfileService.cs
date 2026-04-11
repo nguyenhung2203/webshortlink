@@ -131,6 +131,9 @@ public sealed class ProfileService
                         "rules.targeting_advanced" => "Định tuyến theo thiết bị/quốc gia",
                         "reports.export" => "Xuất dữ liệu analytics (CSV)",
                         "links.social_preview" => "Tùy chỉnh thẻ xem trước MXH (OpenGraph)",
+                        "links.wrapper" => "Bọc link chuyên nghiệp",
+                        "links.wrapper_landing" => "Giao diện Landing Page",
+                        "links.wrapper_cta" => "Khối kêu gọi hành động (CTA)",
                         _ => feature.FeatureKey
                     };
 
