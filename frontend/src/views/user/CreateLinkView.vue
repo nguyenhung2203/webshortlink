@@ -114,6 +114,14 @@ async function submit() {
     return
   }
 
+  // Validate OG image URL - phải là link public https://, không nhận data: hay http:
+  if (canUseSocialPreview.value && mockImg.value) {
+    if (!mockImg.value.startsWith('https://')) {
+      error.value = 'Ảnh xem trước phải là link ảnh công khai bắt đầu bằng https:// (không nhận data:, http:// hoặc đường dẫn cục bộ).'
+      return
+    }
+  }
+
   loading.value = true
 
   try {
@@ -140,6 +148,10 @@ async function submit() {
     
     form.value = { ...defaultForm }
     showAdvanced.value = false
+    // Reset OG fields
+    mockTitle.value = ''
+    mockDesc.value = ''
+    mockImg.value = ''
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Đã có lỗi từ máy chủ. Không thể tạo link.'
   } finally {
@@ -366,6 +378,13 @@ async function submit() {
               </div>
               <p style="font-size: 11px; color: #64748b; margin: 4px 0 0; padding-left: 2px;">
                 Nhập link ảnh công khai từ internet (phải bắt đầu bằng <code style="background:#f1f5f9;padding:1px 4px;border-radius:3px;">https://</code>)
+              </p>
+              <!-- Cảnh báo realtime nếu URL ảnh sai định dạng -->
+              <p
+                v-if="mockImg && !mockImg.startsWith('https://')"
+                style="font-size: 11px; color: #ef4444; font-weight: 500; margin: 4px 0 0; display: flex; align-items: center; gap: 4px;"
+              >
+                ⚠️ URL ảnh không hợp lệ — phải bắt đầu bằng <code style="background:#fef2f2;padding:1px 4px;border-radius:3px;">https://</code>. Không chấp nhận ảnh base64 hoặc data URL.
               </p>
             </div>
             <p v-if="!canUseSocialPreview" style="font-size: 11px; color: #d97706; font-weight: 500; line-height: 1.5; margin: 0; background: #fffbeb; padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid #fde68a;">

@@ -41,28 +41,38 @@ public sealed class RedirectController : ControllerBase
             
             if (response is OgLinkDataDto og)
             {
-                var html = $"""
-                <!DOCTYPE html>
-                <html lang="vi">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>{System.Net.WebUtility.HtmlEncode(og.OgTitle ?? "WeShort Link")}</title>
-                    <meta property="og:title" content="{System.Net.WebUtility.HtmlEncode(og.OgTitle ?? "")}">
-                    <meta property="og:description" content="{System.Net.WebUtility.HtmlEncode(og.OgDescription ?? "")}">
-                    <meta property="og:image" content="{System.Net.WebUtility.HtmlEncode(og.OgImageUrl ?? "")}">
-                    <meta property="og:url" content="https://{og.Host}/{og.Slug}">
-                    <meta property="og:type" content="website">
-                    <meta name="twitter:card" content="summary_large_image">
-                    
-                    <!-- Redirect for normal users if they somehow stay on the page -->
-                    <meta http-equiv="refresh" content="0;url={System.Net.WebUtility.HtmlEncode(og.OriginalUrl)}">
-                </head>
-                <body>
-                    <p>Đang chuyển hướng đến <a href="{System.Net.WebUtility.HtmlEncode(og.OriginalUrl)}">{System.Net.WebUtility.HtmlEncode(og.OriginalUrl)}</a>...</p>
-                    <script>window.location.replace("{og.OriginalUrl}");</script>
-                </body>
-                </html>
-                """;
+                var pageTitle = System.Net.WebUtility.HtmlEncode(og.OgTitle ?? "WeShort Link");
+                var pageDesc = System.Net.WebUtility.HtmlEncode(og.OgDescription ?? "Tiết kiệm thời gian với đường link rút gọn chuyên nghiệp.");
+                var pageImage = og.OgImageUrl != null ? System.Net.WebUtility.HtmlEncode(og.OgImageUrl) : "";
+                var pageUrl = $"https://{og.Host}/{og.Slug}";
+                var destUrl = System.Net.WebUtility.HtmlEncode(og.OriginalUrl);
+                var safeDestJs = og.OriginalUrl.Replace("\\", "\\\\").Replace("\"", "\\\"");
+
+                // Build og:image block only if image URL exists
+                var ogImageBlock = !string.IsNullOrWhiteSpace(pageImage)
+                    ? $"<meta property=\"og:image\" content=\"{pageImage}\"><meta property=\"og:image:secure_url\" content=\"{pageImage}\"><meta property=\"og:image:type\" content=\"image/jpeg\"><meta property=\"og:image:width\" content=\"1200\"><meta property=\"og:image:height\" content=\"630\"><meta name=\"twitter:image\" content=\"{pageImage}\">"
+                    : "";
+
+                var html = "<!DOCTYPE html><html lang=\"vi\"><head>" +
+                    "<meta charset=\"UTF-8\">" +
+                    "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">" +
+                    $"<title>{pageTitle}</title>" +
+                    $"<meta name=\"description\" content=\"{pageDesc}\">" +
+                    "<meta property=\"og:type\" content=\"website\">" +
+                    $"<meta property=\"og:url\" content=\"{pageUrl}\">" +
+                    $"<meta property=\"og:title\" content=\"{pageTitle}\">" +
+                    $"<meta property=\"og:description\" content=\"{pageDesc}\">" +
+                    "<meta property=\"og:site_name\" content=\"WeShort\">" +
+                    ogImageBlock +
+                    "<meta name=\"twitter:card\" content=\"summary_large_image\">" +
+                    $"<meta name=\"twitter:title\" content=\"{pageTitle}\">" +
+                    $"<meta name=\"twitter:description\" content=\"{pageDesc}\">" +
+                    $"<meta http-equiv=\"refresh\" content=\"0;url={destUrl}\">" +
+                    "</head><body>" +
+                    $"<p>Đang chuyển hướng... <a href=\"{destUrl}\">{destUrl}</a></p>" +
+                    $"<script>setTimeout(function(){{window.location.replace(\"{safeDestJs}\");}},100);</script>" +
+                    "</body></html>";
+
                 return Content(html, "text/html");
             }
             

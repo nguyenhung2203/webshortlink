@@ -408,12 +408,19 @@ public sealed class RedirectService
 
         var ua = userAgent.ToLowerInvariant();
         return ua.Contains("facebookexternalhit") || 
+               ua.Contains("facebookcatalog") ||
                ua.Contains("metaexternalhit") ||
                ua.Contains("twitterbot") || 
                ua.Contains("telegrambot") || 
                ua.Contains("linkedinbot") || 
                ua.Contains("viber") || 
                ua.Contains("skypeuripreview") ||
-               ua.Contains("zalo");
+               ua.Contains("zalo") ||
+               ua.Contains("zalopc") ||
+               ua.Contains("slackbot") ||
+               ua.Contains("whatsapp") ||
+               ua.Contains("discordbot") ||
+               ua.Contains("pinterest") ||
+               ua.Contains("googlebot");
     }
 }
