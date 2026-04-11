@@ -25,6 +25,12 @@ const currentPlanId = ref(1)
 const linkId = computed(() => String(route.params.id ?? ''))
 const isPro = computed(() => currentPlanId.value >= 2)
 
+// ─── OG Edit State ─────────────────────────────────────────────────────────────
+const ogForm = ref({ ogTitle: '', ogDescription: '', ogImageUrl: '' })
+const ogSaving = ref(false)
+const ogError = ref('')
+const ogSuccess = ref('')
+
 async function load() {
   loading.value = true
   error.value = ''
@@ -36,10 +42,50 @@ async function load() {
     ])
     detail.value = linkData
     currentPlanId.value = (subscription as any)?.planId ?? 1
+    // Populate OG form from saved data
+    ogForm.value = {
+      ogTitle: linkData.ogTitle ?? '',
+      ogDescription: linkData.ogDescription ?? '',
+      ogImageUrl: linkData.ogImageUrl ?? '',
+    }
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải chi tiết link.'
   } finally {
     loading.value = false
+  }
+}
+
+async function saveOg() {
+  if (!authStore.accessToken || !detail.value) return
+  ogError.value = ''
+  ogSuccess.value = ''
+
+  if (ogForm.value.ogImageUrl && !ogForm.value.ogImageUrl.startsWith('https://')) {
+    ogError.value = 'Ảnh xem trước phải là link https:// công khai.'
+    return
+  }
+
+  ogSaving.value = true
+  try {
+    await LinkService.update(authStore.accessToken, detail.value.id, {
+      originalUrl: detail.value.originalUrl,
+      domainId: (detail.value as any).domainId ?? null,
+      description: detail.value.description ?? '',
+      tag: detail.value.tag ?? '',
+      expiresAtUtc: (detail.value as any).expiresAtUtc ?? null,
+      clickLimit: (detail.value as any).clickLimit ?? null,
+      password: undefined,
+      ogTitle: ogForm.value.ogTitle || undefined,
+      ogDescription: ogForm.value.ogDescription || undefined,
+      ogImageUrl: ogForm.value.ogImageUrl || undefined,
+    })
+    ogSuccess.value = 'Đã lưu thẻ xem trước mạng xã hội!'
+    await load()
+    setTimeout(() => { ogSuccess.value = '' }, 3000)
+  } catch (err) {
+    ogError.value = err instanceof Error ? err.message : 'Không thể lưu.'
+  } finally {
+    ogSaving.value = false
   }
 }
 
@@ -274,34 +320,100 @@ onMounted(load)
         </div>
       </div>
 
-      <!-- Social Preview Meta Grid -->
+      <!-- Social Preview: Edit + Live Preview -->
       <div class="ui-panel" style="margin-top: 1.5rem;">
         <div class="ui-panel-header">
           <h3 class="ui-panel-title" style="display: flex; align-items: center; gap: 0.5rem;">
             <Image :size="16" style="color: #64748b;" /> Xem trước Mạng xã hội (OpenGraph)
           </h3>
         </div>
-        <div class="ui-panel-body" style="background: #f8fafc; padding: 1.5rem; display: flex; justify-content: center;">
-          <div style="background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; overflow: hidden; max-width: 500px; width: 100%;">
-            <!-- Cover image -->
-            <div style="width: 100%; height: 200px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden; border-bottom: 1px solid #f1f5f9;">
-              <img v-if="detail.ogImageUrl" :src="detail.ogImageUrl" style="width: 100%; height: 100%; object-fit: cover;" />
-              <div v-else style="display: flex; flex-direction: column; align-items: center; color: #94a3b8;">
-                <Image :size="32" style="opacity: 0.5; margin-bottom: 8px;" />
-                <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.1em;">KHÔNG CÓ ẢNH</span>
+        <div class="ui-panel-body">
+          <!-- Pro-only gate -->
+          <div v-if="!isPro" style="padding: 1rem; background: #fffbeb; border-radius: 8px; border: 1px solid #fde68a; margin-bottom: 1.25rem; font-size: 0.875rem; color: #92400e;">
+            ⚠️ Tính năng tùy chỉnh thẻ xem trước MXH (OpenGraph) yêu cầu gói <strong>Pro</strong> hoặc <strong>Plus</strong>. <a href="/app/billing" style="color:#2563eb;font-weight:600;">Nâng cấp ngay</a>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 2rem;">
+            <!-- Edit Form -->
+            <div style="flex: 1; min-width: 260px;">
+              <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div>
+                  <label style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 0.35rem;">Tiêu đề (og:title)</label>
+                  <input
+                    v-model="ogForm.ogTitle"
+                    class="ui-form-input"
+                    placeholder="Nhập tiêu đề hiển thị khi chia sẻ..."
+                    maxlength="150"
+                    :disabled="!isPro"
+                    style="font-size: 0.875rem;"
+                  />
+                </div>
+                <div>
+                  <label style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 0.35rem;">Mô tả (og:description)</label>
+                  <textarea
+                    v-model="ogForm.ogDescription"
+                    class="ui-form-input"
+                    placeholder="Mô tả ngắn hiển thị bên dưới tiêu đề..."
+                    maxlength="500"
+                    :disabled="!isPro"
+                    style="font-size: 0.875rem; height: 72px; resize: none;"
+                  ></textarea>
+                </div>
+                <div>
+                  <label style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 0.35rem;">Link ảnh (og:image)</label>
+                  <input
+                    v-model="ogForm.ogImageUrl"
+                    class="ui-form-input"
+                    placeholder="https://example.com/anh.jpg"
+                    :disabled="!isPro"
+                    style="font-size: 0.875rem;"
+                  />
+                  <p v-if="ogForm.ogImageUrl && !ogForm.ogImageUrl.startsWith('https://')" style="font-size: 11px; color: #ef4444; margin: 4px 0 0; font-weight: 500;">
+                    ⚠️ URL phải bắt đầu bằng https://
+                  </p>
+                  <p v-else style="font-size: 11px; color: #94a3b8; margin: 4px 0 0;">Link ảnh công khai (bắt đầu bằng https://)</p>
+                </div>
+
+                <div v-if="ogError" style="font-size: 12px; color: #ef4444; font-weight: 500; padding: 0.5rem 0.75rem; background: #fef2f2; border-radius: 6px; border: 1px solid #fecaca;">
+                  {{ ogError }}
+                </div>
+                <div v-if="ogSuccess" style="font-size: 12px; color: #059669; font-weight: 500; padding: 0.5rem 0.75rem; background: #ecfdf5; border-radius: 6px; border: 1px solid #a7f3d0;">
+                  ✅ {{ ogSuccess }}
+                </div>
+
+                <button
+                  v-if="isPro"
+                  class="ui-btn ui-btn-primary"
+                  :disabled="ogSaving"
+                  @click="saveOg"
+                  style="align-self: flex-start;"
+                >
+                  {{ ogSaving ? 'Đang lưu...' : 'Lưu thay đổi OG' }}
+                </button>
               </div>
             </div>
-            <!-- Content -->
-            <div style="padding: 1rem; background: #f8fafc;">
-              <p style="font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">
-                {{ linkHost.toUpperCase() }}/{{ detail.slug.toUpperCase() }}
-              </p>
-              <h4 style="font-size: 16px; font-weight: 700; color: #0f172a; line-height: 1.35; margin: 0 0 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word;">
-                {{ detail.ogTitle || detail.originalUrl || 'WeShort - Hệ thống chuyển hướng' }}
-              </h4>
-              <p style="font-size: 14px; color: #64748b; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word;">
-                {{ detail.ogDescription || 'Không có mô tả mạng xã hội nào được cung cấp.' }}
-              </p>
+
+            <!-- Live Preview -->
+            <div style="flex: 1; min-width: 260px;">
+              <label style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 0.5rem;">Xem trước card MXH:</label>
+              <div style="background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; overflow: hidden;">
+                <div style="width: 100%; height: 180px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                  <img v-if="ogForm.ogImageUrl && ogForm.ogImageUrl.startsWith('https://')" :src="ogForm.ogImageUrl" style="width: 100%; height: 100%; object-fit: cover;" />
+                  <div v-else style="display: flex; flex-direction: column; align-items: center; color: #94a3b8;">
+                    <Image :size="32" style="opacity: 0.4; margin-bottom: 8px;" />
+                    <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.1em;">CHƯA CÓ ẢNH</span>
+                  </div>
+                </div>
+                <div style="padding: 0.875rem; background: #f8fafc;">
+                  <p style="font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 4px;">{{ linkHost }}</p>
+                  <h4 style="font-size: 15px; font-weight: 700; color: #0f172a; margin: 0 0 4px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                    {{ ogForm.ogTitle || 'WeShort Link' }}
+                  </h4>
+                  <p style="font-size: 13px; color: #64748b; margin: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                    {{ ogForm.ogDescription || 'Tiết kiệm thời gian với đường link rút gọn chuyên nghiệp.' }}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
