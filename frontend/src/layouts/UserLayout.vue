@@ -110,7 +110,7 @@ function executeCommand() {
 </script>
 
 <template>
-  <div class="flex h-screen overflow-hidden bg-surface text-on-surface">
+  <div class="flex h-screen h-[100dvh] overflow-hidden bg-surface text-on-surface">
     <aside class="hidden w-64 flex-col border-r border-outline-variant bg-surface-container transition-all duration-300 md:flex">
       <div class="header-gradient flex h-14 items-center border-b border-outline-variant px-6 text-white">
         <span class="text-xl font-bold tracking-wider">WeShort</span>
@@ -141,7 +141,7 @@ function executeCommand() {
       </div>
     </aside>
 
-    <div class="flex min-w-0 flex-1 flex-col">
+    <div class="flex min-w-0 flex-1 flex-col relative">
       <header class="z-10 flex h-14 shrink-0 items-center justify-between border-b border-outline-variant bg-surface-container px-4 md:px-6 shadow-sm gap-2">
         <div class="min-w-0 flex-1">
           <p class="hidden text-xs text-on-surface-variant md:block">Khu vực người dùng</p>
@@ -173,16 +173,16 @@ function executeCommand() {
         </div>
       </header>
 
-      <main class="flex-1 overflow-y-auto bg-surface p-4 md:p-6">
+      <main class="flex-1 overflow-y-auto bg-surface p-4 md:p-6 mb-[env(safe-area-inset-bottom)] pb-20 md:pb-6">
         <RouterView />
       </main>
 
-      <nav class="z-10 flex h-14 shrink-0 border-t border-outline-variant bg-surface-container shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:hidden overflow-x-auto" style="scrollbar-width: none;">
+      <nav class="fixed bottom-0 left-0 right-0 z-20 flex border-t border-outline-variant bg-surface-container shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:hidden overflow-x-auto" style="scrollbar-width: none; padding-bottom: env(safe-area-inset-bottom); height: calc(3.5rem + env(safe-area-inset-bottom));">
         <RouterLink
           v-for="item in navItems"
           :key="item.to"
           :to="item.to"
-          class="flex flex-col items-center justify-center gap-1 min-w-[72px] flex-shrink-0 text-[10px] font-medium transition-colors"
+          class="flex flex-col items-center justify-center gap-1 min-w-[72px] flex-1 text-[10px] font-medium transition-colors"
           :class="isNavActive(item.to) ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'"
         >
           <component :is="item.icon" :size="20" />

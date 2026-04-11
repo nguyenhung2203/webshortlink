@@ -46,7 +46,7 @@ const pageTitle = computed(() => {
 </script>
 
 <template>
-  <div class="admin-wrapper" style="display: flex; height: 100vh; background-color: #f1f5f9; overflow: hidden;">
+  <div class="admin-wrapper" style="display: flex; height: 100vh; height: 100dvh; background-color: #f1f5f9; overflow: hidden;">
     
     <!-- Sidebar Desktop -->
     <aside class="admin-sidebar" style="width: 260px; background-color: #0f172a; color: #f8fafc; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 4px 0 24px rgba(0,0,0,0.1); z-index: 20;">
