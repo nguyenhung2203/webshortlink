@@ -167,3 +167,4 @@ public sealed record AdminDomainDnsCheckResultDto(
 
 public sealed record AdminCreateDomainForUserRequestDto(Guid? UserId, string Host, bool IsGlobal, DateTime? ExpiredAtUtc = null, string? UserNotes = null);
 
+public sealed record AdminSaveSettingRequestDto(string Key, string Value, string? GroupName);

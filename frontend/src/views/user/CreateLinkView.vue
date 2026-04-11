@@ -13,7 +13,42 @@ const authStore = useAuthStore()
 // --- Social Preview State ---
 const mockTitle = ref('')
 const mockDesc = ref('')
-const mockImg = ref('')
+const mockImg = ref('')           // Public https:// URL (sent to backend)
+const localPreviewImg = ref('')   // Local file preview only (not sent)
+const isDragging = ref(false)
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
+function openFilePicker() {
+  if (!canUseSocialPreview.value) return
+  fileInputRef.value?.click()
+}
+
+function handleFileSelect(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  if (!file.type.startsWith('image/')) return
+  const url = URL.createObjectURL(file)
+  localPreviewImg.value = url
+  // Clear the URL input hint
+  mockImg.value = ''
+}
+
+function handleDrop(e: DragEvent) {
+  isDragging.value = false
+  const file = e.dataTransfer?.files?.[0]
+  if (!file || !canUseSocialPreview.value) return
+  if (!file.type.startsWith('image/')) return
+  const url = URL.createObjectURL(file)
+  localPreviewImg.value = url
+  mockImg.value = ''
+}
+
+// resolvedPreviewImg: local blob takes priority over URL for preview
+const resolvedPreviewImg = computed<string>(() => {
+  if (localPreviewImg.value) return localPreviewImg.value
+  if (mockImg.value && mockImg.value.startsWith('https://')) return mockImg.value
+  return ''
+})
 
 const defaultForm = {
   originalUrl: '',
@@ -349,77 +384,223 @@ async function submit() {
         </div>
       </div>
 
-      <!-- Right: Social Preview -->
-      <div class="ui-panel" style="position: sticky; top: 1.5rem;">
-        <div style="padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 0.5rem;">
-          <Image :size="16" style="color: #3b82f6;" />
-          <h3 style="margin: 0; font-size: 0.875rem; font-weight: 700; color: #0f172a;">Xem trước Mạng xã hội</h3>
-        </div>
-        <div style="padding: 1.25rem; background: #f8fafc; border-radius: 0 0 12px 12px;">
-          <!-- Mock OG Editor -->
-          <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
-            <label style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em;">Điền thông tin hiển thị khi chia sẻ</label>
+      <!-- Right: Social Preview redesigned -->
+      <div style="display: flex; flex-direction: column; gap: 1.25rem; position: sticky; top: 1.5rem;">
+
+        <!-- Panel 1: Nội Dung Hiển Thị -->
+        <div class="ui-panel">
+          <div style="padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 15px;">📝</span>
+            <h3 style="margin: 0; font-size: 0.875rem; font-weight: 700; color: #0f172a;">Nội Dung Hiển Thị</h3>
+          </div>
+          <div style="padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+
+            <!-- Tiêu đề -->
             <div>
-              <input v-model="mockTitle" class="ui-form-input" style="font-size: 0.875rem; padding: 0.5rem 0.75rem;" placeholder="Tiêu đề (vd: Ưu đãi tháng 4 - Giảm 50%)" :disabled="!canUseSocialPreview" maxlength="150" />
+              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.375rem;">
+                <label style="font-size: 0.8rem; font-weight: 600; color: #374151;">Tiêu Đề <span style="color:#ef4444;">*</span></label>
+                <span style="font-size: 11px; color: #94a3b8;">{{ mockTitle.length }}/150 ký tự</span>
+              </div>
+              <input
+                v-model="mockTitle"
+                class="ui-form-input"
+                placeholder="Tiêu đề hấp dẫn"
+                maxlength="150"
+                :disabled="!canUseSocialPreview"
+                style="font-size: 0.875rem;"
+              />
             </div>
+
+            <!-- Mô tả -->
             <div>
-              <textarea v-model="mockDesc" class="ui-form-input" style="font-size: 0.875rem; padding: 0.5rem 0.75rem; resize: none; height: 64px;" placeholder="Mô tả ngắn hiển thị bên dưới tiêu đề..." :disabled="!canUseSocialPreview" maxlength="500"></textarea>
+              <label style="font-size: 0.8rem; font-weight: 600; color: #374151; display: block; margin-bottom: 0.375rem;">Mô Tả</label>
+              <textarea
+                v-model="mockDesc"
+                class="ui-form-input"
+                placeholder="Mô tả ngắn gọn về nội dung"
+                maxlength="500"
+                :disabled="!canUseSocialPreview"
+                style="font-size: 0.875rem; height: 80px; resize: none;"
+              ></textarea>
             </div>
-            <div>
-              <div style="position: relative;">
+
+            <!-- Tên Trang + Tác Giả -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <div>
+                <label style="font-size: 0.8rem; font-weight: 600; color: #374151; display: block; margin-bottom: 0.375rem;">Tên Trang</label>
                 <input
-                  v-model="mockImg"
                   class="ui-form-input"
-                  style="font-size: 0.875rem; padding: 0.5rem 0.75rem 0.5rem 2.25rem;"
-                  placeholder="https://i.imgur.com/abc123.jpg"
-                  :disabled="!canUseSocialPreview"
+                  placeholder="Thương hiệu"
+                  :disabled="true"
+                  :value="selectedDomainHost"
+                  style="font-size: 0.875rem; background: #f8fafc; cursor: not-allowed;"
                 />
-                <span style="position: absolute; left: 0.65rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;">🔗</span>
               </div>
-              <p style="font-size: 11px; color: #64748b; margin: 4px 0 0; padding-left: 2px;">
-                Nhập link ảnh công khai từ internet (phải bắt đầu bằng <code style="background:#f1f5f9;padding:1px 4px;border-radius:3px;">https://</code>)
-              </p>
-              <!-- Cảnh báo realtime nếu URL ảnh sai định dạng -->
-              <p
-                v-if="mockImg && !mockImg.startsWith('https://')"
-                style="font-size: 11px; color: #ef4444; font-weight: 500; margin: 4px 0 0; display: flex; align-items: center; gap: 4px;"
-              >
-                ⚠️ URL ảnh không hợp lệ — phải bắt đầu bằng <code style="background:#fef2f2;padding:1px 4px;border-radius:3px;">https://</code>. Không chấp nhận ảnh base64 hoặc data URL.
-              </p>
+              <div>
+                <label style="font-size: 0.8rem; font-weight: 600; color: #374151; display: block; margin-bottom: 0.375rem;">Tác Giả</label>
+                <input
+                  class="ui-form-input"
+                  placeholder="@username"
+                  :disabled="!canUseSocialPreview"
+                  style="font-size: 0.875rem;"
+                />
+              </div>
             </div>
-            <p v-if="!canUseSocialPreview" style="font-size: 11px; color: #d97706; font-weight: 500; line-height: 1.5; margin: 0; background: #fffbeb; padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid #fde68a;">
-              ⚠️ Cần nâng cấp lên gói Pro hoặc Plus để bật tính năng tùy chỉnh Thẻ xem trước mạng xã hội (OpenGraph).
-            </p>
+
+            <!-- Plan restriction notice -->
+            <div v-if="!canUseSocialPreview" style="font-size: 11px; color: #d97706; background: #fffbeb; padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid #fde68a; font-weight: 500;">
+              ⚠️ Tùy chỉnh thẻ xem trước MXH yêu cầu gói <strong>Pro</strong> hoặc <strong>Plus</strong>.
+            </div>
           </div>
-          
-          <!-- Preview Card -->
-          <label style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 0.5rem;">Xem trước card khi chia sẻ lên MXH:</label>
-          <div style="background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; overflow: hidden; cursor: pointer; transition: box-shadow 0.15s;">
-            <!-- Cover image -->
-            <div style="width: 100%; height: 160px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden; border-bottom: 1px solid #f1f5f9;">
-              <img v-if="mockImg" :src="mockImg" style="width: 100%; height: 100%; object-fit: cover;" />
-              <div v-else style="display: flex; flex-direction: column; align-items: center; color: #94a3b8;">
-                <Image :size="28" style="opacity: 0.5; margin-bottom: 4px;" />
-                <span style="font-size: 10px; font-weight: 600; letter-spacing: 0.1em;">CHƯA CÓ ẢNH</span>
+        </div>
+
+        <!-- Panel 2: Hình Ảnh -->
+        <div class="ui-panel">
+          <div style="padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 15px;">🖼️</span>
+            <h3 style="margin: 0; font-size: 0.875rem; font-weight: 700; color: #0f172a;">Hình Ảnh</h3>
+          </div>
+          <div style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.875rem;">
+
+            <!-- Hidden file input -->
+            <input
+              ref="fileInputRef"
+              type="file"
+              accept="image/*"
+              style="display: none;"
+              @change="handleFileSelect"
+            />
+
+            <!-- Clickable Drop Zone -->
+            <div
+              @click="openFilePicker"
+              @dragover.prevent="isDragging = true"
+              @dragleave.prevent="isDragging = false"
+              @drop.prevent="handleDrop"
+              :style="{
+                border: isDragging ? '2px dashed #3b82f6' : '2px dashed #d1d5db',
+                borderRadius: '10px',
+                padding: resolvedPreviewImg ? '0' : '1.5rem',
+                textAlign: 'center',
+                background: isDragging ? '#eff6ff' : '#f9fafb',
+                cursor: canUseSocialPreview ? 'pointer' : 'not-allowed',
+                transition: 'all 0.15s',
+                overflow: 'hidden',
+                position: 'relative',
+                minHeight: resolvedPreviewImg ? '130px' : 'auto'
+              }"
+            >
+              <img v-if="resolvedPreviewImg" :src="resolvedPreviewImg"
+                style="width: 100%; height: 130px; object-fit: cover; display: block;" />
+              <div v-if="resolvedPreviewImg"
+                style="position: absolute; inset: 0; background: rgba(0,0,0,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s;"
+                onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
+                <span style="font-size: 22px;">📷</span>
+                <span style="font-size: 12px; color: white; font-weight: 600; margin-top: 4px;">Thay ảnh</span>
+              </div>
+              <template v-if="!resolvedPreviewImg">
+                <div style="font-size: 28px; margin-bottom: 8px; color: #9ca3af;">☁️</div>
+                <p style="margin: 0; font-size: 0.8rem; font-weight: 500;" :style="{ color: canUseSocialPreview ? '#374151' : '#9ca3af' }">
+                  {{ canUseSocialPreview ? 'Nhấn để chọn ảnh' : 'Yêu cầu gói Pro để tải ảnh' }}
+                </p>
+                <p style="margin: 4px 0 0; font-size: 11px; color: #9ca3af;">1200×628px khuyến dụng · JPG, PNG, WEBP</p>
+              </template>
+            </div>
+
+            <!-- WARNING: local file not sent to backend -->
+            <div v-if="localPreviewImg && !mockImg" style="font-size: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 0.75rem; color: #991b1b; line-height: 1.6;">
+              <div style="font-weight: 700; margin-bottom: 4px;">⚠️ Ảnh máy tính chỉ là xem trước cục bộ</div>
+              <div>Ảnh này <strong>sẽ không được lưu</strong> khi tạo link và <strong>Zalo không thể hiển thị</strong> ảnh từ máy tính của bạn.</div>
+              <div style="margin-top: 6px;">👉 Hãy upload ảnh lên một dịch vụ miễn phí rồi dán URL vào ô bên dưới:</div>
+              <div style="margin-top: 4px; display: flex; gap: 8px; flex-wrap: wrap;">
+                <a href="https://imgbb.com" target="_blank" style="color:#2563eb;font-weight:600;text-decoration:none;">imgbb.com</a>
+                <span style="color:#d1d5db;">•</span>
+                <a href="https://imgur.com" target="_blank" style="color:#2563eb;font-weight:600;text-decoration:none;">imgur.com</a>
+                <span style="color:#d1d5db;">•</span>
+                <a href="https://cloudinary.com" target="_blank" style="color:#2563eb;font-weight:600;text-decoration:none;">cloudinary.com</a>
               </div>
             </div>
-            <!-- Content -->
-            <div style="padding: 0.75rem; background: #f8fafc;">
-              <p style="font-size: 10px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">
-                {{ selectedDomainHost.toUpperCase() }}{{ form.customSlug ? '/' + form.customSlug.toUpperCase() : '' }}
-              </p>
-              <h4 style="font-size: 15px; font-weight: 700; color: #0f172a; line-height: 1.35; margin: 0 0 4px; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word;">
-                {{ mockTitle || form.originalUrl || 'WeShort - Hệ thống chuyển hướng mạnh mẽ' }}
-              </h4>
-              <p style="font-size: 13px; color: #64748b; margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; word-break: break-word;">
-                {{ mockDesc || 'Click vào link để xem nội dung chi tiết. Tạo bởi hệ thống quản trị WeShort...' }}
+            <div v-else-if="localPreviewImg && mockImg" style="font-size: 11px; color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 0.4rem 0.6rem; font-weight: 500;">
+              ✅ URL ảnh hợp lệ — ảnh này sẽ hiển thị khi chia sẻ lên Zalo/MXH.
+            </div>
+
+            <div>
+              <label style="font-size: 0.8rem; font-weight: 600; color: #374151; display: block; margin-bottom: 0.375rem;">
+                URL ảnh công khai (bắt buộc để hiển thị trên Zalo)
+              </label>
+              <input
+                v-model="mockImg"
+                class="ui-form-input"
+                placeholder="https://i.imgbb.com/abc123.jpg"
+                :disabled="!canUseSocialPreview"
+                style="font-size: 0.875rem;"
+                @input="localPreviewImg = ''"
+              />
+              <p v-if="mockImg && !mockImg.startsWith('https://')" style="font-size: 11px; color: #ef4444; font-weight: 500; margin: 4px 0 0;">
+                ⚠️ URL phải bắt đầu bằng <code style="background:#fef2f2;padding:1px 4px;border-radius:3px;">https://</code>
               </p>
             </div>
           </div>
         </div>
+
+        <!-- Panel 3: Xem Trước trên X (Twitter) -->
+        <div class="ui-panel">
+          <div style="padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 15px; font-weight: 900; color: #0f172a;">𝕏</span>
+            <h3 style="margin: 0; font-size: 0.875rem; font-weight: 700; color: #0f172a;">Xem Trước trên X</h3>
+          </div>
+          <div style="padding: 1.25rem;">
+            <!-- Fake tweet wrapper -->
+            <div style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; background: white;">
+              <!-- Tweet header -->
+              <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem;">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,#3b82f6,#8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: white; flex-shrink: 0;">
+                  {{ (authStore.user?.fullName || 'U').charAt(0).toUpperCase() }}
+                </div>
+                <div>
+                  <div style="font-size: 0.8rem; font-weight: 700; color: #0f172a; line-height: 1.2;">{{ authStore.user?.fullName || 'Người dùng' }}</div>
+                  <div style="font-size: 11px; color: #94a3b8;">@{{ (authStore.user?.email || 'user').split('@')[0] }}</div>
+                </div>
+              </div>
+              <!-- Tweet text -->
+              <p style="font-size: 0.875rem; color: #374151; margin: 0 0 0.75rem; line-height: 1.5;">
+                Xem ngay
+                <span style="color: #3b82f6; text-decoration: underline; cursor: pointer; font-size: 0.875rem;">
+                  {{ selectedDomainHost }}/{{ form.customSlug || '...' }}
+                </span>
+              </p>
+              <!-- Image card inside tweet -->
+              <div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
+                <div style="width: 100%; height: 150px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                  <img
+                    v-if="resolvedPreviewImg"
+                    :src="resolvedPreviewImg"
+                    style="width: 100%; height: 100%; object-fit: cover;"
+                  />
+                  <div v-else style="text-align: center; color: #94a3b8;">
+                    <div style="font-size: 28px; margin-bottom: 4px;">🖼️</div>
+                    <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em;">Chưa chọn ảnh</span>
+                  </div>
+                </div>
+                <div style="padding: 0.6rem 0.75rem; background: #f8fafc;">
+                  <p style="font-size: 11px; color: #94a3b8; margin: 0 0 2px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em;">{{ selectedDomainHost }}</p>
+                  <p style="font-size: 0.8rem; font-weight: 700; color: #0f172a; margin: 0 0 2px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">
+                    {{ mockTitle || 'WeShort - Hệ thống rút gọn link' }}
+                  </p>
+                  <p style="font-size: 11px; color: #64748b; margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">
+                    {{ mockDesc || 'Tiết kiệm thời gian với đường link rút gọn chuyên nghiệp.' }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
+      <!-- /Right column -->
 
     </div>
+    <!-- /lk-grid-responsive -->
 
   </div>
 </template>

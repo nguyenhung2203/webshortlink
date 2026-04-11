@@ -128,4 +128,16 @@ public sealed class AdminController : ControllerBase
     [HttpDelete("plans/feature-labels/{featureKey}")]
     public async Task<IActionResult> DeleteFeatureLabel(string featureKey, CancellationToken cancellationToken)
         => Ok(await _adminService.DeleteFeatureLabelAsync(featureKey, cancellationToken));
+
+    // ─── System Settings ────────────────────────────────────────────────────────
+    [HttpGet("settings/{key}")]
+    public async Task<IActionResult> GetSetting(string key, CancellationToken cancellationToken)
+    {
+        var value = await _adminService.GetSystemSettingAsync(key, cancellationToken);
+        return Ok(new { key, value });
+    }
+
+    [HttpPost("settings")]
+    public async Task<IActionResult> SaveSetting([FromBody] AdminSaveSettingRequestDto request, CancellationToken cancellationToken)
+        => Ok(await _adminService.SaveSystemSettingAsync(request.Key, request.Value, request.GroupName ?? "General", cancellationToken));
 }

@@ -50,11 +50,22 @@ public sealed class RedirectService
 
         if (IsSocialScraper(httpContext.Request.Headers.UserAgent.ToString()))
         {
+            // Nếu link không có ảnh OG riêng, dùng ảnh mặc định từ SystemSettings
+            var ogImage = link.OgImageUrl;
+            if (string.IsNullOrWhiteSpace(ogImage))
+            {
+                ogImage = await _dbContext.SystemSettings
+                    .AsNoTracking()
+                    .Where(x => x.SettingKey == "og.default_image")
+                    .Select(x => x.SettingValue)
+                    .FirstOrDefaultAsync(cancellationToken);
+            }
+
             return new OgLinkDataDto(
                 link.OriginalUrl,
                 link.OgTitle,
                 link.OgDescription,
-                link.OgImageUrl,
+                ogImage,
                 normalizedHost,
                 slug);
         }

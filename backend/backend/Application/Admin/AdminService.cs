@@ -757,4 +757,44 @@ public sealed class AdminService
         await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-FEATURE-DELETE", "PlanFeature", featureKey, current.UserId, current.IpAddress, new { featureKey }, cancellationToken);
         return new MessageResponseDto($"Đã xóa tính năng '{featureKey}' khỏi tất cả các gói.");
     }
+
+    /// <summary>Lấy giá trị của một System Setting theo key.</summary>
+    public async Task<string?> GetSystemSettingAsync(string key, CancellationToken cancellationToken)
+    {
+        return await _dbContext.SystemSettings
+            .AsNoTracking()
+            .Where(x => x.SettingKey == key)
+            .Select(x => x.SettingValue)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    /// <summary>Tạo hoặc cập nhật một System Setting.</summary>
+    public async Task<MessageResponseDto> SaveSystemSettingAsync(string key, string value, string groupName, CancellationToken cancellationToken)
+    {
+        var current = _currentUserService.GetRequired();
+        var setting = await _dbContext.SystemSettings.FirstOrDefaultAsync(x => x.SettingKey == key, cancellationToken);
+        if (setting == null)
+        {
+            setting = new SystemSetting
+            {
+                Id = Guid.NewGuid(),
+                SettingKey = key,
+                SettingValue = value,
+                GroupName = groupName,
+                CreatedAtUtc = DateTime.UtcNow,
+                CreatedByUserId = current.UserId.ToString()
+            };
+            _dbContext.SystemSettings.Add(setting);
+        }
+        else
+        {
+            setting.SettingValue = value;
+            setting.UpdatedAtUtc = DateTime.UtcNow;
+            setting.UpdatedByUserId = current.UserId.ToString();
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _auditLogService.WriteAsync(AuditActorType.Admin, "ADM-API-SETTING-SAVE", "SystemSetting", key, current.UserId, current.IpAddress, new { key, value }, cancellationToken);
+        return new MessageResponseDto($"Đã lưu cài đặt '{key}'.");
+    }
 }

@@ -3,13 +3,61 @@ import { onMounted, ref } from 'vue'
 import { AdminService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
 import type { AdminDashboardDashboard } from '@/types/api'
-import { Users, Link2, MousePointerClick, TrendingUp, ShieldAlert, Zap, ServerCog, Activity, AlertCircle } from 'lucide-vue-next'
+import { Users, Link2, MousePointerClick, TrendingUp, ShieldAlert, Zap, ServerCog, Activity, AlertCircle, Image } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 
 const authStore = useAuthStore()
 const data = ref<AdminDashboardDashboard | null>(null)
 const error = ref('')
 const loading = ref(true)
+
+// ─── Default OG Image Setting ───────────────────────────────────────────────────
+const ogDefaultImage = ref('')
+const ogSaving = ref(false)
+const ogSaveMsg = ref('')
+const ogSaveErr = ref('')
+
+async function loadOgSetting() {
+  try {
+    if (!authStore.accessToken) return
+    const res = await fetch('/api/admin/settings/og.default_image', {
+      headers: { Authorization: `Bearer ${authStore.accessToken}` }
+    })
+    if (res.ok) {
+      const d = await res.json()
+      ogDefaultImage.value = d.value ?? ''
+    }
+  } catch { /* silent */ }
+}
+
+async function saveOgSetting() {
+  if (!authStore.accessToken) return
+  if (ogDefaultImage.value && !ogDefaultImage.value.startsWith('https://')) {
+    ogSaveErr.value = 'URL phải bắt đầu bằng https://'
+    return
+  }
+  ogSaving.value = true
+  ogSaveMsg.value = ''
+  ogSaveErr.value = ''
+  try {
+    const res = await fetch('/api/admin/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.accessToken}` },
+      body: JSON.stringify({ key: 'og.default_image', value: ogDefaultImage.value, groupName: 'OG' })
+    })
+    const d = await res.json()
+    if (res.ok) {
+      ogSaveMsg.value = d.message ?? 'Đã lưu!'
+      setTimeout(() => { ogSaveMsg.value = '' }, 3000)
+    } else {
+      ogSaveErr.value = d.message ?? 'Lỗi lưu'
+    }
+  } catch (e) {
+    ogSaveErr.value = 'Không thể kết nối server'
+  } finally {
+    ogSaving.value = false
+  }
+}
 
 async function load() {
   loading.value = true
@@ -23,7 +71,7 @@ async function load() {
   }
 }
 
-onMounted(load)
+onMounted(async () => { await Promise.all([load(), loadOgSetting()]) })
 </script>
 
 <template>
@@ -204,6 +252,63 @@ onMounted(load)
                   <RouterLink to="/admin/security" class="ui-btn ui-btn-outline" style="background: white;">Trạng thái Bảo mật</RouterLink>
               </div>
            </div>
+        </section>
+
+        <!-- Default OG Image Setting -->
+        <section>
+          <div style="margin-bottom: 0.75rem; font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Cài đặt Xem trước Mạng Xã hội</div>
+          <div class="ui-panel">
+            <div class="ui-panel-header">
+              <h3 class="ui-panel-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                <Image :size="16" style="color: #6366f1;" /> Ảnh OpenGraph Mặc định (Fallback)
+              </h3>
+              <p style="font-size: 0.8rem; color: #64748b; margin: 0.25rem 0 0;">Những link không được đặt ảnh riêng sẽ tự dùng ảnh này khi chia sẻ lên Zalo, Facebook, v.v.</p>
+            </div>
+            <div class="ui-panel-body"
+              style="display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-start;">
+              <!-- Form -->
+              <div style="flex: 1; min-width: 280px;">
+                <label style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.4rem;">URL ảnh mặc định (og:image)</label>
+                <input
+                  v-model="ogDefaultImage"
+                  class="ui-form-input"
+                  placeholder="https://wesortlink.io.vn/og-default.jpg"
+                  style="font-size: 0.9rem; margin-bottom: 0.5rem;"
+                />
+                <p v-if="ogDefaultImage && !ogDefaultImage.startsWith('https://')" style="font-size: 11px; color: #ef4444; margin: 0 0 0.5rem; font-weight: 500;">
+                  ⚠️ URL phải bắt đầu bằng https://
+                </p>
+                <p v-else style="font-size: 11px; color: #94a3b8; margin: 0 0 0.75rem;">Link ảnh công khai, bắt đầu bằng https:// — không chấp nhận base64</p>
+                <div v-if="ogSaveErr" style="font-size: 12px; color: #ef4444; padding: 0.5rem 0.75rem; background: #fef2f2; border-radius: 6px; border: 1px solid #fecaca; margin-bottom: 0.5rem;">{{ ogSaveErr }}</div>
+                <div v-if="ogSaveMsg" style="font-size: 12px; color: #059669; padding: 0.5rem 0.75rem; background: #ecfdf5; border-radius: 6px; border: 1px solid #a7f3d0; margin-bottom: 0.5rem;">✅ {{ ogSaveMsg }}</div>
+                <button class="ui-btn ui-btn-primary" :disabled="ogSaving" @click="saveOgSetting" style="font-size: 0.85rem;">
+                  {{ ogSaving ? 'Đang lưu...' : 'Lưu ảnh mặc định' }}
+                </button>
+              </div>
+              <!-- Preview -->
+              <div style="flex: 1; min-width: 220px; max-width: 360px;">
+                <label style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 0.4rem;">Xem trước:</label>
+                <div style="background: white; border-radius: 10px; border: 1px solid #e2e8f0; overflow: hidden;">
+                  <div style="width: 100%; height: 140px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                    <img
+                      v-if="ogDefaultImage && ogDefaultImage.startsWith('https://')"
+                      :src="ogDefaultImage"
+                      style="width: 100%; height: 100%; object-fit: cover;"
+                    />
+                    <div v-else style="text-align: center; color: #94a3b8;">
+                      <Image :size="28" style="opacity:0.4; display:block; margin: 0 auto 4px;" />
+                      <span style="font-size: 10px; font-weight: 600; letter-spacing: 0.1em;">CHƯA CÓ ẢNH</span>
+                    </div>
+                  </div>
+                  <div style="padding: 0.75rem; background: #f8fafc;">
+                    <p style="font-size: 11px; color: #94a3b8; margin: 0 0 3px; font-weight: 600;">WESORTLINK.IO.VN</p>
+                    <p style="font-size: 13px; font-weight: 700; color: #0f172a; margin: 0 0 3px;">WeShort Link</p>
+                    <p style="font-size: 12px; color: #64748b; margin: 0;">Tiết kiệm thời gian với link rút gọn...</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
       </div>
