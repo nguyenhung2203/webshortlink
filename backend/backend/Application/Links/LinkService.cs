@@ -215,7 +215,8 @@ public sealed class LinkService
                 x.TotalClicks,
                 x.UniqueClicks,
                 x.ClickEvents.LongCount(y => y.IsBot),
-                x.ClickEvents.LongCount(y => y.ClickedAtUtc >= today),
+                x.ClickEvents.LongCount(y => y.ClickedAtUtc >= today && 
+                    (y.EventStatus == ClickEventStatus.Redirected || y.EventStatus == ClickEventStatus.WrapperView)),
                 x.CreatedAtUtc,
                 x.UpdatedAtUtc))
             .ToListAsync(cancellationToken);
