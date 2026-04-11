@@ -1,4 +1,4 @@
-import { apiRequest } from './client'
+import { apiRequest, API_BASE_URL } from './client'
 import type {
   AdminDashboardDashboard,
   AdminLink,
@@ -131,7 +131,6 @@ export const UserService = {
     apiRequest<LinkAnalytics>(`/api/user/analytics/links/${id}`, { token }),
   /** FIX-019: Download CSV export (Pro/Plus plans only) */
   exportLinkAnalyticsCsv: async (token: string, id: string): Promise<void> => {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
     const response = await fetch(`${API_BASE_URL}/api/user/analytics/links/${id}/export-csv`, {
       headers: { Authorization: `Bearer ${token}` },
     })

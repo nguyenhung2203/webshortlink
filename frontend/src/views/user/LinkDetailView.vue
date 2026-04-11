@@ -20,22 +20,17 @@ const actionLoading = ref(false)
 const error = ref('')
 const message = ref('')
 const detail = ref<LinkDetail | null>(null)
-const currentPlanId = ref(1)
 
 const linkId = computed(() => String(route.params.id ?? ''))
-const isPro = computed(() => currentPlanId.value >= 2)
+const canExportAnalytics = computed(() => authStore.hasCapability('reports.export'))
+const canUseAdvancedRules = computed(() => authStore.hasCapability('rules.targeting_advanced'))
 
 async function load() {
   loading.value = true
   error.value = ''
   try {
     if (!authStore.accessToken) throw new Error('Chưa xác thực.')
-    const [linkData, subscription] = await Promise.all([
-      LinkService.detail(authStore.accessToken, linkId.value),
-      UserService.getSubscription(authStore.accessToken),
-    ])
-    detail.value = linkData
-    currentPlanId.value = (subscription as any)?.planId ?? 1
+    detail.value = await LinkService.detail(authStore.accessToken, linkId.value)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải chi tiết link.'
   } finally {
@@ -126,7 +121,7 @@ onMounted(load)
         <p class="ui-subtitle">Xem cấu hình, thống kê nhanh và quản lý toàn diện link rút gọn.</p>
       </div>
       <div>
-        <button v-if="isPro" class="ui-btn ui-btn-outline" style="border-color: #10b981; color: #059669;" :disabled="exportLoading" @click="exportCsv">
+        <button v-if="canExportAnalytics" class="ui-btn ui-btn-outline" style="border-color: #10b981; color: #059669;" :disabled="exportLoading" @click="exportCsv">
           <FileOutput :size="15" /> {{ exportLoading ? 'Đang xuất...' : 'Xuất báo cáo CSV' }}
         </button>
       </div>
@@ -346,7 +341,7 @@ onMounted(load)
            Actually we just put it here, the component handles itself. We'll leave it as is. -->
       <LinkRulesPanel
         :link-id="detail.id"
-        :is-pro="isPro"
+        :is-pro="canUseAdvancedRules"
       />
 
     </template>

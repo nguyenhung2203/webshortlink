@@ -254,7 +254,7 @@ public sealed class LinkService
 
             if (slugExists)
             {
-                throw new AppException(ErrorCodes.Conflict, "Slug da ton tai tren domain duoc chon.", StatusCodes.Status409Conflict);
+                throw new AppException(ErrorCodes.Conflict, "Slug đã tồn tại trên domain được chọn.", StatusCodes.Status409Conflict);
             }
         }
 
@@ -495,34 +495,34 @@ public sealed class LinkService
 
         return Enum.TryParse<LinkRedirectMode>(value, true, out var mode)
             ? mode
-            : throw new AppException(ErrorCodes.ValidationFailed, "Redirect mode khong hop le.");
+            : throw new AppException(ErrorCodes.ValidationFailed, "Chế độ chuyển hướng không hợp lệ.");
     }
 
     private static void ValidateWrapperInput(bool isWrapperEnabled, LinkRedirectMode redirectMode, int? delaySeconds, string? ogImageUrl, string? wrapperImageUrl, string? brandLogoUrl, string? ctaButtonUrl)
     {
         if (!string.IsNullOrWhiteSpace(ogImageUrl) && !IsAllowedAbsoluteUrl(ogImageUrl))
         {
-            throw new AppException(ErrorCodes.ValidationFailed, "OG image URL khong hop le.");
+            throw new AppException(ErrorCodes.ValidationFailed, "URL ảnh OG không hợp lệ.");
         }
 
         if (!string.IsNullOrWhiteSpace(wrapperImageUrl) && !IsAllowedAbsoluteUrl(wrapperImageUrl))
         {
-            throw new AppException(ErrorCodes.ValidationFailed, "Wrapper image URL khong hop le.");
+            throw new AppException(ErrorCodes.ValidationFailed, "URL ảnh Wrapper không hợp lệ.");
         }
 
         if (!string.IsNullOrWhiteSpace(brandLogoUrl) && !IsAllowedAbsoluteUrl(brandLogoUrl))
         {
-            throw new AppException(ErrorCodes.ValidationFailed, "Brand logo URL khong hop le.");
+            throw new AppException(ErrorCodes.ValidationFailed, "URL logo thương hiệu không hợp lệ.");
         }
 
         if (!string.IsNullOrWhiteSpace(ctaButtonUrl) && !IsAllowedAbsoluteUrl(ctaButtonUrl))
         {
-            throw new AppException(ErrorCodes.ValidationFailed, "CTA URL khong hop le.");
+            throw new AppException(ErrorCodes.ValidationFailed, "URL nút CTA không hợp lệ.");
         }
 
         if (isWrapperEnabled && redirectMode == LinkRedirectMode.Delay && (!delaySeconds.HasValue || delaySeconds.Value < 1 || delaySeconds.Value > 30))
         {
-            throw new AppException(ErrorCodes.ValidationFailed, "Delay redirect chi ho tro tu 1 den 30 giay.");
+            throw new AppException(ErrorCodes.ValidationFailed, "Chuyển hướng trễ chỉ hỗ trợ từ 1 đến 30 giây.");
         }
     }
 

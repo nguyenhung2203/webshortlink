@@ -89,8 +89,13 @@ public sealed class AuthService
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         var verificationToken = await _userManager.GenerateUserTokenAsync(user, TokenOptions.DefaultEmailProvider, "ConfirmEmail");
+        var toEmail = user.Email ?? request.Email.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(toEmail))
+        {
+            throw new AppException(ErrorCodes.ValidationFailed, "Email khong hop le.");
+        }
         await _emailSenderService.SendEmailAsync(
-            user.Email,
+            toEmail,
             "Xác thực Tài khoản WeShort",
             $"Mã bí mật (OTP) để xác thực email của bạn là:\n\n{verificationToken}\n\nVui lòng copy và dán vào Hệ thống để kích hoạt quyền truy cập.",
             cancellationToken);
@@ -200,8 +205,9 @@ public sealed class AuthService
         }
 
         var token = await _userManager.GenerateUserTokenAsync(user, TokenOptions.DefaultEmailProvider, "ResetPassword");
+        var toEmail = user.Email ?? request.Email.Trim().ToLowerInvariant();
         await _emailSenderService.SendEmailAsync(
-            user.Email,
+            toEmail,
             "Khôi phục Mật khẩu - WeShort",
             $"Hệ thống đã nhận được yêu cầu khôi phục mật khẩu. Mã bảo mật (OTP) của bạn là:\n\n{token}\n\nTuyệt đối không chia sẻ mã này cho bất kỳ ai.",
             cancellationToken);
@@ -277,7 +283,18 @@ public sealed class AuthService
     {
         var current = _currentUserService.GetRequired();
         var user = await _dbContext.Users.AsNoTracking().FirstAsync(x => x.Id == current.UserId, cancellationToken);
-        return new CurrentSessionDto(user.Id, user.Email!, user.FullName, current.IsAdmin ? AppRoles.Admin : AppRoles.User, user.CurrentPlanId, user.AccountStatus.ToString());
+        var planSnapshot = await GetPlanSnapshotAsync(user.CurrentPlanId, cancellationToken);
+
+        return new CurrentSessionDto(
+            user.Id,
+            user.Email!,
+            user.FullName,
+            current.IsAdmin ? AppRoles.Admin : AppRoles.User,
+            user.CurrentPlanId,
+            planSnapshot.Code,
+            planSnapshot.Name,
+            planSnapshot.Capabilities,
+            user.AccountStatus.ToString());
     }
 
     private async Task WriteLoginFailedAuditAsync(string email, AppUser? user, string reason, CancellationToken cancellationToken)
@@ -305,6 +322,7 @@ public sealed class AuthService
         var accessToken = _jwtTokenService.CreateAccessToken(user, roles);
         var refreshToken = _jwtTokenService.CreateRefreshToken();
         var refreshHash = _jwtTokenService.HashRefreshToken(refreshToken);
+        var planSnapshot = await GetPlanSnapshotAsync(user.CurrentPlanId, cancellationToken);
 
         _dbContext.RefreshSessions.Add(new RefreshSession
         {
@@ -329,7 +347,32 @@ public sealed class AuthService
                 user.FullName,
                 roles.FirstOrDefault() ?? AppRoles.User,
                 user.CurrentPlanId,
+                planSnapshot.Code,
+                planSnapshot.Name,
+                planSnapshot.Capabilities,
                 user.AccountStatus.ToString()));
+    }
+
+    private async Task<(string Code, string Name, IReadOnlyCollection<string> Capabilities)> GetPlanSnapshotAsync(int planId, CancellationToken cancellationToken)
+    {
+        var plan = await _dbContext.Plans
+            .AsNoTracking()
+            .Include(x => x.Features)
+            .FirstOrDefaultAsync(x => x.Id == planId, cancellationToken);
+
+        if (plan is null)
+        {
+            return ("free", "Free", Array.Empty<string>());
+        }
+
+        var capabilities = plan.Features
+            .Where(x => x.IsEnabled)
+            .Select(x => x.FeatureKey)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        return (plan.Code, plan.Name, capabilities);
     }
 
     private static void ValidateRegister(RegisterRequestDto request)

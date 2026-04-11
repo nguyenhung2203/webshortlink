@@ -50,6 +50,20 @@ const title = computed(() => {
   }
 })
 
+const planBadge = computed(() => {
+  switch (authStore.planCode) {
+    case 'premium':
+    case 'plus':
+      return { label: 'PLUS', className: 'rounded-full bg-amber-500/20 border border-amber-500/30 px-3 py-1 text-xs font-black text-amber-600 uppercase drop-shadow-sm tracking-widest' }
+    case 'pro':
+      return { label: 'PRO', className: 'rounded-full bg-primary/20 border border-primary/30 px-3 py-1 text-xs font-black text-primary uppercase drop-shadow-sm tracking-widest' }
+    case 'basic':
+      return { label: 'BASIC', className: 'rounded-full bg-emerald-500/20 border border-emerald-500/30 px-3 py-1 text-xs font-black text-emerald-600 uppercase drop-shadow-sm tracking-widest' }
+    default:
+      return { label: 'FREE', className: 'rounded-full bg-gray-200 border border-gray-300 px-3 py-1 text-xs font-bold text-gray-500 uppercase tracking-widest' }
+  }
+})
+
 function isNavActive(path: string) {
   if (path === '/app/links') {
     return route.path === '/app/links' || route.path.startsWith('/app/links/')
@@ -148,23 +162,8 @@ function executeCommand() {
           <h1 class="text-lg font-bold truncate">{{ title }}</h1>
         </div>
         <div class="flex items-center gap-2 md:gap-3 shrink-0">
-          <span 
-            v-if="authStore.user?.currentPlanId === 2"
-            class="rounded-full bg-primary/20 border border-primary/30 px-3 py-1 text-xs font-black text-primary uppercase drop-shadow-sm tracking-widest"
-          >
-            PRO
-          </span>
-          <span 
-            v-else-if="authStore.user?.currentPlanId === 3"
-            class="rounded-full bg-amber-500/20 border border-amber-500/30 px-3 py-1 text-xs font-black text-amber-600 uppercase drop-shadow-sm tracking-widest"
-          >
-            PLUS
-          </span>
-          <span 
-            v-else
-            class="rounded-full bg-gray-200 border border-gray-300 px-3 py-1 text-xs font-bold text-gray-500 uppercase tracking-widest"
-          >
-            FREE
+          <span :class="planBadge.className">
+            {{ planBadge.label }}
           </span>
           <span class="text-sm font-bold text-on-surface ml-1 whitespace-nowrap">{{ authStore.user?.fullName || authStore.user?.email || 'N/A' }}</span>
           <button @click="logout" class="md:hidden flex items-center justify-center p-1.5 text-red-500 hover:bg-red-50 rounded" title="Đăng xuất">

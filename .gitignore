@@ -13,3 +13,8 @@ backend/backend/obj/
 # Local .NET telemetry/cache paths
 .dotnet/
 .dotnet-home/
+
+# Local temp, logs, and pid files
+.tmp/
+backend/backend/*.log
+backend/backend/*.pid

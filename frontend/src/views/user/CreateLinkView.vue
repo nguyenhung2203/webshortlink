@@ -57,14 +57,18 @@ const selectedDomainHost = computed(() => {
 const copySuccess = ref(false)
 const showAdvanced = ref(false)
 
-const currentPlanId = computed(() => authStore.user?.currentPlanId ?? 1)
-const canUseCustomDomain = computed(() => currentPlanId.value >= 2)
-const canUseCustomSlug = computed(() => currentPlanId.value >= 2)
-const canUsePremiumLinkSettings = computed(() => currentPlanId.value >= 2)
-const canUseSocialPreview = computed(() => currentPlanId.value >= 2)
-const canUseWrapper = computed(() => currentPlanId.value >= 2)
-const canUseWrapperLanding = computed(() => currentPlanId.value >= 3)
-const canUseWrapperCta = computed(() => currentPlanId.value >= 3)
+const canUseCustomDomain = computed(() => authStore.hasCapability('domains.custom'))
+const canUseCustomSlug = computed(() => authStore.hasCapability('links.custom_slug'))
+const canUsePasswordProtection = computed(() => authStore.hasCapability('links.password_protection'))
+const canUseExpiration = computed(() => authStore.hasCapability('links.expiration'))
+const canUseClickLimit = computed(() => authStore.hasCapability('links.click_limit'))
+const canUsePremiumLinkSettings = computed(() =>
+  canUsePasswordProtection.value || canUseExpiration.value || canUseClickLimit.value,
+)
+const canUseSocialPreview = computed(() => authStore.hasCapability('links.social_preview'))
+const canUseWrapper = computed(() => authStore.hasCapability('links.wrapper'))
+const canUseWrapperLanding = computed(() => authStore.hasCapability('links.wrapper_landing'))
+const canUseWrapperCta = computed(() => authStore.hasCapability('links.wrapper_cta'))
 
 const result = ref<ShortLink | null>(null)
 const error = ref('')
@@ -123,8 +127,16 @@ async function submit() {
     error.value = 'Giới hạn số click phải lớn hơn 0.'
     return
   }
-  if (!canUsePremiumLinkSettings.value && (form.value.password || form.value.expiresAtUtc || form.value.clickLimit)) {
-    error.value = 'Mật khẩu, ngày hết hạn và giới hạn click yêu cầu gói Pro hoặc Plus.'
+  if (form.value.password && !canUsePasswordProtection.value) {
+    error.value = 'Bảo vệ link bằng mật khẩu chưa sẵn sàng trên gói hiện tại.'
+    return
+  }
+  if (form.value.expiresAtUtc && !canUseExpiration.value) {
+    error.value = 'Cài đặt ngày hết hạn chưa sẵn sàng trên gói hiện tại.'
+    return
+  }
+  if (form.value.clickLimit && !canUseClickLimit.value) {
+    error.value = 'Giới hạn click chưa sẵn sàng trên gói hiện tại.'
     return
   }
   if (!canUseCustomDomain.value && form.value.domainId) {
@@ -141,35 +153,35 @@ async function submit() {
   }
 
   if (form.value.isWrapperEnabled && !canUseWrapper.value) {
-    error.value = 'Tinh nang boc link yeu cau goi Pro hoac Plus.'
+    error.value = 'Tính năng bọc link yêu cầu gói Pro hoặc Plus.'
     return
   }
 
   if (form.value.isWrapperEnabled && form.value.redirectMode === 'LandingPage' && !canUseWrapperLanding.value) {
-    error.value = 'Landing wrapper chi co trong goi Plus.'
+    error.value = 'Landing wrapper chỉ có trong gói Plus.'
     return
   }
 
   if (!canUseWrapperCta.value && (form.value.ctaTitle || form.value.ctaDescription || form.value.ctaButtonText || form.value.ctaButtonUrl)) {
-    error.value = 'CTA block chi co trong goi Plus.'
+    error.value = 'CTA block chỉ có trong gói Plus.'
     return
   }
 
   if (form.value.isWrapperEnabled && form.value.redirectMode === 'Delay') {
     const delay = Number(form.value.delaySeconds)
     if (Number.isNaN(delay) || delay < 1 || delay > 30) {
-      error.value = 'Delay redirect chi ho tro tu 1 den 30 giay.'
+      error.value = 'Delay redirect chỉ hỗ trợ từ 1 đến 30 giây.'
       return
     }
   }
 
   for (const [fieldLabel, value] of [
-    ['Anh wrapper', form.value.wrapperImageUrl],
-    ['Logo thuong hieu', form.value.brandLogoUrl],
+    ['Ảnh wrapper', form.value.wrapperImageUrl],
+    ['Logo thương hiệu', form.value.brandLogoUrl],
     ['CTA URL', form.value.ctaButtonUrl],
   ] as const) {
     if (value && !String(value).startsWith('https://')) {
-      error.value = `${fieldLabel} phai la link https:// cong khai.`
+      error.value = `${fieldLabel} phải là link https:// công khai.`
       return
     }
   }
@@ -178,7 +190,7 @@ async function submit() {
 
   try {
     if (!authStore.accessToken) throw new Error('Chưa xác thực')
-    
+
     let expiresDate = null
     if (form.value.expiresAtUtc) {
       expiresDate = new Date(form.value.expiresAtUtc).toISOString()
@@ -186,13 +198,13 @@ async function submit() {
 
     result.value = await LinkService.create(authStore.accessToken, {
       ...form.value,
-      expiresAtUtc: expiresDate,
-      clickLimit: form.value.clickLimit ? Number(form.value.clickLimit) : null,
+      expiresAtUtc: canUseExpiration.value ? expiresDate : null,
+      clickLimit: canUseClickLimit.value && form.value.clickLimit ? Number(form.value.clickLimit) : null,
       customSlug: form.value.customSlug || undefined,
       description: form.value.description || undefined,
       domainId: form.value.domainId || null,
       tag: form.value.tag || undefined,
-      password: form.value.password || undefined,
+      password: canUsePasswordProtection.value ? (form.value.password || undefined) : undefined,
       ogTitle: (canUseSocialPreview.value && mockTitle.value) ? mockTitle.value : undefined,
       ogDescription: (canUseSocialPreview.value && mockDesc.value) ? mockDesc.value : undefined,
       ogImageUrl: (canUseSocialPreview.value && mockImg.value) ? mockImg.value : undefined,
@@ -212,7 +224,7 @@ async function submit() {
       ctaButtonText: form.value.isWrapperEnabled && canUseWrapperCta.value ? (form.value.ctaButtonText || undefined) : undefined,
       ctaButtonUrl: form.value.isWrapperEnabled && canUseWrapperCta.value ? (form.value.ctaButtonUrl || undefined) : undefined,
     })
-    
+
     form.value = { ...defaultForm }
     showAdvanced.value = false
     // Reset OG fields
@@ -441,7 +453,7 @@ async function submit() {
                       <input v-model="form.wrapperImageUrl" class="ui-form-input" placeholder="https://..." />
                     </div>
                     <div class="ui-form-group" style="margin: 0;">
-                      <label class="ui-form-label" style="font-size: 0.7rem; color: #475569; font-weight: 700; text-transform: uppercase;">Lời nhắc nhỏ</label>
+                      <label class="ui-form-label" style="font-size: 0.7rem; color: #475569; font-weight: 700; text-transform: uppercase;">Lời nhắc nhở</label>
                       <input v-model="form.warningText" class="ui-form-input" placeholder="VD: Hãy cẩn thận trang giả mạo" />
                     </div>
                   </div>

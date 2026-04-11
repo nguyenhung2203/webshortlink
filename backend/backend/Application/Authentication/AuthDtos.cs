@@ -38,4 +38,7 @@ public sealed record SessionUserDto(
     string FullName,
     string Role,
     int CurrentPlanId,
+    string CurrentPlanCode,
+    string CurrentPlanName,
+    IReadOnlyCollection<string> Capabilities,
     string AccountStatus);

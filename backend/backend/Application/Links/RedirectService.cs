@@ -105,6 +105,10 @@ public sealed class RedirectService
             out var utmMedium, 
             out var utmCampaign);
 
+        var primaryEventStatus = link.IsWrapperEnabled
+            ? ClickEventStatus.WrapperView.ToString()
+            : ClickEventStatus.Redirected.ToString();
+
         await _analyticsQueue.EnqueueAsync(new ClickTrackingMessage
         {
             LinkId = link.Id,
@@ -115,7 +119,7 @@ public sealed class RedirectService
             Referrer = string.IsNullOrWhiteSpace(referrer) ? "direct" : referrer,
             UserAgent = httpContext.Request.Headers.UserAgent.ToString(),
             ResponseTimeMs = responseTimeMs,
-            EventStatus = ClickEventStatus.Redirected.ToString(),
+            EventStatus = primaryEventStatus,
             CountryCode = DetectCountry(httpContext),
             City = DetectCity(httpContext),
             NormalizedSource = normalizedSource,
@@ -145,7 +149,7 @@ public sealed class RedirectService
 
         return new PublicWrapperRenderDto(
             $"/w/{slug}?target={encodedTarget}&sig={signature}",
-            targetUrl,
+            $"/c/{slug}?target={encodedTarget}&sig={signature}",
             normalizedHost,
             slug,
             targetUrl,
@@ -196,6 +200,46 @@ public sealed class RedirectService
         {
             return false;
         }
+    }
+
+    public async Task<string> TrackContinueAsync(string host, string slug, string targetUrl, HttpContext httpContext, CancellationToken cancellationToken)
+    {
+        var normalizedHost = NormalizeHost(host);
+        var systemDefaultHost = await GetSystemDefaultHostAsync(cancellationToken);
+        var link = await _linkCacheService.GetAsync(normalizedHost, slug, cancellationToken)
+            ?? await ResolveFromDatabaseAsync(normalizedHost, systemDefaultHost, slug, cancellationToken)
+            ?? throw new AppException(ErrorCodes.NotFound, "Shortlink khong ton tai.", StatusCodes.Status404NotFound);
+
+        ValidateRedirectPreconditions(link);
+
+        WebShortlink.Backend.Application.Analytics.AnalyticsSourceHelper.ParseAnalyticsFromRequest(
+            httpContext.Request,
+            out var referrer,
+            out var normalizedSource,
+            out var utmSource,
+            out var utmMedium,
+            out var utmCampaign);
+
+        await _analyticsQueue.EnqueueAsync(new ClickTrackingMessage
+        {
+            LinkId = link.Id,
+            ClickedAtUtc = DateTime.UtcNow,
+            Host = normalizedHost,
+            Slug = slug,
+            IpAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            Referrer = string.IsNullOrWhiteSpace(referrer) ? "direct" : referrer,
+            UserAgent = httpContext.Request.Headers.UserAgent.ToString(),
+            ResponseTimeMs = 0,
+            EventStatus = ClickEventStatus.ContinueClicked.ToString(),
+            CountryCode = DetectCountry(httpContext),
+            City = DetectCity(httpContext),
+            NormalizedSource = normalizedSource,
+            UtmSource = utmSource,
+            UtmMedium = utmMedium,
+            UtmCampaign = utmCampaign
+        }, cancellationToken);
+
+        return targetUrl;
     }
 
     private async Task<CachedLinkDto?> ResolveFromDatabaseAsync(string host, string defaultHost, string slug, CancellationToken cancellationToken)

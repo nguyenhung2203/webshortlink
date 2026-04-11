@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { Lock } from 'lucide-vue-next'
 import WxInput from '@/components/ui/WxInput.vue'
 import WxButton from '@/components/ui/WxButton.vue'
 
+import { API_BASE_URL } from '@/api/client'
+
 const route = useRoute()
-const router = useRouter()
 const slug = route.params.slug as string
+const shortlinkHost = typeof route.query.host === 'string' ? route.query.host : ''
 const password = ref('')
 const error = ref('')
 const loading = ref(false)
@@ -20,10 +22,12 @@ async function submit() {
   error.value = ''
   loading.value = true
   try {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5130'
     const res = await fetch(`${API_BASE_URL}/api/public/resolve/${slug}/password`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(shortlinkHost ? { 'X-Shortlink-Host': shortlinkHost } : {}),
+      },
       body: JSON.stringify({ password: password.value }),
     })
     if (!res.ok) {

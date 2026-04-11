@@ -29,6 +29,9 @@ export interface AuthResponseDto {
     fullName: string
     role: string
     currentPlanId: number
+    currentPlanCode: string
+    currentPlanName: string
+    capabilities: string[]
     accountStatus: string
   }
 }
@@ -39,6 +42,9 @@ export interface CurrentSessionDto {
   fullName: string
   role: string
   currentPlanId: number
+  currentPlanCode: string
+  currentPlanName: string
+  capabilities: string[]
   accountStatus: string
 }
 
@@ -53,6 +59,9 @@ export interface UserProfileProfile {
   fullName: string
   role: string
   currentPlanId: number
+  currentPlanCode: string
+  currentPlanName: string
+  capabilities: string[]
   accountStatus: string
 }
 
@@ -211,6 +220,9 @@ export interface LinkAnalytics {
   totalClicks: number
   uniqueClicks: number
   botClicks: number
+  wrapperViews: number
+  continueClicks: number
+  continueRate: number
   trends: TrendPoint[]
   topCountries: AnalyticsBreakdownItem[]
   topDevices: AnalyticsBreakdownItem[]

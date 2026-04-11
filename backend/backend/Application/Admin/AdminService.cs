@@ -48,7 +48,30 @@ public sealed class AdminService
     {
         var current = _currentUserService.GetRequired();
         var user = await _dbContext.Users.AsNoTracking().FirstAsync(x => x.Id == current.UserId, cancellationToken);
-        return new CurrentSessionDto(user.Id, user.Email!, user.FullName, AppRoles.Admin, user.CurrentPlanId, user.AccountStatus.ToString());
+        var plan = await _dbContext.Plans
+            .AsNoTracking()
+            .Include(x => x.Features)
+            .FirstOrDefaultAsync(x => x.Id == user.CurrentPlanId, cancellationToken);
+
+        var planCode = plan?.Code ?? "free";
+        var planName = plan?.Name ?? "Free";
+        var capabilities = plan?.Features
+            .Where(x => x.IsEnabled)
+            .Select(x => x.FeatureKey)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToArray() ?? Array.Empty<string>();
+
+        return new CurrentSessionDto(
+            user.Id,
+            user.Email!,
+            user.FullName,
+            AppRoles.Admin,
+            user.CurrentPlanId,
+            planCode,
+            planName,
+            capabilities,
+            user.AccountStatus.ToString());
     }
 
     public async Task<AdminOverviewDto> GetOverviewAsync(CancellationToken cancellationToken)

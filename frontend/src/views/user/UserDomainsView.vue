@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
-import { DomainService, UserService } from '@/api/services'
+import { DomainService } from '@/api/services'
 import { useAuthStore } from '@/stores/auth'
 import { Globe, Plus, CheckCircle, Clock, Shield, Trash2, RefreshCw, Lock, AlertCircle, Copy } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
@@ -17,19 +17,13 @@ const newDomainForm = ref({ host: '', expiredAt: '', notes: '' })
 const addLoading = ref(false)
 const confirmDeleteId = ref<string | null>(null)
 
-const currentPlanId = ref(1)
-const isPro = computed(() => currentPlanId.value >= 2)
+const canUseCustomDomains = computed(() => authStore.hasCapability('domains.custom'))
 
 async function load() {
   loading.value = true
   try {
     if (!authStore.accessToken) return
-    const [list, subscription] = await Promise.all([
-      DomainService.list(authStore.accessToken),
-      UserService.getSubscription(authStore.accessToken),
-    ])
-    domains.value = list
-    currentPlanId.value = (subscription as any)?.planId ?? 1
+    domains.value = await DomainService.list(authStore.accessToken)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải danh sách tên miền.'
   } finally {
@@ -82,7 +76,7 @@ onMounted(load)
   <div class="ui-root">
     <!-- Action Bar -->
     <div class="ui-action-bar">
-      <button v-if="isPro" class="ui-btn ui-btn-primary" @click="showAdd = !showAdd">
+      <button v-if="canUseCustomDomains" class="ui-btn ui-btn-primary" @click="showAdd = !showAdd">
         <Plus :size="16" /> Thêm Tên Miền
       </button>
     </div>
@@ -100,7 +94,7 @@ onMounted(load)
 
     <template v-else>
       <!-- Paywall for Free Users -->
-      <div v-if="!isPro" class="ui-empty">
+      <div v-if="!canUseCustomDomains" class="ui-empty">
         <div class="ui-empty-icon locked-icon"><Lock :size="50" /></div>
         <h3 class="ui-empty-title">Tính năng dành cho gói Pro / Plus</h3>
         <p class="ui-empty-desc">Nâng cấp tài khoản để sử dụng tên miền riêng trên các link rút gọn của bạn.</p>
