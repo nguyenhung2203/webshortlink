@@ -274,6 +274,41 @@ onMounted(load)
         </div>
       </div>
 
+      <div v-if="detail.isWrapperEnabled" class="ui-panel" style="margin-top: 1.5rem;">
+        <div class="ui-panel-header">
+          <h3 class="ui-panel-title" style="display: flex; align-items: center; gap: 0.5rem;">
+            <Eye :size="16" style="color: #64748b;" /> Bọc link / Smart Redirect
+          </h3>
+        </div>
+        <div class="ui-panel-body" style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="font-size: 0.85rem; color: #64748b;">Mode: <strong style="color: #0f172a;">{{ detail.redirectMode || 'Instant' }}</strong></div>
+            <div v-if="detail.delaySeconds" style="font-size: 0.85rem; color: #64748b;">Delay: <strong style="color: #0f172a;">{{ detail.delaySeconds }} giây</strong></div>
+            <div style="font-size: 0.85rem; color: #64748b;">Theme: <strong style="color: #0f172a;">{{ detail.wrapperTheme || 'brand' }}</strong></div>
+            <div style="font-size: 0.85rem; color: #64748b;">Thương hiệu: <strong style="color: #0f172a;">{{ detail.brandName || linkHost }}</strong></div>
+            <div style="font-size: 0.85rem; color: #64748b;">Nút tiếp tục: <strong style="color: #0f172a;">{{ detail.continueButtonText || 'Tiếp tục đến trang đích' }}</strong></div>
+            <div style="font-size: 0.85rem; color: #64748b;">Cảnh báo: <strong style="color: #0f172a;">{{ detail.warningText || 'Bạn sắp rời khỏi website hiện tại.' }}</strong></div>
+          </div>
+          <div style="background: #0f172a; color: #e2e8f0; border-radius: 16px; overflow: hidden; border: 1px solid rgba(148,163,184,0.2);">
+            <div :style="{ padding: '1rem 1.25rem', background: detail.wrapperTheme === 'dark' ? 'linear-gradient(135deg,#111827,#1f2937)' : detail.wrapperTheme === 'light' ? 'linear-gradient(135deg,#e2e8f0,#cbd5e1)' : 'linear-gradient(135deg,#0ea5e9,#2563eb)', color: detail.wrapperTheme === 'light' ? '#0f172a' : '#fff' }">
+              <strong>{{ detail.brandName || linkHost }}</strong>
+            </div>
+            <div style="padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+              <img v-if="detail.wrapperImageUrl" :src="detail.wrapperImageUrl" style="width: 100%; height: 140px; object-fit: cover; border-radius: 12px;" />
+              <div style="font-size: 1rem; font-weight: 700;">{{ detail.wrapperTitle || detail.ogTitle || 'Bạn sắp đến trang đích' }}</div>
+              <div style="font-size: 0.85rem; color: #cbd5e1;">{{ detail.wrapperDescription || detail.ogDescription || 'Xác nhận trước khi tiếp tục mở liên kết.' }}</div>
+              <div style="font-size: 0.75rem; color: #fde68a; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.35); border-radius: 10px; padding: 0.65rem 0.75rem;">
+                {{ detail.warningText || 'Bạn sắp rời khỏi website hiện tại.' }}
+              </div>
+              <div v-if="detail.ctaTitle" style="padding: 0.9rem 1rem; border-radius: 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(148,163,184,0.16);">
+                <div style="font-weight: 700;">{{ detail.ctaTitle }}</div>
+                <div style="font-size: 0.8rem; color: #cbd5e1; margin-top: 0.35rem;">{{ detail.ctaDescription }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Social Preview Meta Grid -->
       <div class="ui-panel" style="margin-top: 1.5rem;">
         <div class="ui-panel-header">

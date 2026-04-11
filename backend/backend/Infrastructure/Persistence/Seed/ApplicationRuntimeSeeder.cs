@@ -137,7 +137,19 @@ public sealed class ApplicationRuntimeSeeder
 
             new PlanFeature { Id = 34, PlanId = 1, FeatureKey = "links.social_preview", IsEnabled = false, CreatedAtUtc = now },
             new PlanFeature { Id = 35, PlanId = 2, FeatureKey = "links.social_preview", IsEnabled = true, CreatedAtUtc = now },
-            new PlanFeature { Id = 36, PlanId = 3, FeatureKey = "links.social_preview", IsEnabled = true, CreatedAtUtc = now }
+            new PlanFeature { Id = 36, PlanId = 3, FeatureKey = "links.social_preview", IsEnabled = true, CreatedAtUtc = now },
+
+            new PlanFeature { Id = 37, PlanId = 1, FeatureKey = "links.wrapper", IsEnabled = false, CreatedAtUtc = now },
+            new PlanFeature { Id = 38, PlanId = 2, FeatureKey = "links.wrapper", IsEnabled = true, CreatedAtUtc = now },
+            new PlanFeature { Id = 39, PlanId = 3, FeatureKey = "links.wrapper", IsEnabled = true, CreatedAtUtc = now },
+
+            new PlanFeature { Id = 40, PlanId = 1, FeatureKey = "links.wrapper_landing", IsEnabled = false, CreatedAtUtc = now },
+            new PlanFeature { Id = 41, PlanId = 2, FeatureKey = "links.wrapper_landing", IsEnabled = false, CreatedAtUtc = now },
+            new PlanFeature { Id = 42, PlanId = 3, FeatureKey = "links.wrapper_landing", IsEnabled = true, CreatedAtUtc = now },
+
+            new PlanFeature { Id = 43, PlanId = 1, FeatureKey = "links.wrapper_cta", IsEnabled = false, CreatedAtUtc = now },
+            new PlanFeature { Id = 44, PlanId = 2, FeatureKey = "links.wrapper_cta", IsEnabled = false, CreatedAtUtc = now },
+            new PlanFeature { Id = 45, PlanId = 3, FeatureKey = "links.wrapper_cta", IsEnabled = true, CreatedAtUtc = now }
         };
 
         foreach (var f in features)
@@ -156,16 +168,7 @@ public sealed class ApplicationRuntimeSeeder
 
         if (_dbContext.ChangeTracker.HasChanges())
         {
-            await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-            try {
-                await _dbContext.Database.ExecuteSqlRawAsync("SET IDENTITY_INSERT PlanFeatures ON", cancellationToken);
-                await _dbContext.SaveChangesAsync(cancellationToken);
-                await _dbContext.Database.ExecuteSqlRawAsync("SET IDENTITY_INSERT PlanFeatures OFF", cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
-            } catch {
-                await transaction.RollbackAsync(cancellationToken);
-                throw;
-            }
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
     }
 

@@ -130,6 +130,21 @@ export interface LinkDetail {
   ogTitle?: string | null
   ogDescription?: string | null
   ogImageUrl?: string | null
+  isWrapperEnabled?: boolean
+  redirectMode?: string | null
+  delaySeconds?: number | null
+  wrapperTitle?: string | null
+  wrapperDescription?: string | null
+  wrapperImageUrl?: string | null
+  continueButtonText?: string | null
+  warningText?: string | null
+  wrapperTheme?: string | null
+  brandName?: string | null
+  brandLogoUrl?: string | null
+  ctaTitle?: string | null
+  ctaDescription?: string | null
+  ctaButtonText?: string | null
+  ctaButtonUrl?: string | null
 }
 
 export interface CreateLinkRequest {
@@ -144,6 +159,21 @@ export interface CreateLinkRequest {
   ogTitle?: string | null
   ogDescription?: string | null
   ogImageUrl?: string | null
+  isWrapperEnabled?: boolean
+  redirectMode?: string | null
+  delaySeconds?: number | null
+  wrapperTitle?: string | null
+  wrapperDescription?: string | null
+  wrapperImageUrl?: string | null
+  continueButtonText?: string | null
+  warningText?: string | null
+  wrapperTheme?: string | null
+  brandName?: string | null
+  brandLogoUrl?: string | null
+  ctaTitle?: string | null
+  ctaDescription?: string | null
+  ctaButtonText?: string | null
+  ctaButtonUrl?: string | null
 }
 
 // ─── Analytics ────────────────────────────────────────────────────────────────

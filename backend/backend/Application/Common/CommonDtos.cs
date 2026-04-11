@@ -18,6 +18,27 @@ public sealed record PublicRedirectAccessRequestDto(string Password);
 
 public sealed record PublicRedirectAccessResponseDto(string RedirectUrl);
 
+public sealed record PublicWrapperRenderDto(
+    string WrapperUrl,
+    string ContinueUrl,
+    string Host,
+    string Slug,
+    string OriginalUrl,
+    string RedirectMode,
+    int DelaySeconds,
+    string Title,
+    string Description,
+    string? ImageUrl,
+    string ButtonText,
+    string WarningText,
+    string Theme,
+    string? BrandName,
+    string? BrandLogoUrl,
+    string? CtaTitle,
+    string? CtaDescription,
+    string? CtaButtonText,
+    string? CtaButtonUrl);
+
 public sealed record OgLinkDataDto(
     string OriginalUrl,
     string? OgTitle,

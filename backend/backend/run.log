@@ -1,0 +1,378 @@
+Using launch settings from E:\webshortlink\backend\backend\Properties\launchSettings.json...
+Building...
+E:\webshortlink\backend\backend\Application\Authentication\AuthService.cs(204,13): warning CS8604: Possible null reference argument for parameter 'toEmail' in 'Task IEmailSenderService.SendEmailAsync(string toEmail, string subject, string body, CancellationToken cancellationToken = default(CancellationToken))'. [E:\webshortlink\backend\backend\backend.csproj]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (23ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (22ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (11ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT [MigrationId], [ProductVersion]
+      FROM [__EFMigrationsHistory]
+      ORDER BY [MigrationId];
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (19ms) [Parameters=[@__normalizedName_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [a].[Id], [a].[ConcurrencyStamp], [a].[Name], [a].[NormalizedName]
+      FROM [AspNetRoles] AS [a]
+      WHERE [a].[NormalizedName] = @__normalizedName_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__normalizedName_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [a].[Id], [a].[ConcurrencyStamp], [a].[Name], [a].[NormalizedName]
+      FROM [AspNetRoles] AS [a]
+      WHERE [a].[NormalizedName] = @__normalizedName_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (5ms) [Parameters=[@__plan_Id_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[Code], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[IsActive], [p].[MonthlyPrice], [p].[Name], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [Plans] AS [p]
+      WHERE [p].[Id] = @__plan_Id_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__plan_Id_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[Code], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[IsActive], [p].[MonthlyPrice], [p].[Name], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [Plans] AS [p]
+      WHERE [p].[Id] = @__plan_Id_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__plan_Id_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[Code], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[IsActive], [p].[MonthlyPrice], [p].[Name], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [Plans] AS [p]
+      WHERE [p].[Id] = @__plan_Id_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (5ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__f_PlanId_0='?' (DbType = Int32), @__f_FeatureKey_1='?' (Size = 100)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [p].[Id], [p].[CreatedAtUtc], [p].[CreatedByUserId], [p].[FeatureKey], [p].[FeatureValue], [p].[IsEnabled], [p].[LimitValue], [p].[PlanId], [p].[UpdatedAtUtc], [p].[UpdatedByUserId]
+      FROM [PlanFeatures] AS [p]
+      WHERE [p].[PlanId] = @__f_PlanId_0 AND [p].[FeatureKey] = @__f_FeatureKey_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [SystemSettings] AS [s]) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@__normalizedEmail_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(2) [a].[Id], [a].[AccessFailedCount], [a].[AccountStatus], [a].[ConcurrencyStamp], [a].[CreatedAtUtc], [a].[CurrentPlanId], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsDeleted], [a].[LastLoginAtUtc], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+      FROM [AppUsers] AS [a]
+      WHERE [a].[NormalizedEmail] = @__normalizedEmail_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__normalizedRoleName_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(2) [a].[Id], [a].[ConcurrencyStamp], [a].[Name], [a].[NormalizedName]
+      FROM [AspNetRoles] AS [a]
+      WHERE [a].[NormalizedName] = @__normalizedRoleName_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__get_Item_0='?' (DbType = Guid), @__get_Item_1='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [a].[UserId], [a].[RoleId]
+      FROM [AspNetUserRoles] AS [a]
+      WHERE [a].[UserId] = @__get_Item_0 AND [a].[RoleId] = @__get_Item_1
+info: Program[0]
+      Database seeding completed successfully.
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5130
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: E:\webshortlink\backend\backend
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [s].[Id], [s].[CreatedAtUtc], [s].[CreatedByUserId], [s].[GroupName], [s].[IsSensitive], [s].[SettingKey], [s].[SettingValue], [s].[UpdatedAtUtc], [s].[UpdatedByUserId]
+      FROM [SystemSettings] AS [s]
+      WHERE [s].[SettingKey] = N'DefaultDomain'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (9ms) [Parameters=[@__slug_0='?' (Size = 64), @__host_1='?' (Size = 255)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [l].[Id], [l].[BrandLogoUrl], [l].[BrandName], [l].[ClickLimit], [l].[ContinueButtonText], [l].[CreatedAtUtc], [l].[CreatedByUserId], [l].[CtaButtonText], [l].[CtaButtonUrl], [l].[CtaDescription], [l].[CtaTitle], [l].[DelaySeconds], [l].[DeletedAtUtc], [l].[DeletedByUserId], [l].[Description], [l].[DomainId], [l].[ExpiresAtUtc], [l].[IsDeleted], [l].[IsWrapperEnabled], [l].[OgDescription], [l].[OgImageUrl], [l].[OgTitle], [l].[OriginalUrl], [l].[PasswordHash], [l].[RedirectMode], [l].[RowVersion], [l].[Slug], [l].[Status], [l].[Tag], [l].[TotalClicks], [l].[UniqueClicks], [l].[UpdatedAtUtc], [l].[UpdatedByUserId], [l].[UserId], [l].[WarningText], [l].[WrapperDescription], [l].[WrapperImageUrl], [l].[WrapperTheme], [l].[WrapperTitle], [d].[Id], [d].[AdminFeedback], [d].[CreatedAtUtc], [d].[CreatedByUserId], [d].[DeletedAtUtc], [d].[DeletedByUserId], [d].[ExpiredAtUtc], [d].[Host], [d].[IsDeleted], [d].[IsGlobal], [d].[IsVerified], [d].[UpdatedAtUtc], [d].[UpdatedByUserId], [d].[UserId], [d].[UserNotes], [d].[VerificationToken], [d].[VerifiedAtUtc]
+      FROM [Links] AS [l]
+      LEFT JOIN [Domains] AS [d] ON [l].[DomainId] = [d].[Id]
+      WHERE [l].[Slug] = @__slug_0 AND [l].[IsDeleted] = CAST(0 AS bit) AND ([l].[DomainId] IS NULL OR ([d].[Id] IS NOT NULL AND [d].[IsDeleted] = CAST(0 AS bit) AND [d].[IsVerified] = CAST(1 AS bit) AND [d].[Host] = @__host_1))
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [s].[Id], [s].[CreatedAtUtc], [s].[CreatedByUserId], [s].[GroupName], [s].[IsSensitive], [s].[SettingKey], [s].[SettingValue], [s].[UpdatedAtUtc], [s].[UpdatedByUserId]
+      FROM [SystemSettings] AS [s]
+      WHERE [s].[SettingKey] = N'DefaultDomain'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__link_Id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [l].[Id], [l].[BrandLogoUrl], [l].[BrandName], [l].[ClickLimit], [l].[ContinueButtonText], [l].[CreatedAtUtc], [l].[CreatedByUserId], [l].[CtaButtonText], [l].[CtaButtonUrl], [l].[CtaDescription], [l].[CtaTitle], [l].[DelaySeconds], [l].[DeletedAtUtc], [l].[DeletedByUserId], [l].[Description], [l].[DomainId], [l].[ExpiresAtUtc], [l].[IsDeleted], [l].[IsWrapperEnabled], [l].[OgDescription], [l].[OgImageUrl], [l].[OgTitle], [l].[OriginalUrl], [l].[PasswordHash], [l].[RedirectMode], [l].[RowVersion], [l].[Slug], [l].[Status], [l].[Tag], [l].[TotalClicks], [l].[UniqueClicks], [l].[UpdatedAtUtc], [l].[UpdatedByUserId], [l].[UserId], [l].[WarningText], [l].[WrapperDescription], [l].[WrapperImageUrl], [l].[WrapperTheme], [l].[WrapperTitle], [d].[Id], [d].[AdminFeedback], [d].[CreatedAtUtc], [d].[CreatedByUserId], [d].[DeletedAtUtc], [d].[DeletedByUserId], [d].[ExpiredAtUtc], [d].[Host], [d].[IsDeleted], [d].[IsGlobal], [d].[IsVerified], [d].[UpdatedAtUtc], [d].[UpdatedByUserId], [d].[UserId], [d].[UserNotes], [d].[VerificationToken], [d].[VerifiedAtUtc]
+      FROM [Links] AS [l]
+      LEFT JOIN [Domains] AS [d] ON [l].[DomainId] = [d].[Id]
+      WHERE [l].[Id] = @__link_Id_0 AND [l].[IsDeleted] = CAST(0 AS bit)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@p1='?' (DbType = Guid), @p2='?' (Size = 8) (DbType = Binary), @p0='?' (DbType = Int64)], CommandType='Text', CommandTimeout='30']
+      SET IMPLICIT_TRANSACTIONS OFF;
+      SET NOCOUNT ON;
+      UPDATE [Links] SET [TotalClicks] = @p0
+      OUTPUT INSERTED.[RowVersion]
+      WHERE [Id] = @p1 AND [RowVersion] = @p2;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [s].[Id], [s].[CreatedAtUtc], [s].[CreatedByUserId], [s].[GroupName], [s].[IsSensitive], [s].[SettingKey], [s].[SettingValue], [s].[UpdatedAtUtc], [s].[UpdatedByUserId]
+      FROM [SystemSettings] AS [s]
+      WHERE [s].[SettingKey] = N'DefaultDomain'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@__link_Id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT [l].[Id], [l].[CreatedAtUtc], [l].[CreatedByUserId], [l].[IsActive], [l].[LinkId], [l].[Priority], [l].[RuleType], [l].[RuleValue], [l].[TargetUrl], [l].[UpdatedAtUtc], [l].[UpdatedByUserId]
+      FROM [LinkRules] AS [l]
+      WHERE [l].[LinkId] = @__link_Id_0 AND [l].[IsActive] = CAST(1 AS bit)
+      ORDER BY [l].[Priority], [l].[CreatedAtUtc]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [s].[Id], [s].[CreatedAtUtc], [s].[CreatedByUserId], [s].[GroupName], [s].[IsSensitive], [s].[SettingKey], [s].[SettingValue], [s].[UpdatedAtUtc], [s].[UpdatedByUserId]
+      FROM [SystemSettings] AS [s]
+      WHERE [s].[SettingKey] = N'DefaultDomain'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@__message_LinkId_0='?' (DbType = Guid), @__uniqueFingerprint_1='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [ClickEvents] AS [c]
+              WHERE [c].[LinkId] = @__message_LinkId_0 AND [c].[FingerprintHash] = @__uniqueFingerprint_1) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (5ms) [Parameters=[@__message_LinkId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [l].[Id], [l].[BrandLogoUrl], [l].[BrandName], [l].[ClickLimit], [l].[ContinueButtonText], [l].[CreatedAtUtc], [l].[CreatedByUserId], [l].[CtaButtonText], [l].[CtaButtonUrl], [l].[CtaDescription], [l].[CtaTitle], [l].[DelaySeconds], [l].[DeletedAtUtc], [l].[DeletedByUserId], [l].[Description], [l].[DomainId], [l].[ExpiresAtUtc], [l].[IsDeleted], [l].[IsWrapperEnabled], [l].[OgDescription], [l].[OgImageUrl], [l].[OgTitle], [l].[OriginalUrl], [l].[PasswordHash], [l].[RedirectMode], [l].[RowVersion], [l].[Slug], [l].[Status], [l].[Tag], [l].[TotalClicks], [l].[UniqueClicks], [l].[UpdatedAtUtc], [l].[UpdatedByUserId], [l].[UserId], [l].[WarningText], [l].[WrapperDescription], [l].[WrapperImageUrl], [l].[WrapperTheme], [l].[WrapperTitle], [d].[Id], [d].[AdminFeedback], [d].[CreatedAtUtc], [d].[CreatedByUserId], [d].[DeletedAtUtc], [d].[DeletedByUserId], [d].[ExpiredAtUtc], [d].[Host], [d].[IsDeleted], [d].[IsGlobal], [d].[IsVerified], [d].[UpdatedAtUtc], [d].[UpdatedByUserId], [d].[UserId], [d].[UserNotes], [d].[VerificationToken], [d].[VerifiedAtUtc]
+      FROM [Links] AS [l]
+      LEFT JOIN [Domains] AS [d] ON [l].[DomainId] = [d].[Id]
+      WHERE [l].[Id] = @__message_LinkId_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@__message_LinkId_0='?' (DbType = Guid), @__statDate_1='?' (DbType = Date)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [l].[Id], [l].[BotClicks], [l].[CreatedAtUtc], [l].[CreatedByUserId], [l].[LinkId], [l].[StatDate], [l].[SuspiciousClicks], [l].[TotalClicks], [l].[UniqueClicks], [l].[UpdatedAtUtc], [l].[UpdatedByUserId]
+      FROM [LinkDailyStats] AS [l]
+      WHERE [l].[LinkId] = @__message_LinkId_0 AND [l].[StatDate] = @__statDate_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__message_LinkId_0='?' (DbType = Guid), @__bucket_1='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [l].[Id], [l].[BotClicks], [l].[CreatedAtUtc], [l].[CreatedByUserId], [l].[HourBucketUtc], [l].[LinkId], [l].[TotalClicks], [l].[UniqueClicks], [l].[UpdatedAtUtc], [l].[UpdatedByUserId]
+      FROM [LinkHourlyStats] AS [l]
+      WHERE [l].[LinkId] = @__message_LinkId_0 AND [l].[HourBucketUtc] = @__bucket_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (7ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 100), @p2='?' (Size = 100), @p3='?' (DbType = DateTime2), @p4='?' (Size = 8), @p5='?' (DbType = DateTime2), @p6='?' (Size = 4000), @p7='?' (Size = 50), @p8='?' (DbType = Int32), @p9='?' (Size = 256), @p10='?' (Size = 64), @p11='?' (DbType = Boolean), @p12='?' (DbType = Boolean), @p13='?' (DbType = Guid), @p14='?' (Size = 64), @p15='?' (Size = 4000), @p16='?' (Size = 100), @p17='?' (Size = 1000), @p18='?' (DbType = Int32), @p19='?' (DbType = DateTime2), @p20='?' (Size = 4000), @p21='?' (Size = 1000), @p22='?' (Size = 4000), @p23='?' (Size = 4000), @p24='?' (Size = 4000), @p26='?' (DbType = Guid), @p25='?' (DbType = Int64), @p28='?' (DbType = Guid), @p27='?' (DbType = Int64)], CommandType='Text', CommandTimeout='30']
+      SET NOCOUNT ON;
+      INSERT INTO [ClickEvents] ([Id], [Browser], [City], [ClickedAtUtc], [CountryCode], [CreatedAtUtc], [CreatedByUserId], [DeviceType], [EventStatus], [FingerprintHash], [IpAddress], [IsBot], [IsSuspicious], [LinkId], [MaskedIp], [NormalizedSource], [OperatingSystem], [Referrer], [ResponseTimeMs], [UpdatedAtUtc], [UpdatedByUserId], [UserAgent], [UtmCampaign], [UtmMedium], [UtmSource])
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, @p20, @p21, @p22, @p23, @p24);
+      UPDATE [LinkDailyStats] SET [TotalClicks] = @p25
+      OUTPUT 1
+      WHERE [Id] = @p26;
+      UPDATE [LinkHourlyStats] SET [TotalClicks] = @p27
+      OUTPUT 1
+      WHERE [Id] = @p28;

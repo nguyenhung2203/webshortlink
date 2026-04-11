@@ -29,6 +29,11 @@
     <Compile Remove="Models\**\*.cs" />
     <Compile Remove="Services\AppDataStore.cs" />
     <Compile Remove="WeatherForecast.cs" />
+    <Compile Remove="obj\**\*.cs" />
+    <Compile Remove="obj2\**\*.cs" />
+    <Compile Remove="obj_wrapper\**\*.cs" />
+    <Compile Remove="publish\**\*.cs" />
+    <Compile Remove="publish_web\**\*.cs" />
   </ItemGroup>
 
 </Project>
