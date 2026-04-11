@@ -383,32 +383,32 @@ async function submit() {
 
               <div v-if="form.isWrapperEnabled" style="display: flex; flex-direction: column; gap: 1.25rem; background: #ffffff; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
                 
-                <!-- Compact Tip -->
-                <div style="padding: 0.6rem 1rem; background: #f0f9ff; border-radius: 8px; font-size: 0.8rem; color: #036ae1; display: flex; align-items: center; gap: 0.5rem; border: 1px solid #e0f2fe;">
-                  <Info :size="14" />
-                  <span>Trang chờ giúp bảo vệ link và quảng bá thương hiệu cá nhân của bạn.</span>
+                <!-- Tiny Tip -->
+                <div style="padding: 0.5rem 0.85rem; background: #f0f9ff; border-radius: 8px; font-size: 0.75rem; color: #036ae1; display: flex; align-items: center; gap: 0.4rem; border: 1px solid #e0f2fe;">
+                  <Info :size="12" />
+                  <span>Trang chờ giúp bảo vệ liên kết và tăng nhận diện thương hiệu.</span>
                 </div>
 
-                <!-- Part 1: Logic & Theme -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <!-- Part 1: Logic & Appearance -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
                   <div class="ui-form-group" style="margin: 0;">
-                    <label class="ui-form-label" style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase;">Kiểu hoạt động</label>
+                    <label class="ui-form-label" style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.02em;">Cách hoạt động</label>
                     <select v-model="form.redirectMode" class="ui-form-select">
-                      <option value="Instant">Chuyển ngay (An toàn)</option>
-                      <option value="Delay">Đếm ngược giây</option>
-                      <option value="ManualContinue">Bấm nút để đi tiếp</option>
-                      <option value="LandingPage" :disabled="!canUseWrapperLanding">Giao diện Landing Page</option>
+                      <option value="Instant">Chuyển hướng ngay</option>
+                      <option value="Delay">Chờ đếm ngược</option>
+                      <option value="ManualContinue">Bấm nút thủ công</option>
+                      <option value="LandingPage" :disabled="!canUseWrapperLanding">Trang Landing Page</option>
                     </select>
                   </div>
                   <div v-if="form.redirectMode === 'Delay'" class="ui-form-group" style="margin: 0;">
-                    <label class="ui-form-label" style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase;">Thời gian chờ</label>
+                    <label class="ui-form-label" style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.02em;">Thời gian chờ</label>
                     <div style="position: relative;">
                       <input v-model="form.delaySeconds" type="number" min="1" max="30" class="ui-form-input" style="padding-right: 2.5rem;" />
-                      <span style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: #94a3b8;">giây</span>
+                      <span style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); font-size: 0.7rem; color: #94a3b8;">giây</span>
                     </div>
                   </div>
                   <div class="ui-form-group" style="margin: 0;">
-                    <label class="ui-form-label" style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase;">Chủ đề</label>
+                    <label class="ui-form-label" style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.02em;">Chủ đề màu</label>
                     <select v-model="form.wrapperTheme" class="ui-form-select">
                       <option value="brand">Thương hiệu</option>
                       <option value="light">Sáng tối giản</option>
@@ -417,38 +417,69 @@ async function submit() {
                   </div>
                 </div>
 
-                <!-- Part 2: Main Content Block -->
-                <div style="display: flex; flex-direction: column; gap: 1rem; padding: 1.25rem; background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9;">
-                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
-                    <input v-model="form.wrapperTitle" class="ui-form-input" placeholder="Tiêu đề trang chờ (VD: Chào mừng bạn...)" />
-                    <input v-model="form.continueButtonText" class="ui-form-input" placeholder="Chữ trên nút (VD: Vào ngay)" />
-                  </div>
-                  <textarea v-model="form.wrapperDescription" class="ui-form-input" style="resize: none; min-height: 60px;" placeholder="Mô tả ngắn gọn hiển thị trên trang chờ..."></textarea>
-                  
-                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
-                    <input v-model="form.wrapperImageUrl" class="ui-form-input" placeholder="Link ảnh nền (URL)" />
-                    <input v-model="form.warningText" class="ui-form-input" placeholder="Lời nhắc cảnh báo (không bắt buộc)" />
+                <!-- Part 2: Content Details -->
+                <div style="display: flex; flex-direction: column; gap: 1rem; padding: 1rem; background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9;">
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label" style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase;">Tiêu đề chính</label>
+                      <input v-model="form.wrapperTitle" class="ui-form-input" placeholder="VD: Chào mừng bạn đến..." />
+                    </div>
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label" style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase;">Nội dung nút</label>
+                      <input v-model="form.continueButtonText" class="ui-form-input" placeholder="VD: Tiếp tục" />
+                    </div>
                   </div>
 
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; border-top: 1px solid #e2e8f0; padding-top: 1rem; margin-top: 0.5rem;">
-                    <input v-model="form.brandName" class="ui-form-input" placeholder="Tên thương hiệu cá nhân" />
-                    <input v-model="form.brandLogoUrl" class="ui-form-input" placeholder="Link Logo cá nhân" />
+                  <div class="ui-form-group" style="margin: 0;">
+                    <label class="ui-form-label" style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase;">Mô tả ngắn</label>
+                    <textarea v-model="form.wrapperDescription" class="ui-form-input" style="resize: none; min-height: 56px;" placeholder="Lời chào hoặc thông tin thêm về link..."></textarea>
+                  </div>
+                  
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label" style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase;">Ảnh chờ (URL)</label>
+                      <input v-model="form.wrapperImageUrl" class="ui-form-input" placeholder="https://..." />
+                    </div>
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label" style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase;">Lời nhắc nhỏ</label>
+                      <input v-model="form.warningText" class="ui-form-input" placeholder="VD: Hãy cẩn thận trang giả mạo" />
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label" style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase;">Tên Shop/Thương hiệu</label>
+                      <input v-model="form.brandName" class="ui-form-input" placeholder="VD: WeShort Team" />
+                    </div>
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label" style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase;">Link Logo</label>
+                      <input v-model="form.brandLogoUrl" class="ui-form-input" placeholder="Link ảnh logo của bạn" />
+                    </div>
                   </div>
                 </div>
 
-                <!-- Part 3: CTA - Exclusive for Plus -->
-                <div v-if="canUseWrapperCta" style="padding: 1rem; border-radius: 12px; background: #fffbeb; border: 1px dashed #fbbf24;">
+                <!-- Part 3: Advanced CTA -->
+                <div v-if="canUseWrapperCta" style="padding: 1.25rem; border-radius: 12px; background: #fffbeb; border: 1px dashed #fbbf24;">
                   <div style="font-size: 0.7rem; font-weight: 800; color: #b45309; text-transform: uppercase; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.35rem;">
-                    <Sparkles :size="12" /> Quảng cáo thêm (CTA)
+                    <Sparkles :size="12" /> Khối kêu gọi hành động (CTA)
                   </div>
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-                    <input v-model="form.ctaTitle" class="ui-form-input" placeholder="Tiêu đề KM" style="background: #fff;" />
-                    <input v-model="form.ctaButtonText" class="ui-form-input" placeholder="Tên nút" style="background: #fff;" />
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label" style="font-size: 0.7rem; color: #92400e; opacity: 0.7;">Tiêu đề KM</label>
+                      <input v-model="form.ctaTitle" class="ui-form-input" placeholder="Vd: Giảm giá 50%" style="background: #fff;" />
+                    </div>
+                    <div class="ui-form-group" style="margin: 0;">
+                      <label class="ui-form-label" style="font-size: 0.7rem; color: #92400e; opacity: 0.7;">Tên nút bấm</label>
+                      <input v-model="form.ctaButtonText" class="ui-form-input" placeholder="Xem ngay" style="background: #fff;" />
+                    </div>
                   </div>
-                  <input v-model="form.ctaButtonUrl" class="ui-form-input" placeholder="Link web muốn quảng cáo thêm..." style="margin-top: 0.75rem; background: #fff;" />
+                  <div class="ui-form-group" style="margin-top: 0.75rem;">
+                    <label class="ui-form-label" style="font-size: 0.7rem; color: #92400e; opacity: 0.7;">Link liên kết quảng cáo</label>
+                    <input v-model="form.ctaButtonUrl" class="ui-form-input" placeholder="Dán link web cần quảng cáo thêm vào đây..." style="background: #fff;" />
+                  </div>
                 </div>
-                <div v-else style="padding: 1rem; text-align: center; border: 1px dashed #e2e8f0; border-radius: 12px; font-size: 0.75rem; color: #94a3b8; background: #fafafa;">
-                  Nâng cấp gói <b>PLUS</b> để chèn thêm quảng cáo vào trang chờ.
+                <div v-else style="padding: 0.75rem; text-align: center; border: 1px dashed #e2e8f0; border-radius: 12px; font-size: 0.75rem; color: #94a3b8; background: #fafafa; margin-top: 0.5rem;">
+                  Nâng cấp gói <b>PLUS</b> để thêm quảng cáo vào trang chờ.
                 </div>
               </div>
             </div>
@@ -499,7 +530,6 @@ async function submit() {
               </button>
               <button type="button" class="ui-btn ui-btn-ghost" @click="router.push('/app/links')">Hủy</button>
             </div>
-
           </form>
         </div>
       </div>
@@ -596,7 +626,6 @@ async function submit() {
       </div>
 
     </div>
-
   </div>
 </template>
 
