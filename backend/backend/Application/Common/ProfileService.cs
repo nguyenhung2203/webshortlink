@@ -23,12 +23,17 @@ public sealed class ProfileService
     {
         var current = _currentUserService.GetRequired();
         var user = await _dbContext.Users.AsNoTracking().FirstAsync(x => x.Id == current.UserId, cancellationToken);
+        var planSnapshot = await GetPlanSnapshotAsync(user.CurrentPlanId, cancellationToken);
+
         return new CurrentSessionDto(
             user.Id,
             user.Email!,
             user.FullName,
             current.IsAdmin ? Domain.Enums.AppRoles.Admin : Domain.Enums.AppRoles.User,
             user.CurrentPlanId,
+            planSnapshot.Code,
+            planSnapshot.Name,
+            planSnapshot.Capabilities,
             user.AccountStatus.ToString());
     }
 
@@ -202,5 +207,27 @@ public sealed class ProfileService
             .OrderByDescending(x => x.CreatedAtUtc)
             .Select(x => new PaymentHistoryItemDto(x.Id, x.Amount, x.Currency, x.Status.ToString(), x.PaidAtUtc))
             .ToListAsync(cancellationToken);
+    }
+
+    private async Task<(string Code, string Name, IReadOnlyCollection<string> Capabilities)> GetPlanSnapshotAsync(int planId, CancellationToken cancellationToken)
+    {
+        var plan = await _dbContext.Plans
+            .AsNoTracking()
+            .Include(x => x.Features)
+            .FirstOrDefaultAsync(x => x.Id == planId, cancellationToken);
+
+        if (plan is null)
+        {
+            return ("free", "Free", Array.Empty<string>());
+        }
+
+        var capabilities = plan.Features
+            .Where(x => x.IsEnabled)
+            .Select(x => x.FeatureKey)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        return (plan.Code, plan.Name, capabilities);
     }
 }

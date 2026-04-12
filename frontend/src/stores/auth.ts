@@ -13,6 +13,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => Boolean(accessToken.value && user.value))
   const role = computed(() => user.value?.role ?? null)
+  const planCode = computed(() => user.value?.currentPlanCode?.toLowerCase() ?? 'free')
+  const planName = computed(() => user.value?.currentPlanName ?? 'Free')
 
   /** True if the stored access token is expired or within 60 seconds of expiry */
   const isTokenExpired = computed(() => {
@@ -110,14 +112,21 @@ export const useAuthStore = defineStore('auth', () => {
     persist()
   }
 
+  function hasCapability(featureKey: string) {
+    return user.value?.capabilities?.includes(featureKey) ?? false
+  }
+
   return {
     accessToken,
     refreshToken,
     expiresAtUtc,
     user,
     role,
+    planCode,
+    planName,
     isAuthenticated,
     isTokenExpired,
+    hasCapability,
     restore,
     login,
     register,

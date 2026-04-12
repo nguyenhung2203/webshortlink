@@ -10,6 +10,7 @@ const email = ref('')
 const role = ref('')
 const status = ref('')
 const currentPlanId = ref(0)
+const currentPlanName = ref('Free')
 
 const currentPassword = ref('')
 const newPassword = ref('')
@@ -32,6 +33,7 @@ async function load() {
     role.value = profile.role
     status.value = profile.accountStatus
     currentPlanId.value = profile.currentPlanId
+    currentPlanName.value = profile.currentPlanName
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Không thể tải hồ sơ.'
   } finally {
@@ -146,7 +148,7 @@ onMounted(load)
                 <p style="margin: 0; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Gói dịch vụ</p>
                 <div style="display: flex; align-items: center; gap: 0.35rem; margin-top: 0.2rem; font-size: 0.85rem; font-weight: 600;">
                   <Package :size="14" style="color: #f59e0b;" /> 
-                  <span style="color: #0f172a;">Gói số #{{ currentPlanId }}</span>
+                  <span style="color: #0f172a;">{{ currentPlanName }} <span style="color: #94a3b8;">(#{{ currentPlanId }})</span></span>
                 </div>
               </div>
             </div>

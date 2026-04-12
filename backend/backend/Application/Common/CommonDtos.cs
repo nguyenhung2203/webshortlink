@@ -12,7 +12,16 @@ public sealed record UpdateProfileRequestDto(string FullName);
 
 public sealed record ChangePasswordRequestDto(string CurrentPassword, string NewPassword, string ConfirmPassword);
 
-public sealed record CurrentSessionDto(Guid UserId, string Email, string FullName, string Role, int CurrentPlanId, string AccountStatus);
+public sealed record CurrentSessionDto(
+    Guid UserId,
+    string Email,
+    string FullName,
+    string Role,
+    int CurrentPlanId,
+    string CurrentPlanCode,
+    string CurrentPlanName,
+    IReadOnlyCollection<string> Capabilities,
+    string AccountStatus);
 
 public sealed record PublicRedirectAccessRequestDto(string Password);
 

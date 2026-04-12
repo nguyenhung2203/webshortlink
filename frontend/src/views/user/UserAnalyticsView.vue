@@ -34,7 +34,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-const isAdvancedAnalyticsEnabled = computed(() => (authStore.user?.currentPlanId ?? 1) >= 2)
+const isAdvancedAnalyticsEnabled = computed(() => authStore.hasCapability('analytics.advanced'))
 
 const links = ref<ShortLink[]>([])
 const selectedLinkId = ref('')
@@ -285,6 +285,26 @@ onMounted(bootstrap)
               </div>
             </div>
 
+          </div>
+        </div>
+
+        <div v-if="analytics.wrapperViews > 0 || analytics.continueClicks > 0" class="ui-panel">
+          <div class="ui-panel-header">
+            <h3 class="ui-panel-title">Hiệu quả Bọc link</h3>
+          </div>
+          <div class="ui-panel-body" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+            <div class="ui-stat-card">
+              <p class="ui-stat-label">Wrapper views</p>
+              <p class="ui-stat-value">{{ analytics.wrapperViews }}</p>
+            </div>
+            <div class="ui-stat-card">
+              <p class="ui-stat-label">Continue clicks</p>
+              <p class="ui-stat-value">{{ analytics.continueClicks }}</p>
+            </div>
+            <div class="ui-stat-card">
+              <p class="ui-stat-label">Continue rate</p>
+              <p class="ui-stat-value">{{ analytics.continueRate }}%</p>
+            </div>
           </div>
         </div>
 

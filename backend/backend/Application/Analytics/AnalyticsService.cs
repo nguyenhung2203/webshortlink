@@ -80,22 +80,34 @@ public sealed class AnalyticsService
         var events = await _dbContext.ClickEvents.AsNoTracking()
             .Where(x => x.LinkId == linkId && x.ClickedAtUtc >= retentionCutoff)
             .ToListAsync(cancellationToken);
+        var primaryTrafficEvents = events
+            .Where(x => x.EventStatus is Domain.Enums.ClickEventStatus.Redirected or Domain.Enums.ClickEventStatus.WrapperView)
+            .ToList();
 
         var trends = await _dbContext.LinkDailyStats.AsNoTracking()
             .Where(x => x.LinkId == linkId && x.StatDate >= DateOnly.FromDateTime(retentionCutoff))
             .OrderBy(x => x.StatDate)
             .ToListAsync(cancellationToken);
 
+        var wrapperViews = events.LongCount(x => x.EventStatus == Domain.Enums.ClickEventStatus.WrapperView);
+        var continueClicks = events.LongCount(x => x.EventStatus == Domain.Enums.ClickEventStatus.ContinueClicked);
+        var continueRate = wrapperViews > 0
+            ? Math.Round((decimal)continueClicks * 100m / wrapperViews, 2)
+            : 0m;
+
         return new LinkAnalyticsDto(
             link.Id,
             link.TotalClicks,
             link.UniqueClicks,
-            events.LongCount(x => x.IsBot),
+            primaryTrafficEvents.LongCount(x => x.IsBot),
+            wrapperViews,
+            continueClicks,
+            continueRate,
             trends.Select(x => new TrendPointDto(x.StatDate.ToString("yyyy-MM-dd"), x.TotalClicks, x.UniqueClicks, x.BotClicks)).ToList(),
-            events.GroupBy(x => x.CountryCode ?? "Unknown").OrderByDescending(x => x.Count()).Take(5).Select(x => new KeyValueMetricDto(x.Key, x.LongCount())).ToList(),
-            events.GroupBy(x => x.DeviceType).OrderByDescending(x => x.Count()).Take(5).Select(x => new KeyValueMetricDto(x.Key, x.LongCount())).ToList(),
-            events.GroupBy(x => x.NormalizedSource).OrderByDescending(x => x.Count()).Take(5).Select(x => new KeyValueMetricDto(x.Key, x.LongCount())).ToList(),
-            events.Where(x => !string.IsNullOrEmpty(x.UtmCampaign)).GroupBy(x => x.UtmCampaign!).OrderByDescending(x => x.Count()).Take(5).Select(x => new KeyValueMetricDto(x.Key, x.LongCount())).ToList());
+            primaryTrafficEvents.GroupBy(x => x.CountryCode ?? "Unknown").OrderByDescending(x => x.Count()).Take(5).Select(x => new KeyValueMetricDto(x.Key, x.LongCount())).ToList(),
+            primaryTrafficEvents.GroupBy(x => x.DeviceType).OrderByDescending(x => x.Count()).Take(5).Select(x => new KeyValueMetricDto(x.Key, x.LongCount())).ToList(),
+            primaryTrafficEvents.GroupBy(x => x.NormalizedSource).OrderByDescending(x => x.Count()).Take(5).Select(x => new KeyValueMetricDto(x.Key, x.LongCount())).ToList(),
+            primaryTrafficEvents.Where(x => !string.IsNullOrEmpty(x.UtmCampaign)).GroupBy(x => x.UtmCampaign!).OrderByDescending(x => x.Count()).Take(5).Select(x => new KeyValueMetricDto(x.Key, x.LongCount())).ToList());
     }
 
     /// <summary>

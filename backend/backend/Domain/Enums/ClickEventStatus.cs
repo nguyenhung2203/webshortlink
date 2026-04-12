@@ -7,5 +7,7 @@ public enum ClickEventStatus
     Disabled = 3,
     Expired = 4,
     ClickLimitReached = 5,
-    NotFound = 6
+    NotFound = 6,
+    WrapperView = 7,
+    ContinueClicked = 8
 }

@@ -39,6 +39,10 @@ public sealed class ClickAnalyticsWorker : BackgroundService
                 var browser = DetectBrowser(message.UserAgent);
                 var os = DetectOperatingSystem(message.UserAgent);
                 var isBot = message.UserAgent.Contains("bot", StringComparison.OrdinalIgnoreCase);
+                var eventStatus = Enum.TryParse<ClickEventStatus>(message.EventStatus, true, out var parsedStatus)
+                    ? parsedStatus
+                    : ClickEventStatus.Redirected;
+                var shouldAggregateClick = eventStatus is ClickEventStatus.Redirected or ClickEventStatus.WrapperView;
                 var fingerprint = $"{message.LinkId}:{MaskIp(message.IpAddress)}:{browser}:{message.ClickedAtUtc:yyyy-MM-dd}";
                 var uniqueFingerprint = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(fingerprint)));
 
@@ -61,7 +65,7 @@ public sealed class ClickAnalyticsWorker : BackgroundService
                     Referrer = string.IsNullOrWhiteSpace(message.Referrer) ? "direct" : message.Referrer,
                     UserAgent = message.UserAgent,
                     FingerprintHash = uniqueFingerprint,
-                    EventStatus = ClickEventStatus.Redirected,
+                    EventStatus = eventStatus,
                     NormalizedSource = message.NormalizedSource,
                     UtmSource = message.UtmSource,
                     UtmMedium = message.UtmMedium,
@@ -82,47 +86,50 @@ public sealed class ClickAnalyticsWorker : BackgroundService
                     continue;
                 }
 
-                if (isUnique)
+                if (shouldAggregateClick && isUnique)
                 {
                     link.UniqueClicks += 1;
                 }
 
-                var statDate = DateOnly.FromDateTime(message.ClickedAtUtc);
-                var daily = await dbContext.LinkDailyStats.FirstOrDefaultAsync(x => x.LinkId == message.LinkId && x.StatDate == statDate, stoppingToken);
-                if (daily is null)
+                if (shouldAggregateClick)
                 {
-                    daily = new LinkDailyStat
+                    var statDate = DateOnly.FromDateTime(message.ClickedAtUtc);
+                    var daily = await dbContext.LinkDailyStats.FirstOrDefaultAsync(x => x.LinkId == message.LinkId && x.StatDate == statDate, stoppingToken);
+                    if (daily is null)
                     {
-                        Id = Guid.NewGuid(),
-                        LinkId = message.LinkId,
-                        StatDate = statDate,
-                        CreatedAtUtc = DateTime.UtcNow
-                    };
-                    dbContext.LinkDailyStats.Add(daily);
-                }
+                        daily = new LinkDailyStat
+                        {
+                            Id = Guid.NewGuid(),
+                            LinkId = message.LinkId,
+                            StatDate = statDate,
+                            CreatedAtUtc = DateTime.UtcNow
+                        };
+                        dbContext.LinkDailyStats.Add(daily);
+                    }
 
-                daily.TotalClicks += 1;
-                daily.UniqueClicks += isUnique ? 1 : 0;
-                daily.BotClicks += isBot ? 1 : 0;
-                daily.SuspiciousClicks += isBot ? 1 : 0;
+                    daily.TotalClicks += 1;
+                    daily.UniqueClicks += isUnique ? 1 : 0;
+                    daily.BotClicks += isBot ? 1 : 0;
+                    daily.SuspiciousClicks += isBot ? 1 : 0;
 
-                var bucket = new DateTime(message.ClickedAtUtc.Year, message.ClickedAtUtc.Month, message.ClickedAtUtc.Day, message.ClickedAtUtc.Hour, 0, 0, DateTimeKind.Utc);
-                var hourly = await dbContext.LinkHourlyStats.FirstOrDefaultAsync(x => x.LinkId == message.LinkId && x.HourBucketUtc == bucket, stoppingToken);
-                if (hourly is null)
-                {
-                    hourly = new LinkHourlyStat
+                    var bucket = new DateTime(message.ClickedAtUtc.Year, message.ClickedAtUtc.Month, message.ClickedAtUtc.Day, message.ClickedAtUtc.Hour, 0, 0, DateTimeKind.Utc);
+                    var hourly = await dbContext.LinkHourlyStats.FirstOrDefaultAsync(x => x.LinkId == message.LinkId && x.HourBucketUtc == bucket, stoppingToken);
+                    if (hourly is null)
                     {
-                        Id = Guid.NewGuid(),
-                        LinkId = message.LinkId,
-                        HourBucketUtc = bucket,
-                        CreatedAtUtc = DateTime.UtcNow
-                    };
-                    dbContext.LinkHourlyStats.Add(hourly);
-                }
+                        hourly = new LinkHourlyStat
+                        {
+                            Id = Guid.NewGuid(),
+                            LinkId = message.LinkId,
+                            HourBucketUtc = bucket,
+                            CreatedAtUtc = DateTime.UtcNow
+                        };
+                        dbContext.LinkHourlyStats.Add(hourly);
+                    }
 
-                hourly.TotalClicks += 1;
-                hourly.UniqueClicks += isUnique ? 1 : 0;
-                hourly.BotClicks += isBot ? 1 : 0;
+                    hourly.TotalClicks += 1;
+                    hourly.UniqueClicks += isUnique ? 1 : 0;
+                    hourly.BotClicks += isBot ? 1 : 0;
+                }
 
                 await dbContext.SaveChangesAsync(stoppingToken);
                 await linkCacheService.SetAsync(
@@ -136,7 +143,25 @@ public sealed class ClickAnalyticsWorker : BackgroundService
                         link.ExpiresAtUtc,
                         link.ClickLimit,
                         link.PasswordHash,
-                        link.TotalClicks),
+                        link.TotalClicks,
+                        link.OgTitle,
+                        link.OgDescription,
+                        link.OgImageUrl,
+                        link.IsWrapperEnabled,
+                        link.RedirectMode.ToString(),
+                        link.DelaySeconds,
+                        link.WrapperTitle,
+                        link.WrapperDescription,
+                        link.WrapperImageUrl,
+                        link.ContinueButtonText,
+                        link.WarningText,
+                        link.WrapperTheme,
+                        link.BrandName,
+                        link.BrandLogoUrl,
+                        link.CtaTitle,
+                        link.CtaDescription,
+                        link.CtaButtonText,
+                        link.CtaButtonUrl),
                     stoppingToken);
             }
             catch (OperationCanceledException)

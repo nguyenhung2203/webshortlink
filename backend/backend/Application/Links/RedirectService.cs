@@ -50,10 +50,6 @@ public sealed class RedirectService
         var link = cached ?? await ResolveFromDatabaseAsync(normalizedHost, systemDefaultHost, slug, cancellationToken);
         if (link is null)
         {
-            throw new AppException(ErrorCodes.NotFound, "Shortlink khong ton tai.", StatusCodes.Status404NotFound);
-        }
-        if (link is null)
-        {
             throw new AppException(ErrorCodes.NotFound, "Shortlink không tồn tại.", StatusCodes.Status404NotFound);
         }
 
@@ -75,18 +71,10 @@ public sealed class RedirectService
             var placeholder = new Link { PasswordHash = link.PasswordHash };
             if (string.IsNullOrWhiteSpace(password))
             {
-                throw new AppException(ErrorCodes.PasswordRequired, "Link yeu cau mat khau.", StatusCodes.Status400BadRequest);
-            }
-            if (string.IsNullOrWhiteSpace(password))
-            {
                 throw new AppException(ErrorCodes.PasswordRequired, "Link yêu cầu mật khẩu.", StatusCodes.Status400BadRequest);
             }
 
             var verification = _passwordHasher.VerifyHashedPassword(placeholder, link.PasswordHash, password);
-            if (verification == PasswordVerificationResult.Failed)
-            {
-                throw new AppException(ErrorCodes.InvalidPassword, "Mat khau khong dung.");
-            }
             if (verification == PasswordVerificationResult.Failed)
             {
                 throw new AppException(ErrorCodes.InvalidPassword, "Mật khẩu không đúng.");
@@ -105,6 +93,10 @@ public sealed class RedirectService
             out var utmMedium, 
             out var utmCampaign);
 
+        var primaryEventStatus = link.IsWrapperEnabled
+            ? ClickEventStatus.WrapperView.ToString()
+            : ClickEventStatus.Redirected.ToString();
+
         await _analyticsQueue.EnqueueAsync(new ClickTrackingMessage
         {
             LinkId = link.Id,
@@ -115,7 +107,7 @@ public sealed class RedirectService
             Referrer = string.IsNullOrWhiteSpace(referrer) ? "direct" : referrer,
             UserAgent = httpContext.Request.Headers.UserAgent.ToString(),
             ResponseTimeMs = responseTimeMs,
-            EventStatus = ClickEventStatus.Redirected.ToString(),
+            EventStatus = primaryEventStatus,
             CountryCode = DetectCountry(httpContext),
             City = DetectCity(httpContext),
             NormalizedSource = normalizedSource,
@@ -145,17 +137,17 @@ public sealed class RedirectService
 
         return new PublicWrapperRenderDto(
             $"/w/{slug}?target={encodedTarget}&sig={signature}",
-            targetUrl,
+            $"/c/{slug}?target={encodedTarget}&sig={signature}",
             normalizedHost,
             slug,
             targetUrl,
             mode.ToString(),
             Math.Clamp(link.DelaySeconds ?? (mode == LinkRedirectMode.Instant ? 1 : 3), 1, 30),
-            link.WrapperTitle ?? link.OgTitle ?? "Ban sap den trang dich",
-            link.WrapperDescription ?? link.OgDescription ?? "Nhan tiep tuc de mo lien ket.",
+            link.WrapperTitle ?? link.OgTitle ?? "Bạn sắp đến trang đích",
+            link.WrapperDescription ?? link.OgDescription ?? "Nhấn tiếp tục để mở liên kết.",
             link.WrapperImageUrl ?? link.OgImageUrl,
-            string.IsNullOrWhiteSpace(link.ContinueButtonText) ? "Tiep tuc den trang dich" : link.ContinueButtonText,
-            string.IsNullOrWhiteSpace(link.WarningText) ? "Ban sap roi khoi website hien tai." : link.WarningText,
+            string.IsNullOrWhiteSpace(link.ContinueButtonText) ? "Tiếp tục đến trang đích" : link.ContinueButtonText,
+            string.IsNullOrWhiteSpace(link.WarningText) ? "Bạn sắp rời khỏi website hiện tại." : link.WarningText,
             string.IsNullOrWhiteSpace(link.WrapperTheme) ? "brand" : link.WrapperTheme,
             link.BrandName,
             link.BrandLogoUrl,
@@ -196,6 +188,46 @@ public sealed class RedirectService
         {
             return false;
         }
+    }
+
+    public async Task<string> TrackContinueAsync(string host, string slug, string targetUrl, HttpContext httpContext, CancellationToken cancellationToken)
+    {
+        var normalizedHost = NormalizeHost(host);
+        var systemDefaultHost = await GetSystemDefaultHostAsync(cancellationToken);
+        var link = await _linkCacheService.GetAsync(normalizedHost, slug, cancellationToken)
+            ?? await ResolveFromDatabaseAsync(normalizedHost, systemDefaultHost, slug, cancellationToken)
+            ?? throw new AppException(ErrorCodes.NotFound, "Shortlink không tồn tại.", StatusCodes.Status404NotFound);
+
+        ValidateRedirectPreconditions(link);
+
+        WebShortlink.Backend.Application.Analytics.AnalyticsSourceHelper.ParseAnalyticsFromRequest(
+            httpContext.Request,
+            out var referrer,
+            out var normalizedSource,
+            out var utmSource,
+            out var utmMedium,
+            out var utmCampaign);
+
+        await _analyticsQueue.EnqueueAsync(new ClickTrackingMessage
+        {
+            LinkId = link.Id,
+            ClickedAtUtc = DateTime.UtcNow,
+            Host = normalizedHost,
+            Slug = slug,
+            IpAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            Referrer = string.IsNullOrWhiteSpace(referrer) ? "direct" : referrer,
+            UserAgent = httpContext.Request.Headers.UserAgent.ToString(),
+            ResponseTimeMs = 0,
+            EventStatus = ClickEventStatus.ContinueClicked.ToString(),
+            CountryCode = DetectCountry(httpContext),
+            City = DetectCity(httpContext),
+            NormalizedSource = normalizedSource,
+            UtmSource = utmSource,
+            UtmMedium = utmMedium,
+            UtmCampaign = utmCampaign
+        }, cancellationToken);
+
+        return targetUrl;
     }
 
     private async Task<CachedLinkDto?> ResolveFromDatabaseAsync(string host, string defaultHost, string slug, CancellationToken cancellationToken)
@@ -277,17 +309,17 @@ public sealed class RedirectService
     {
         if (!Enum.TryParse<LinkStatus>(link.Status, out var status))
         {
-            throw new AppException(ErrorCodes.NotFound, "Shortlink khong ton tai.", StatusCodes.Status404NotFound);
+            throw new AppException(ErrorCodes.NotFound, "Shortlink không tồn tại.", StatusCodes.Status404NotFound);
         }
 
         if (status is LinkStatus.Paused or LinkStatus.DisabledByAdmin)
         {
-            throw new AppException(ErrorCodes.LinkDisabled, "Link hien khong kha dung.", StatusCodes.Status400BadRequest);
+            throw new AppException(ErrorCodes.LinkDisabled, "Link hiện không khả dụng.", StatusCodes.Status400BadRequest);
         }
 
         if (link.ExpiresAtUtc.HasValue && link.ExpiresAtUtc.Value <= DateTime.UtcNow)
         {
-            throw new AppException(ErrorCodes.LinkExpired, "Link da het han.", StatusCodes.Status400BadRequest);
+            throw new AppException(ErrorCodes.LinkExpired, "Link đã hết hạn.", StatusCodes.Status400BadRequest);
         }
     }
 
@@ -303,22 +335,22 @@ public sealed class RedirectService
 
             if (trackedLink is null)
             {
-                throw new AppException(ErrorCodes.NotFound, "Shortlink khong ton tai.", StatusCodes.Status404NotFound);
+                throw new AppException(ErrorCodes.NotFound, "Shortlink không tồn tại.", StatusCodes.Status404NotFound);
             }
 
             if (trackedLink.Status is LinkStatus.Paused or LinkStatus.DisabledByAdmin)
             {
-                throw new AppException(ErrorCodes.LinkDisabled, "Link hien khong kha dung.", StatusCodes.Status400BadRequest);
+                throw new AppException(ErrorCodes.LinkDisabled, "Link hiện không khả dụng.", StatusCodes.Status400BadRequest);
             }
 
             if (trackedLink.ExpiresAtUtc.HasValue && trackedLink.ExpiresAtUtc.Value <= DateTime.UtcNow)
             {
-                throw new AppException(ErrorCodes.LinkExpired, "Link da het han.", StatusCodes.Status400BadRequest);
+                throw new AppException(ErrorCodes.LinkExpired, "Link đã hết hạn.", StatusCodes.Status400BadRequest);
             }
 
             if (trackedLink.ClickLimit.HasValue && trackedLink.TotalClicks >= trackedLink.ClickLimit.Value)
             {
-                throw new AppException(ErrorCodes.ClickLimitReached, "Link da vuot gioi han click.", StatusCodes.Status400BadRequest);
+                throw new AppException(ErrorCodes.ClickLimitReached, "Link đã vượt giới hạn click.", StatusCodes.Status400BadRequest);
             }
 
             trackedLink.TotalClicks += 1;
@@ -368,7 +400,7 @@ public sealed class RedirectService
             }
         }
 
-        throw new AppException(ErrorCodes.Conflict, "Khong the ghi nhan click luc nay. Vui long thu lai.", StatusCodes.Status409Conflict);
+        throw new AppException(ErrorCodes.Conflict, "Không thể ghi nhận click lúc này. Vui lòng thử lại.", StatusCodes.Status409Conflict);
     }
 
     private async Task<string> ResolveTargetUrlAsync(CachedLinkDto link, long reservedTotalClicks, HttpContext httpContext, CancellationToken cancellationToken)
@@ -433,18 +465,29 @@ public sealed class RedirectService
 
     private string NormalizeHost(string host)
     {
-        var normalized = string.IsNullOrWhiteSpace(host) ? _defaultHost : host.Trim().ToLowerInvariant();
-        if (normalized.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || normalized.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(host)) return _defaultHost;
+
+        var normalized = host.Trim().ToLowerInvariant();
+        
+        // Strip protocol/port/path if present
+        if (normalized.StartsWith("http://") || normalized.StartsWith("https://"))
         {
             normalized = DomainService.NormalizeHost(normalized);
         }
-
+        
         if (normalized.Contains(':'))
         {
             normalized = normalized.Split(':')[0];
         }
 
-        if (normalized is "localhost" or "127.0.0.1" or "::1" or "default")
+        // Standardize www.
+        if (normalized.StartsWith("www."))
+        {
+            normalized = normalized[4..];
+        }
+
+        // Treat local/technical hosts as the default domain for global links
+        if (normalized is "localhost" or "127.0.0.1" or "::1" or "default" || normalized.EndsWith(".atempurl.com"))
         {
             return _defaultHost;
         }

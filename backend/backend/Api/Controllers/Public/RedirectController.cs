@@ -28,13 +28,14 @@ public sealed class RedirectController : ControllerBase
     [HttpPost("/api/public/resolve/{slug}/password")]
     public async Task<IActionResult> SubmitPassword(string slug, [FromBody] PublicRedirectAccessRequestDto request, CancellationToken cancellationToken)
     {
-        var response = await _redirectService.ResolveAsync(ResolveHost(), slug, request.Password, HttpContext, cancellationToken);
+        var shortlinkHost = ResolveHost();
+        var response = await _redirectService.ResolveAsync(shortlinkHost, slug, request.Password, HttpContext, cancellationToken);
         if (response is PublicRedirectAccessResponseDto redirectResponse)
         {
-            var wrapper = await _redirectService.BuildWrapperRenderAsync(ResolveHost(), slug, redirectResponse.RedirectUrl, cancellationToken);
+            var wrapper = await _redirectService.BuildWrapperRenderAsync(shortlinkHost, slug, redirectResponse.RedirectUrl, cancellationToken);
             if (wrapper is not null)
             {
-                return Ok(new PublicRedirectAccessResponseDto(wrapper.WrapperUrl));
+                return Ok(new PublicRedirectAccessResponseDto(BuildAbsoluteShortlinkUrl(shortlinkHost, wrapper.WrapperUrl)));
             }
         }
         return Ok(response);
@@ -47,24 +48,55 @@ public sealed class RedirectController : ControllerBase
         {
             if (!_redirectService.TryReadWrapperTarget(ResolveHost(), slug, target, sig, out var targetUrl))
             {
-                throw new AppException(ErrorCodes.NotFound, "Wrapper khong hop le.", StatusCodes.Status404NotFound);
+                throw new AppException(ErrorCodes.NotFound, "Wrapper không hợp lệ.", StatusCodes.Status404NotFound);
             }
 
             var wrapper = await _redirectService.BuildWrapperRenderAsync(ResolveHost(), slug, targetUrl, cancellationToken)
-                ?? throw new AppException(ErrorCodes.NotFound, "Khong tim thay wrapper.", StatusCodes.Status404NotFound);
+                ?? throw new AppException(ErrorCodes.NotFound, "Không tìm thấy wrapper.", StatusCodes.Status404NotFound);
 
             return Content(RenderWrapperHtml(wrapper), "text/html");
         }
         catch (AppException ex)
         {
             var feBaseUrl = _appOptions.Value.FrontendUrl.TrimEnd('/');
+            var hostQuery = Uri.EscapeDataString(ResolveHost());
             return ex.ErrorCode switch
             {
                 ErrorCodes.NotFound => Redirect($"{feBaseUrl}/link-not-found"),
                 ErrorCodes.LinkExpired => Redirect($"{feBaseUrl}/link-expired"),
                 ErrorCodes.LinkDisabled => Redirect($"{feBaseUrl}/link-disabled"),
                 ErrorCodes.ClickLimitReached => Redirect($"{feBaseUrl}/link-limit-reached"),
-                ErrorCodes.PasswordRequired => Redirect($"{feBaseUrl}/link/{slug}/unlock"),
+                ErrorCodes.PasswordRequired => Redirect($"{feBaseUrl}/link/{slug}/unlock?host={hostQuery}"),
+                _ => Redirect($"{feBaseUrl}/link-not-found"),
+            };
+        }
+    }
+
+    [HttpGet("/c/{slug}")]
+    public async Task<IActionResult> ContinueBySlug(string slug, [FromQuery] string? target, [FromQuery] string? sig, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var shortlinkHost = ResolveHost();
+            if (!_redirectService.TryReadWrapperTarget(shortlinkHost, slug, target, sig, out var targetUrl))
+            {
+                throw new AppException(ErrorCodes.NotFound, "Đường dẫn tiếp tục không hợp lệ.", StatusCodes.Status404NotFound);
+            }
+
+            var resolvedUrl = await _redirectService.TrackContinueAsync(shortlinkHost, slug, targetUrl, HttpContext, cancellationToken);
+            return Redirect(resolvedUrl);
+        }
+        catch (AppException ex)
+        {
+            var feBaseUrl = _appOptions.Value.FrontendUrl.TrimEnd('/');
+            var hostQuery = Uri.EscapeDataString(ResolveHost());
+            return ex.ErrorCode switch
+            {
+                ErrorCodes.NotFound => Redirect($"{feBaseUrl}/link-not-found"),
+                ErrorCodes.LinkExpired => Redirect($"{feBaseUrl}/link-expired"),
+                ErrorCodes.LinkDisabled => Redirect($"{feBaseUrl}/link-disabled"),
+                ErrorCodes.ClickLimitReached => Redirect($"{feBaseUrl}/link-limit-reached"),
+                ErrorCodes.PasswordRequired => Redirect($"{feBaseUrl}/link/{slug}/unlock?host={hostQuery}"),
                 _ => Redirect($"{feBaseUrl}/link-not-found"),
             };
         }
@@ -80,11 +112,10 @@ public sealed class RedirectController : ControllerBase
             if (response is OgLinkDataDto og)
             {
                 var pageTitle = System.Net.WebUtility.HtmlEncode(og.OgTitle ?? "WeShort Link");
-                var pageDesc = System.Net.WebUtility.HtmlEncode(og.OgDescription ?? "Tiết kiệm thời gian với đường link rút gọn chuyên nghiệp.");
-                var pageImage = og.OgImageUrl != null ? System.Net.WebUtility.HtmlEncode(og.OgImageUrl) : "";
+                var pageDesc = System.Net.WebUtility.HtmlEncode(og.OgDescription ?? "Smart redirect link preview.");
+                var pageImage = og.OgImageUrl is null ? string.Empty : System.Net.WebUtility.HtmlEncode(og.OgImageUrl);
                 var pageUrl = $"https://{og.Host}/{og.Slug}";
                 var destUrl = System.Net.WebUtility.HtmlEncode(og.OriginalUrl);
-                var safeDestJs = og.OriginalUrl.Replace("\\", "\\\\").Replace("\"", "\\\"");
 
                 // Build og:image block only if image URL exists
                 var ogImageBlock = !string.IsNullOrWhiteSpace(pageImage)
@@ -105,10 +136,8 @@ public sealed class RedirectController : ControllerBase
                     "<meta name=\"twitter:card\" content=\"summary_large_image\">" +
                     $"<meta name=\"twitter:title\" content=\"{pageTitle}\">" +
                     $"<meta name=\"twitter:description\" content=\"{pageDesc}\">" +
-                    $"<meta http-equiv=\"refresh\" content=\"0;url={destUrl}\">" +
                     "</head><body>" +
-                    $"<p>Đang chuyển hướng... <a href=\"{destUrl}\">{destUrl}</a></p>" +
-                    $"<script>setTimeout(function(){{window.location.replace(\"{safeDestJs}\");}},100);</script>" +
+                    $"<p>Preview link: <a href=\"{destUrl}\">{destUrl}</a></p>" +
                     "</body></html>";
 
                 return Content(html, "text/html");
@@ -125,13 +154,14 @@ public sealed class RedirectController : ControllerBase
         catch (AppException ex)
         {
             var feBaseUrl = _appOptions.Value.FrontendUrl.TrimEnd('/');
+            var hostQuery = Uri.EscapeDataString(ResolveHost());
             return ex.ErrorCode switch
             {
                 ErrorCodes.NotFound      => Redirect($"{feBaseUrl}/link-not-found"),
                 ErrorCodes.LinkExpired   => Redirect($"{feBaseUrl}/link-expired"),
                 ErrorCodes.LinkDisabled  => Redirect($"{feBaseUrl}/link-disabled"),
                 ErrorCodes.ClickLimitReached => Redirect($"{feBaseUrl}/link-limit-reached"),
-                ErrorCodes.PasswordRequired  => Redirect($"{feBaseUrl}/link/{slug}/unlock"),
+                ErrorCodes.PasswordRequired  => Redirect($"{feBaseUrl}/link/{slug}/unlock?host={hostQuery}"),
                 _ => Redirect($"{feBaseUrl}/link-not-found"),
             };
         }
@@ -145,7 +175,21 @@ public sealed class RedirectController : ControllerBase
             return forwarded;
         }
 
-        return Request.Host.Host;
+        return Request.Headers.Host.ToString();
+    }
+
+    private static string BuildAbsoluteShortlinkUrl(string host, string path)
+    {
+        if (path.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || path.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return path;
+        }
+
+        var scheme = host.StartsWith("localhost", StringComparison.OrdinalIgnoreCase) || host.StartsWith("127.0.0.1", StringComparison.OrdinalIgnoreCase)
+            ? "http"
+            : "https";
+        var normalizedPath = path.StartsWith('/') ? path : "/" + path;
+        return $"{scheme}://{host}{normalizedPath}";
     }
 
     private static string RenderWrapperHtml(PublicWrapperRenderDto wrapper)
@@ -167,8 +211,9 @@ public sealed class RedirectController : ControllerBase
         var isManual = wrapper.RedirectMode.Equals("ManualContinue", StringComparison.OrdinalIgnoreCase);
         var isLanding = wrapper.RedirectMode.Equals("LandingPage", StringComparison.OrdinalIgnoreCase);
         var effectiveDelay = isManual ? 0 : delaySeconds;
+        var rawContinueUrl = wrapper.ContinueUrl; // Do not HTML encode for JS block
         var autoRedirectScript = effectiveDelay > 0
-            ? $"let s={effectiveDelay};const el=document.getElementById('count');if(el){{el.textContent=s;}}setInterval(function(){{s--;if(el&&s>=0){{el.textContent=s;}}if(s<=0){{window.location.replace('{continueUrl}');}}}},1000);"
+            ? $"let s={effectiveDelay};const el=document.getElementById('count');if(el){{el.textContent=s;}}const timer=setInterval(function(){{s--;if(el&&s>=0){{el.textContent=s;}}if(s<=0){{clearInterval(timer);window.location.replace('{rawContinueUrl}');}}}},1000);"
             : string.Empty;
         var imageBlock = string.IsNullOrWhiteSpace(image) ? string.Empty : $"<img class=\"hero\" src=\"{image}\" alt=\"wrapper image\">";
         var logoBlock = string.IsNullOrWhiteSpace(brandLogo) ? string.Empty : $"<img class=\"logo\" src=\"{brandLogo}\" alt=\"brand logo\">";
@@ -205,6 +250,6 @@ public sealed class RedirectController : ControllerBase
             "@media (max-width:640px){.head,.body,.foot{padding-left:18px;padding-right:18px;}.title{font-size:22px;}}" +
             "</style></head><body><div class=\"shell\"><div class=\"head\"><div class=\"brand\">" +
             logoBlock +
-            $"<span>{brandName}</span></div></div><div class=\"body\">{imageBlock}<h1 class=\"title\">{title}</h1><p class=\"desc\">{description}</p>{countdownBlock}<div class=\"warn\">{warning}</div>{ctaBlock}{continueBlock}</div><div class=\"foot\">Ban sap roi khoi website hien tai va duoc chuyen den trang dich.</div></div><script>{autoRedirectScript}</script></body></html>";
+            $"<span>{brandName}</span></div></div><div class=\"body\">{imageBlock}<h1 class=\"title\">{title}</h1><p class=\"desc\">{description}</p>{countdownBlock}<div class=\"warn\">{warning}</div>{ctaBlock}{continueBlock}</div><div class=\"foot\">Bạn sắp rời khỏi website hiện tại và được chuyển đến trang đích.</div></div><script>{autoRedirectScript}</script></body></html>";
     }
 }
