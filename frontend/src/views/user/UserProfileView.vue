@@ -129,7 +129,7 @@ onMounted(load)
               </div>
             </div>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
               <div>
                 <p style="margin: 0; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Trạng thái</p>
                 <div style="display: flex; align-items: center; gap: 0.35rem; margin-top: 0.2rem; font-size: 0.85rem; font-weight: 600;">

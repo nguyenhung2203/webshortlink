@@ -218,12 +218,12 @@ public sealed class RedirectController : ControllerBase
         var imageBlock = string.IsNullOrWhiteSpace(image) ? string.Empty : $"<img class=\"hero\" src=\"{image}\" alt=\"wrapper image\">";
         var logoBlock = string.IsNullOrWhiteSpace(brandLogo) ? string.Empty : $"<img class=\"logo\" src=\"{brandLogo}\" alt=\"brand logo\">";
         var ctaBlock = isLanding && !string.IsNullOrWhiteSpace(ctaTitle)
-            ? $"<div class=\"cta\"><strong>{ctaTitle}</strong><p>{ctaDescription}</p>{(string.IsNullOrWhiteSpace(ctaButtonUrl) ? string.Empty : $"<a class=\"cta-btn\" href=\"{ctaButtonUrl}\" target=\"_blank\" rel=\"noopener noreferrer\">{(string.IsNullOrWhiteSpace(ctaButtonText) ? "Xem them" : ctaButtonText)}</a>")}</div>"
+            ? $"<div class=\"cta\"><strong>{ctaTitle}</strong><p>{ctaDescription}</p>{(string.IsNullOrWhiteSpace(ctaButtonUrl) ? string.Empty : $"<a class=\"cta-btn\" href=\"{ctaButtonUrl}\" target=\"_blank\" rel=\"noopener noreferrer\">{(string.IsNullOrWhiteSpace(ctaButtonText) ? "Xem thêm" : ctaButtonText)}</a>")}</div>"
             : string.Empty;
         var continueBlock = isManual || isLanding
             ? $"<a class=\"continue\" href=\"{continueUrl}\" rel=\"noopener noreferrer\">{buttonText}</a>"
-            : $"<a class=\"continue ghost\" href=\"{continueUrl}\" rel=\"noopener noreferrer\">Mo ngay</a>";
-        var countdownBlock = effectiveDelay > 0 ? "<div class=\"countdown\">Dang chuyen trong <span id=\"count\"></span> giay...</div>" : string.Empty;
+            : $"<a class=\"continue ghost\" href=\"{continueUrl}\" rel=\"noopener noreferrer\">Mở ngay</a>";
+        var countdownBlock = effectiveDelay > 0 ? "<div class=\"countdown\">Đang chuyển trong <span id=\"count\"></span> giây...</div>" : string.Empty;
 
         return "<!DOCTYPE html><html lang=\"vi\"><head>" +
             "<meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" +
