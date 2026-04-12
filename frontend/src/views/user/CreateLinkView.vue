@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { LinkService, UserService } from '@/api/services'
@@ -447,7 +447,7 @@ async function submit() {
 
             <!-- Step 3: Wrapper -->
             <div class="wrapper-section">
-              <button type="button" class="wrapper-section-header" @click="showWrapperSection = !showWrapperSection">
+              <div class="wrapper-section-header" @click="showWrapperSection = !showWrapperSection">
                 <div class="wrapper-section-header__left">
                   <div class="wrapper-section-icon">
                     <ShieldCheck :size="18" />
@@ -458,13 +458,13 @@ async function submit() {
                   </div>
                 </div>
                 <div class="wrapper-section-header__right">
-                  <span class="wrapper-status-pill" :class="{ 'wrapper-status-pill--active': wrapperEnabled }">
+                  <button type="button" class="wrapper-status-pill" :class="{ 'wrapper-status-pill--active': wrapperEnabled }" @click.stop="setWrapperEnabled(!form.isWrapperEnabled)">
                     {{ wrapperStatusLabel }}
-                  </span>
+                  </button>
                   <ChevronUp v-if="showWrapperSection" :size="18" />
                   <ChevronDown v-else :size="18" />
                 </div>
-              </button>
+              </div>
 
               <div v-if="showWrapperSection" class="wrapper-section-body">
                 <div v-if="!canUseWrapper" class="wrapper-upsell">
@@ -894,6 +894,10 @@ async function submit() {
   font-weight: 800;
   letter-spacing: 0.03em;
   text-transform: uppercase;
+  white-space: nowrap;
+  border: none;
+  cursor: pointer;
+  outline: none;
 }
 
 .wrapper-status-pill--active {
